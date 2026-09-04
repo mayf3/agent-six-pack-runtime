@@ -145,20 +145,57 @@ class ProcessAdapter:
     """Generic subprocess adapter for any provider CLI.
 
     The command template receives ``{role}``, ``{task_id}``, ``{worktree}``,
-    and ``{goal}`` substitutions. Non-zero exit means stage failure.
+    ``{goal}``, and ``{prompt}`` substitutions. ``{prompt}`` carries the
+    station briefing built from the vendored role definition (Owns /
+    Does Not Own / required checks / done criteria), the goal, and the
+    done-when record. Non-zero exit means stage failure.
+
+    Permission note (CTR-SIX-017): any flags in the template must stay
+    narrower than the task's Execution Mandate; the profile never grants
+    bypass by default.
     """
 
     def __init__(self, command_template: list[str], timeout_seconds: int = 3600) -> None:
         self.command_template = command_template
         self.timeout_seconds = timeout_seconds
 
+    def _briefing(self, context: StageContext) -> str:
+        from .roles import load_role_catalog
+
+        definition = load_role_catalog().definition(context.role)
+        owns = "; ".join(definition.owns)
+        not_owns = "; ".join(definition.does_not_own)
+        checks = "; ".join(definition.required_checks)
+        done = "; ".join(definition.done_criteria)
+        return (
+            "You are the "
+            f"{context.role.value} station of a six-stage software delivery "
+            "pipeline (specifier -> coder -> cleaner -> architect -> "
+            "hardender -> QA). Work ONLY inside the current directory (an "
+            "isolated git worktree). Commit your changes with git before "
+            "finishing.\n\n"
+            f"TASK_ID: {context.task_id}\n"
+            f"GOAL: {context.goal}\n"
+            f"DONE_WHEN (task record): {context.instructions}\n\n"
+            f"YOUR ROLE OWNS: {owns}\n"
+            f"YOUR ROLE DOES NOT OWN (do not do this work): {not_owns}\n"
+            f"REQUIRED CHECKS: {checks}\n"
+            f"DONE CRITERIA: {done}\n\n"
+            "Stay strictly inside your ownership boundary. If required "
+            "behavior is not decided by accepted authority, stop and write "
+            "the blocker into a file named SPEC_GAP.md instead of inventing "
+            "a product contract."
+        )
+
     def execute_stage(self, context: StageContext) -> StageOutcome:
+        prompt = self._briefing(context)
         command = [
             part.format(
                 role=context.role.value,
                 task_id=context.task_id,
                 worktree=str(context.worktree_path),
                 goal=context.goal,
+                prompt=prompt,
             )
             for part in self.command_template
         ]
@@ -200,6 +237,7 @@ class RoleRunner:
         self.queues = queues
         self.audit_gate = audit_gate
         self.worktrees = worktrees  # repository name -> manager
+        self.default_worktree_root: Path | None = None
         self.adapter = adapter
 
     # -- helpers -----------------------------------------------------------
@@ -208,10 +246,10 @@ class RoleRunner:
         """Per-repository worktree manager, shared with the host controller."""
         manager = self.worktrees.get(record.repository)
         if manager is None:
-            manager = WorktreeManager(
-                Path(record.repository_path),
-                Path(record.repository_path).parent / "sixpack-worktrees",
-            )
+            root = self.default_worktree_root
+            if root is None:
+                root = Path(record.repository_path).parent / "sixpack-worktrees"
+            manager = WorktreeManager(Path(record.repository_path), root)
             self.worktrees[record.repository] = manager
         return manager
 

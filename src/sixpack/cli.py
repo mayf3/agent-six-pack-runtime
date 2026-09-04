@@ -44,6 +44,11 @@ def _build_runtime(
     else:
         adapter = ProcessAdapter(command_template=provider.split(" "))
     runner = RoleRunner(ledger, queues, audit_gate, {}, adapter)
+    host_json = workspace / "host.json"
+    if host_json.exists():
+        overrides = json.loads(host_json.read_text(encoding="utf-8"))
+        if overrides.get("worktree_root"):
+            runner.default_worktree_root = (workspace / overrides["worktree_root"]).resolve()
     controller = HostController(workspace, ledger, queues, runner)
     return ledger, queues, runner, controller
 
