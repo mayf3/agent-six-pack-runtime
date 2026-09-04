@@ -223,8 +223,12 @@ class ProcessAdapter:
                 success=False,
                 message=f"provider exited {result.returncode}: {result.stderr[-500:]}",
             )
+        qa_paths = ["sixpack-artifacts/"] if context.role is Role.QA else []
         return StageOutcome(
-            success=True, message="provider stage complete", results={"adapter": "process"}
+            success=True,
+            message="provider stage complete",
+            results={"adapter": "process"},
+            qa_automation_paths=qa_paths,
         )
 
 
@@ -324,7 +328,9 @@ class RoleRunner:
                 for path in changed
                 if path not in allowed
                 and not any(
-                    item.startswith(path.rstrip("/") + "/") for item in allowed
+                    item.startswith(path.rstrip("/") + "/")  # dir entry containing owned files
+                    or path.startswith(item.rstrip("/") + "/")  # file under an owned dir
+                    for item in allowed
                 )
             ]
             if product_changes:
