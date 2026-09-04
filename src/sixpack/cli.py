@@ -169,6 +169,7 @@ def cmd_drive_all(args: argparse.Namespace) -> int:
     _, _, _, controller = _build_runtime(workspace, args.provider)
     from .model import WorkflowState
 
+    controller.recover()  # crash-heal before driving (resume semantics)
     # Deterministic admission of every task record that lacks a workflow.
     admitted: list[str] = []
     refused: list[dict[str, str]] = []

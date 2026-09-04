@@ -362,34 +362,23 @@ class HostController:
             "window": self.window_phase(), "dispatched": dispatched, "recovered": {}
         }
         self._reconcile_leases(report)
-        # Dispatch queued work to idle stations (wake-up-loss tolerance).
+        # Dispatch is LEDGER-driven: queue items are lossy wake-up hints
+        # (CTR-SIX-012); the stage pointer + pending status are the truth.
+        # A mid-chain crash whose inbound item was already consumed must
+        # still re-dispatch, so candidacy never depends on the queue.
         for role in Role.ordered():
             if role.value in self.in_process_roles:
                 continue
-            queue = self.queues.queue(role.value)
-            candidates: list[str] = []
-            for filename in queue.list_new():
-                envelope = queue.read_item("inbox/new", filename)
-                task_id = envelope.task_id
-                instance = self.ledger.workflows().get(task_id)
-                # Terminal copies converge, they never dispatch.
-                if instance is None or instance.state in (
-                    WorkflowState.TERMINAL_BROADCAST, WorkflowState.CONVERGED
-                ) or instance.stage_pointer is not role:
-                    continue
-                candidates.append(task_id)
-            # The specifier entry point is admission itself, not a queue
-            # item: freshly admitted tasks wait at specifier with an empty
-            # inbox.
-            if not candidates and role is Role.SPECIFIER:
-                candidates = [
-                    wf.task_id
-                    for wf in self.ledger.workflows().values()
-                    if wf.state is WorkflowState.ADMITTED
-                    and wf.stage_pointer is Role.SPECIFIER
-                ]
+            candidates = [
+                wf.task_id
+                for wf in self.ledger.workflows().values()
+                if wf.stage_pointer is role
+                and wf.stage_status.get(role.value) in (None, "pending")
+                and wf.state
+                not in (WorkflowState.TERMINAL_BROADCAST, WorkflowState.CONVERGED)
+            ]
             # Exactly ONE dispatch per pass: tasks interleave across passes
-            # (af/specifier, canary/specifier, af/coder, ...) so the shared
+            # (af/cleaner, canary/cleaner, af/architect, ...) so the shared
             # pool is observable and no repo monopolizes the controller.
             if candidates:
                 task_id = candidates[0]
