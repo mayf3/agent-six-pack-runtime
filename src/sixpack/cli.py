@@ -33,7 +33,7 @@ from .runner import AgentAdapter, FakeAgentAdapter, ProcessAdapter, RoleRunner
 from .verifier import TerminalVerifier
 
 
-def cmd_version(args: argparse.Namespace) -> int:
+def cmd_version(_args: argparse.Namespace) -> int:
     """Print packaged runtime and governance versions without workspace access."""
     print(f"sixpack-runtime {__version__} + governance {GOVERNANCE_SOURCE_COMMIT}")
     return 0
