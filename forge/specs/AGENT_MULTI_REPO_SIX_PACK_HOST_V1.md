@@ -11,6 +11,7 @@ scope:
 governed_by:
   - AGENT_DEVELOPMENT_GOVERNANCE_V1
   - AGENT_SIX_PACK_DELIVERY_PROFILE_V1
+  - AGENT_OPERATIONAL_LAYER_V1
 external_authorities: []
 supersedes: []
 superseded_by: null
@@ -81,9 +82,13 @@ AUTHORITY_CONFLICT = NONE
 
 The gap this Spec closes: no accepted authority decides how six
 repository-agnostic role workers share themselves across repositories, how
-concurrent writes to one repository are bounded, how work survives the
-night-window boundary, or what the deterministic controller may and may not
-do. `AGENT_DEVELOPMENT_GOVERNANCE_V1` explicitly places cross-repository
+concurrent writes to one repository are bounded across tasks, the
+night-window admission/quiesce phase semantics, or the exact closed power
+set of a deterministic controller. What the parents already own and this
+Spec does NOT re-decide: durable queue survival, restart recovery, and
+per-station ambiguous-state refusal (`CTR-SIX-012`); controller
+non-authority as a principle (`CTR-SIX-001`, `CTR-GOV1-005`, `CTR-OPL-001`).
+`AGENT_DEVELOPMENT_GOVERNANCE_V1` explicitly places cross-repository
 settings control outside its own scope, and
 `AGENT_SIX_PACK_DELIVERY_PROFILE_V1` explicitly places runtime/queue
 implementation outside its own scope.
@@ -189,7 +194,13 @@ implementation outside its own scope.
 - Decision: the host maintains a registry binding repository name, local
   path, base branch, last-scanned exact head, and a `write_enabled` flag
   defaulting to false. Admission to any writing stage requires
-  `write_enabled = true` plus a valid task PREFLIGHT record.
+  `write_enabled = true` plus a valid task PREFLIGHT record. Registration
+  and every `write_enabled` transition additionally require (a) the exact
+  commit of the consumer repository's local adoption of the governing
+  authorities and (b) an attributable, persistent consumer-local
+  authorization naming the actor who set the flag. The host flag only
+  narrows an existing consumer-local permission; it never creates one
+  (consumer authority remains local per `CTR-GOV1-001`/`CTR-GOV1-002`).
 - Rejected alternatives: implicit registration by path scan; mutable
   registry without head snapshots.
 - Reason: admission legality must be checkable without trusting task text.
@@ -209,9 +220,16 @@ implementation outside its own scope.
 
 - Decision owner: repository owner
 - Decision: admission creates a lease binding task, repository, role, and
-  expiry. Crashed or expired leases are recovered by the controller's
-  deterministic reconciliation; recovery never re-executes a recorded
-  handoff (idempotency by handoff identity).
+  expiry, plus a monotonically increasing fencing generation recorded with
+  every stage claim. A stage worker may record outcomes only under its own
+  live generation; the controller treats an expired lease as
+  `outcome_unknown` for the interrupted stage until reconciliation proves
+  otherwise (recorded receipt = completed; no receipt and clean worktree
+  revalidation = requeueable). Expired leases never automatically restore
+  admissibility: recovery must positively exclude the prior worker (fresh
+  head revalidation + queue idempotency by handoff identity) before a task
+  becomes admittable again, and `outcome_unknown` blocks dependent
+  admission until reconciled.
 - Rejected alternatives: advisory locks without expiry; manual recovery.
 - Reason: night windows end mid-task; recovery must be routine.
 - Owner decision remaining: NONE
@@ -222,8 +240,8 @@ implementation outside its own scope.
 - Decision: the controller exposes `WINDOW_OPEN`, `ACTIVE`, `QUIESCE`,
   `WINDOW_CLOSED`. Admission only in `WINDOW_OPEN`/`ACTIVE`; `QUIESCE`
   finishes bounded stages or saves restart-safe state; `WINDOW_CLOSED`
-  runs no GLM work. Timers drive only these phases; role stations are
-  woken by handoff completion, never by polling.
+  runs no model-backed stage work. Timers drive only these phases; role
+  stations are woken by handoff completion, never by polling.
 - Rejected alternatives: cron-polling agents; always-on operation.
 - Reason: the window is a billing boundary, not a workflow primitive.
 - Owner decision remaining: NONE
@@ -232,8 +250,12 @@ implementation outside its own scope.
 
 - Decision owner: repository owner
 - Decision: the controller may scan, route, lease, wake, reconcile,
-  quiesce, and recover. It must not create Product Authority, invent
-  product tasks, accept Specs, merge to authority branches, deploy, or
+  quiesce, and recover. `route` means applying an already-authorized
+  deterministic assignment (admitted task -> registered repository ->
+  station by stage pointer); it never includes creating, selecting,
+  reprioritizing, reclassifying, or semantically judging work. The
+  controller must not create Product Authority, invent or select product
+  tasks, accept or reject Specs, merge to authority branches, deploy, or
   widen its own permissions. It is a deterministic program; any judgment
   call is routed to a role station or the Owner.
 - Rejected alternatives: an intelligent scheduler agent.
@@ -252,7 +274,20 @@ implementation outside its own scope.
 - Reason: chat is lossy; CTR-SIX-012 already requires durable queue state.
 - Owner decision remaining: NONE
 
-### DEC-MRH-007 — Fixed safety policy for the forge
+### DEC-MRH-007 — Head drift is revalidated, never adopted
+
+- Decision owner: repository owner
+- Decision: when a registered repository's head moves between host
+  operations, the host requires revalidation before further stage
+  execution on affected tasks; unrelated base-branch movement triggers a
+  bounded impact check (`CTR-GOV1-014`), while candidate/target drift
+  aborts (`CTR-GOV1-006`). Silent adoption is forbidden. This complements
+  the worktree-level drift abort of the runtime.
+- Rejected alternatives: automatic rebase; automatic adoption.
+- Reason: exact coordinates are the only legal evidence anchors.
+- Owner decision remaining: NONE
+
+### DEC-MRH-008 — Fixed safety policy for the forge
 
 - Decision owner: repository owner
 - Decision: `AUTO_ACCEPT = false`, `AUTO_MERGE = false`,
@@ -265,13 +300,20 @@ implementation outside its own scope.
 
 ## 9. Contracts
 
-### CTR-MRH-001 — Registry integrity and write authority
+### CTR-MRH-001 — Registry integrity and consumer-local write authority
 
 The host registry MUST bind repository identity, local path, base branch,
-and last-scanned full head. Admission to any writing stage MUST require
-`write_enabled = true` on the registry entry. A repository without a
-registry entry MUST be refused. Registry scans MUST record exact heads;
-head movement between scan and admission MUST be revalidated, not adopted.
+the consumer's exact local adoption revision of the governing authorities,
+the attributable consumer-local authorization for the current
+`write_enabled` value, and the last-scanned full head. Admission to any
+writing stage MUST require `write_enabled = true` on the registry entry
+AND a valid task PREFLIGHT record bound to that consumer. A repository
+without a registry entry MUST be refused. The host flag MUST only narrow
+consumer-local permission and MUST NOT create it. Registry scans MUST
+record exact heads; head movement between scan and admission MUST be
+revalidated, not adopted. Candidate/target head drift MUST abort stage
+execution; unrelated base-tip movement MUST trigger a bounded impact
+check (`CTR-GOV1-014`).
 
 ### CTR-MRH-002 — Concurrency invariants are mechanical
 
@@ -279,19 +321,42 @@ The host MUST refuse: a second in-process job for a role already in
 process, and admission of a write task to a repository that already has an
 active write task. Refusal MUST be a typed rejection, never a silent queue.
 
-### CTR-MRH-003 — Leases are bounded and recoverable
+### CTR-MRH-003 — Leases are fenced, bounded, and recoverable
 
-Every admitted task MUST hold a lease binding task, repository, role, and
-expiry. Lease recovery after crash MUST preserve recorded handoff
-idempotency and MUST NOT re-execute completed handoffs. Expired leases
-MUST return their task to admittable state deterministically.
+Every admitted task MUST hold a lease binding task, repository, role,
+fencing generation, and expiry. Stage outcome recording MUST carry the
+worker's live generation; outcomes under a stale generation MUST be
+refused. Lease recovery after crash MUST preserve recorded handoff
+idempotency, MUST NOT re-execute completed handoffs, and MUST treat an
+interrupted stage without a durable receipt as `outcome_unknown` until
+reconciliation (receipt present, or worktree revalidated clean) classifies
+it. `outcome_unknown` MUST block re-admission of the task and dependent
+work. Only after positive prior-worker exclusion MAY an expired lease
+return its task to admittable state, deterministically.
 
-### CTR-MRH-004 — Window phases gate admission only through the control plane
+### CTR-MRH-004 — Window phases gate the control plane with a complete matrix
 
-`WINDOW_OPEN`/`QUIESCE`/`WINDOW_CLOSED` MUST gate admission and new GLM
-work; `QUIESCE` MUST preserve queues, leases, and restart-safe state.
-Role stations MUST be woken by handoff completion. A timer MUST only
-invoke control-plane operations.
+The host MUST enforce exactly this phase matrix:
+
+```text
+                 WINDOW_OPEN      ACTIVE           QUIESCE          WINDOW_CLOSED
+new admission    allowed          allowed          refused          refused
+new stage start  allowed          allowed          allowed only     refused
+                                                   for stages that
+                                                   finish before close
+continuation     allowed          allowed          allowed          allowed only
+of in-flight                                                       to reach a
+stage                                                              checkpoint
+checkpoint/save  allowed          allowed          required         required
+lease renewal    allowed          allowed          allowed          allowed
+recovery/tick    allowed          allowed          allowed          control plane only
+```
+
+Legal transitions are `WINDOW_CLOSED -> WINDOW_OPEN -> ACTIVE -> QUIESCE
+-> WINDOW_CLOSED`; `QUIESCE` MUST preserve queues, leases, and
+restart-safe state across the close. Role stations MUST be woken by
+handoff completion. A timer MUST only invoke control-plane operations.
+Phase language MUST stay provider-neutral.
 
 ### CTR-MRH-005 — Controller powers are closed
 
@@ -301,19 +366,24 @@ mutation permission. Every controller action MUST be one of: scan, route,
 lease, wake, reconcile, quiesce, recover. Attempted actions outside this
 set MUST fail.
 
-### CTR-MRH-006 — Head drift is revalidated, never adopted
+### CTR-MRH-006 — Fixed safety policy
 
-When a registered repository's head moves between host operations, the
-host MUST require revalidation before further stage execution on affected
-tasks; silent adoption of movement is forbidden. This complements the
-worktree-level drift abort of the runtime.
+The forge MUST operate with `AUTO_ACCEPT = false`, `AUTO_MERGE = false`,
+`AUTO_DEPLOY = false`, `REMOTE_WRITE_DEFAULT = false`;
+`MAIN_CHECKOUT_WRITE`, `SELF_SELECT_NEW_WORK`, and `BLIND_RETRY` are
+forbidden. Configuration or invocation attempting any of these MUST fail
+closed. Relaxation requires a separate authority action. (Registry head
+drift revalidation is part of `CTR-MRH-001` per `DEC-MRH-007`.)
 
-### CTR-MRH-007 — Ledger exclusivity
+### CTR-MRH-007 — Ledger and queue are the authoritative record
 
-The durable machine-readable ledger MUST be the sole authoritative store
-for task state, handoff records, receipts, and review state. Forum or any
-chat surface MUST NOT be required for, or capable of, reconstructing run
-state.
+The durable machine-readable ledger (including the queue-location state
+required by `CTR-SIX-012`, which remains mandatory and is not replaced by
+the ledger file) MUST be the sole authoritative store for task state,
+handoff records, receipts, and review state. Forum content (discussion,
+clarifications, stage summaries, morning reports) MUST never be accepted
+as an authoritative reconstruction of run state; run state is read from
+the ledger and queues only.
 
 ## 10. Acceptance
 
@@ -348,12 +418,30 @@ state.
 
 ### ACC-MRH-004 — Controller power closure
 
-- Contracts: `CTR-MRH-005`, `CTR-MRH-006`
-- Method: request merge, deploy, spec acceptance, and task invention from
-  the controller; move a registered head under an active task.
-- Expected result: every out-of-set action fails; head movement forces
-  revalidation and blocks stage work until completed.
+- Contracts: `CTR-MRH-005`
+- Method: request merge, deploy, spec acceptance, task invention or
+  selection, and semantic reprioritization from the controller; move a
+  registered candidate head under an active task.
+- Expected result: every out-of-set action fails; candidate/target head
+  movement aborts stage work until revalidated; unrelated base movement
+  yields only a bounded impact check.
 - Failure condition: the controller can reach product or authority state.
+
+### ACC-MRH-005 — Safety policy and ledger exclusivity
+
+- Contracts: `CTR-MRH-006`, `CTR-MRH-007`, `CTR-MRH-003`
+- Method: attempt configuration with each `AUTO_*` flag true, remote write
+  enabled by default, main-checkout write, self-selected work, and blind
+  retry; separately, present Forum content as the only record of run
+  state, and present an `outcome_unknown` interrupted stage for
+  re-admission before reconciliation.
+- Expected result: every unsafe configuration fails closed; run state is
+  reconstructed from ledger+queues with Forum ignored as authority;
+  `outcome_unknown` blocks re-admission until reconciled; a fenced stale
+  generation cannot record outcomes.
+- Failure condition: any safety constant is relaxable by configuration, or
+  any surface other than ledger+queues can authorize or reconstruct run
+  state.
 
 ## 11. Alternatives and disposition
 
@@ -385,8 +473,10 @@ MIGRATION = author in forge/specs (runtime repo); promote through
   mayf3/agent-development-governance; runtime pins the accepted revision.
 COMPATIBILITY = narrows nothing in parents; runtime V0 already implements
   these semantics and gains their authority on acceptance.
-ROLLBACK = reject the proposal; runtime continues under Profile + host
-  policy constants with multi-repo operation disabled.
+ROLLBACK = reject the proposal; runtime reverts to single-repo operation
+  under Profile + host policy constants (the multi-repo registry and
+  admission paths stay implemented but disabled via registry
+  write_enabled = false).
 EMERGENCY_CONTAINMENT = disable admission (WINDOW_CLOSED) and leases;
   contain only; permanent repair returns through authority routing.
 ```
@@ -399,5 +489,13 @@ NORMATIVE_TBD = NONE
 UNRESOLVED_AUTHORITY_CONFLICT = NONE
 PARTIAL_SUPERSESSION = NONE
 INDEPENDENT_REVIEW_REQUIRED = YES
+INDEPENDENT_REVIEW_R1 = forge/specs/AGENT_MULTI_REPO_SIX_PACK_HOST_V1_REVIEW_R1.md
+  (fresh provider session; verdict REVISE, 5 blockers)
+R1_BLOCKERS_ADDRESSED = 5 (consumer-local authority, lease fencing,
+  DEC/CTR one-to-one remap incl. DEC-MRH-008 + CTR-MRH-006 policy contract,
+  ACC-MRH-005 safety/ledger coverage, complete window-phase matrix)
+R1_CONCERNS_ADDRESSED = 7 (route definition, narrowed gap claim,
+  provider-neutral wording, OPL in governed_by, drift vs base-movement,
+  Forum wording, enablement consistency)
 IMPLEMENTATION_IN_THIS_SPEC = NO (runtime V0 already exists as prior art)
 ```
