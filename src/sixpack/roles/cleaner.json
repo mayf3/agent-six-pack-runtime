@@ -1,0 +1,36 @@
+{
+  "role": "cleaner",
+  "owns": [
+    "cleanup_and_local_quality_checks"
+  ],
+  "does_not_own": [
+    "behavior_specification",
+    "qa_procedure",
+    "implementation_and_unit_tests",
+    "architecture_and_property_tests",
+    "mutation_hardening",
+    "executable_qa_automation",
+    "final_qa_receipt"
+  ],
+  "required_inputs": [
+    "coder candidate at exact head",
+    "repository-approved coverage and CRAP/DRY tools"
+  ],
+  "permitted_mutations": [
+    "behavior-preserving local structure improvements",
+    "test readability and dead code removal"
+  ],
+  "required_checks": [
+    "observable behavior unchanged",
+    "coverage plus local CRAP/DRY checks bound to output candidate"
+  ],
+  "handoff_target": "architect",
+  "failure_output": "behavior change detected, correction routed to coder",
+  "done_criteria": [
+    "local structure improved without behavior change",
+    "stage-local quality checks recorded"
+  ],
+  "receive_mode": "batch",
+  "propagation": "back-one",
+  "terminal_broadcast": false
+}

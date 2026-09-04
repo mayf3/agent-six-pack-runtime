@@ -1,0 +1,37 @@
+{
+  "role": "qa",
+  "owns": [
+    "executable_qa_automation",
+    "final_qa_receipt"
+  ],
+  "does_not_own": [
+    "behavior_specification",
+    "qa_procedure",
+    "implementation_and_unit_tests",
+    "acceptance_generator_runtime_step_handlers",
+    "cleanup_and_local_quality_checks",
+    "architecture_and_property_tests",
+    "mutation_hardening"
+  ],
+  "required_inputs": [
+    "specifier end-to-end QA procedure",
+    "hardender candidate at exact head"
+  ],
+  "permitted_mutations": [
+    "executable QA automation scripts committed before the final run"
+  ],
+  "required_checks": [
+    "end-to-end verification through the public user boundary",
+    "final CRAP/DRY checks on the terminal candidate",
+    "handoff and manifest consistency"
+  ],
+  "handoff_target": "terminal broadcast to the other five roles at priority 00",
+  "failure_output": "product-code mutation routes a correction; self-certification forbidden",
+  "done_criteria": [
+    "final QA receipt binds the unchanged terminal candidate head/tree",
+    "no owner acceptance or merge authority claimed"
+  ],
+  "receive_mode": "batch",
+  "propagation": "back-all",
+  "terminal_broadcast": true
+}

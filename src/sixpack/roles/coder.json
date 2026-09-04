@@ -1,0 +1,38 @@
+{
+  "role": "coder",
+  "owns": [
+    "implementation_and_unit_tests",
+    "acceptance_generator_runtime_step_handlers"
+  ],
+  "does_not_own": [
+    "behavior_specification",
+    "qa_procedure",
+    "cleanup_and_local_quality_checks",
+    "architecture_and_property_tests",
+    "mutation_hardening",
+    "executable_qa_automation",
+    "final_qa_receipt"
+  ],
+  "required_inputs": [
+    "accepted behavior specification",
+    "isolated worktree at exact candidate head"
+  ],
+  "permitted_mutations": [
+    "minimal production behavior implementation",
+    "focused failing-first unit tests",
+    "project-specific acceptance generator/runtime/step handlers/runner scripts"
+  ],
+  "required_checks": [
+    "unit tests fail for plausible wrong implementations",
+    "acceptance tests generated and green"
+  ],
+  "handoff_target": "cleaner",
+  "failure_output": "missing acceptance infrastructure reported, stage fails closed",
+  "done_criteria": [
+    "implementation satisfies accepted behavior only",
+    "unit and acceptance tests pass on the candidate"
+  ],
+  "receive_mode": "task",
+  "propagation": "forward-only",
+  "terminal_broadcast": false
+}

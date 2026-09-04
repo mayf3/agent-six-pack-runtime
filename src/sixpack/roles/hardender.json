@@ -1,0 +1,36 @@
+{
+  "role": "hardender",
+  "owns": [
+    "mutation_hardening"
+  ],
+  "does_not_own": [
+    "behavior_specification",
+    "qa_procedure",
+    "implementation_and_unit_tests",
+    "cleanup_and_local_quality_checks",
+    "architecture_and_property_tests",
+    "executable_qa_automation",
+    "final_qa_receipt"
+  ],
+  "required_inputs": [
+    "architect candidate at exact head",
+    "repository-approved differential mutation and CRAP/DRY tools"
+  ],
+  "permitted_mutations": [
+    "tests that kill surviving mutants on changed behavior",
+    "post-hardening CRAP/DRY adjustments within its own boundary"
+  ],
+  "required_checks": [
+    "surviving mutants killed or limitations recorded",
+    "post-hardening CRAP gate (<=10 changed-file default) evaluated"
+  ],
+  "handoff_target": "qa",
+  "failure_output": "accepted examples must not change to kill mutants",
+  "done_criteria": [
+    "mutation hardening applied to affected behavior",
+    "post-hardening checks recorded on output candidate"
+  ],
+  "receive_mode": "batch",
+  "propagation": "forward-only",
+  "terminal_broadcast": false
+}

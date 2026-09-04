@@ -1,0 +1,61 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agent-six-pack-runtime"
+version = "0.1.0"
+description = "Repository-agnostic, model-agnostic Six-Pack software delivery runtime (specifier -> coder -> cleaner -> architect -> hardender -> QA)"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "mayf3" }]
+dependencies = []
+
+[project.scripts]
+sixpack = "sixpack.cli:main"
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8",
+  "ruff>=0.6",
+  "mypy>=1.11",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+sixpack = ["schemas/*.json", "schemas/*.md", "roles/*.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "A", "C4", "SIM", "RUF"]
+ignore = [
+  "SIM108",
+  # Exception names carry AGENT_SIX_PACK_DELIVERY_PROFILE_V1 vocabulary
+  # (AUDIT_REQUIRED, HEAD_DRIFT, ...); an Error suffix would drift from the
+  # machine-readable rejection codes used in reports and CLI output.
+  "N818",
+  # (str, Enum) members are serialized by name across JSON ledgers; StrEnum
+  # adds nothing here and would change reprs baked into fixtures.
+  "UP042",
+]
+
+[tool.mypy]
+python_version = "3.11"
+mypy_path = "src"
+strict = true
+warn_unreachable = true
+show_error_codes = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
