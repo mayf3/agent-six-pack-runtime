@@ -1,9 +1,10 @@
 # GOAL_STATE — Bootstrap Multi-Repo Six-Pack Governance Forge
 
-GOAL_STATUS = READY_FOR_GOVERNANCE_FORGE_PILOT_REVIEW
+GOAL_STATUS = AWAITING_INDEPENDENT_PILOT_REVIEWS
 PHASE_LOCK = ON
-UPDATED_AT = 2026-09-05T01:40:00+08:00
-READY_FOR_GOVERNANCE_FORGE_PILOT_REVIEW = YES（达成，见下方 DONE_WHEN 审计；不自动扩大范围，STOP）
+UPDATED_AT = 2026-09-05T09:20:00+08:00
+READY_FOR_GOVERNANCE_FORGE_PILOT_REVIEW = YES（历史里程碑，见 DONE_WHEN 审计）
+AWAITING_INDEPENDENT_PILOT_REVIEWS = YES（REVIEW_PREPARATION 完成，三个 exact review surfaces 已冻结，STOP）
 
 ## Governing authority（已 fresh-verify）
 
@@ -78,13 +79,16 @@ BLIND_RETRY = forbidden
 
 automation-4cf1970a-bc60-4f89-8b24-f2435e7a4f96 每 30 分钟触发。若 canary 仍在跑，检查 $FORGE/drive-all.log；若卡住（stage failure），读日志定位、修复后用 resume/tick 恢复（不盲目重试——BLIND_RETRY forbidden，先找共同根因）。
 
+## REVIEW SURFACES（AWAITING_INDEPENDENT_PILOT_REVIEWS）
+
+HOST_SPEC_REVIEW_STATUS = NEEDS_EXACT_R2_REVIEW（R1=REVISE→r2，无 r2 独立复审；r2 bytes 冻结 SHA256 a5faf452…；packet=forge/specs/REVIEW_PACKET_HOST_V1_R2.md；freeze commit 613ba6f3）
+RUNTIME_REVIEW_PR = mayf3/agent-six-pack-runtime#1（Draft，base v0/bootstrap，head 8957f2feec4eaff0bab278db3b907c02203c28f8，tree d22e791e44856b79f5a244eae361aec57d0f5873，base-head dc684d0851b9）
+AGENT_FORUM_REVIEW_PR = mayf3/agent-forum#18（Draft，base main（fb11552 已含于 main），head 77bc1467dedea95bcaa7db250303232263ce6e5e，tree 74a10b68b13074d1e601f67e6f372950605a96eb）
+CANDIDATE_BYTES_CHANGED = NO；REGISTRY_EXPANDED = NO；AUTO_MERGE = false；AUTO_DEPLOY = false
+
 ## NEXT
 
-1. 等 canary QA 完成（exec_0818d97f 后台运行中，两任务 @ qa）→ done + converge + verify 双任务
-2. 固化跨仓并行证据（两任务 receipts 序列 + 时间戳，已在真实运行中交错）→ forge/PILOT_EVIDENCE.md
-3. LANE B：收独立评审报告 → 修复 blocker → Owner acceptance（OWNER_ACTION_REQUIRED）
-4. DONE_WHEN 审计（15 条逐条对照）→ FINAL REPORT
-5. OWNER_ACTION_REQUIRED：LANE B Spec acceptance；首批后仓库扩容决策
+STOP —— 等待三个独立评审（Reviewer 完成后由 Owner 处置）。不 merge、不 accept、不 deploy、不扩 registry、不开新任务。
 
 ## 实操验证证据（quiesce/recovery，已发生三次真实恢复）
 

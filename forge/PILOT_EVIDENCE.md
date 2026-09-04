@@ -76,3 +76,15 @@ QA 站自产报告（`sixpack-artifacts/qa.report.md`，QA 工位真实输出）
 - 两个目标仓库均未被 push；全部交付停留在本地隔离 worktree 的 candidate 分支（`sixpack/<task>/<role>` + 收敛后的角色 refs）。
 - 两任务均停于 `AWAITING_INDEPENDENT_REVIEW`：等待 Owner 指定的独立评审与 Owner 处置（runtime 仓的 canary 交付物 `sixpack version` 可直接验收；agent-forum 的 spec 交付物在 `sixpack/af-verifier-1/*` refs 上）。
 - LANE B child Spec：独立评审 R1（REVISE 5 blockers）→ amendment r2 全部落实 → **Owner acceptance 待行**（见 GOAL_STATE FINAL REPORT / OWNER_ACTION_REQUIRED）。
+
+## 7. Review surfaces（REVIEW_PREPARATION，2026-09-05）
+
+三个待决策对象已冻结为 exact review surfaces：
+
+| 对象 | revision / head | 暴露方式 |
+|------|-----------------|----------|
+| AGENT_MULTI_REPO_SIX_PACK_HOST_V1 r2 | SHA256 a5faf4528d4e4c1949a69925b33c990b1ddd7ff923a137ac407610d26d2966ae | NEEDS_EXACT_R2_REVIEW；packet = forge/specs/REVIEW_PACKET_HOST_V1_R2.md；freeze commit 613ba6f3fc3f0cb08e07892840c343538ef4eb7e |
+| runtime canary-version-1 | 8957f2feec4eaff0bab278db3b907c02203c28f8（tree d22e791e…） | branch `review/canary-version-1` + Draft PR mayf3/agent-six-pack-runtime#1 |
+| agent-forum af-verifier-1 | 77bc1467dedea95bcaa7db250303232263ce6e5e（tree 74a10b68…） | branch `review/af-verifier-1` + Draft PR mayf3/agent-forum#18 |
+
+candidate bytes 未因 review preparation 改变（推送的是已存在 commit）；registry 未扩大；无 merge/accept/deploy；GOAL_STATUS → AWAITING_INDEPENDENT_PILOT_REVIEWS。
