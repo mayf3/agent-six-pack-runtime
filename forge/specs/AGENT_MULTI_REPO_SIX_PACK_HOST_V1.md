@@ -327,44 +327,59 @@ Every admitted task MUST hold a lease binding task, repository, role,
 fencing generation, and expiry. Stage outcome recording MUST carry the
 worker's live generation; outcomes under a stale generation MUST be
 refused. Lease recovery after crash MUST preserve recorded handoff
-idempotency, MUST NOT re-execute completed handoffs, and MUST treat an
-interrupted stage without a durable receipt as `outcome_unknown` until
-reconciliation (receipt present, or worktree revalidated clean) classifies
-it. `outcome_unknown` MUST block re-admission of the task and dependent
-work. Only after positive prior-worker exclusion MAY an expired lease
-return its task to admittable state, deterministically.
+idempotency and MUST NOT re-execute completed handoffs. An interrupted
+stage whose durable receipt is absent stays `outcome_unknown`; a clean
+worktree is NOT sufficient evidence to requeue it, because the worktree
+cannot prove that no commit was produced. Reconciliation to anything
+other than `outcome_unknown` requires ALL of: (a) the stage input exact
+Head is reverified in the repository; (b) the station's isolated ref is
+inspected for commits descending from the last recorded receipt output —
+any unreceipted descendant is an ambiguous mutation and keeps
+`outcome_unknown`; (c) the fencing generation is live; and (d) the prior
+worker is positively excluded (lease ownership expired or revoked with
+the worker provably stopped). `outcome_unknown` MUST block re-admission
+of the task and dependent work until an Owner-visible reconciliation
+classifies it. Retry of an ambiguous mutation is allowed only through a
+declared idempotency mechanism or after confirmed absence of the effect.
 
 ### CTR-MRH-004 — Window phases gate the control plane with a complete matrix
 
-The host MUST enforce exactly this phase matrix:
+The host MUST enforce exactly this phase matrix (V1 simplification; no
+phase may start model-backed stage work except `WINDOW_OPEN`/`ACTIVE`):
 
 ```text
-                 WINDOW_OPEN      ACTIVE           QUIESCE          WINDOW_CLOSED
-new admission    allowed          allowed          refused          refused
-new stage start  allowed          allowed          allowed only     refused
-                                                   for stages that
-                                                   finish before close
-continuation     allowed          allowed          allowed          allowed only
-of in-flight                                                       to reach a
-stage                                                              checkpoint
-checkpoint/save  allowed          allowed          required         required
-lease renewal    allowed          allowed          allowed          allowed
-recovery/tick    allowed          allowed          allowed          control plane only
+                        WINDOW_OPEN   ACTIVE   QUIESCE      WINDOW_CLOSED
+new admission           allowed       allowed  refused      refused
+new model-backed stage  allowed       allowed  refused      refused
+in-flight stage         allowed       allowed  finish the   none
+                                               bounded stage
+                                               or checkpoint
+checkpoint/save         allowed       allowed  required     bookkeeping only
+lease renewal           allowed       allowed  allowed      allowed
+recovery/tick           allowed       allowed  allowed      control plane only
 ```
 
-Legal transitions are `WINDOW_CLOSED -> WINDOW_OPEN -> ACTIVE -> QUIESCE
--> WINDOW_CLOSED`; `QUIESCE` MUST preserve queues, leases, and
-restart-safe state across the close. Role stations MUST be woken by
-handoff completion. A timer MUST only invoke control-plane operations.
-Phase language MUST stay provider-neutral.
+`QUIESCE` MUST NOT start a new model-backed stage; a stage already
+running MAY finish its bounded stage or save a restart-safe checkpoint.
+`WINDOW_CLOSED` MUST NOT run model-backed work; only control-plane
+recovery and checkpoint bookkeeping operate. Legal transitions are
+`WINDOW_CLOSED -> WINDOW_OPEN -> ACTIVE -> QUIESCE -> WINDOW_CLOSED`;
+`QUIESCE` MUST preserve queues, leases, and restart-safe state across the
+close. Role stations MUST be woken by handoff completion. A timer MUST
+only invoke control-plane operations. Phase language MUST stay
+provider-neutral.
 
 ### CTR-MRH-005 — Controller powers are closed
 
 The controller MUST NOT create or amend Product Authority, accept or
-reject Specs, execute merges to authority branches, deploy, or self-issue
-mutation permission. Every controller action MUST be one of: scan, route,
-lease, wake, reconcile, quiesce, recover. Attempted actions outside this
-set MUST fail.
+reject Specs, execute merges to authority branches, deploy, self-select
+or invent new work, or self-issue mutation permission. `route` MUST mean
+only applying an already-authorized, already-decided deterministic
+assignment (admitted task -> registered repository -> station by stage
+pointer). The controller MUST NOT create, select, reprioritize,
+reclassify, or semantically judge tasks. Every controller action MUST be
+one of: scan, route, lease, wake, reconcile, quiesce, recover. Attempted
+actions outside this set MUST fail.
 
 ### CTR-MRH-006 — Fixed safety policy
 
@@ -497,5 +512,13 @@ R1_BLOCKERS_ADDRESSED = 5 (consumer-local authority, lease fencing,
 R1_CONCERNS_ADDRESSED = 7 (route definition, narrowed gap claim,
   provider-neutral wording, OPL in governed_by, drift vs base-movement,
   Forum wording, enablement consistency)
+INDEPENDENT_PILOT_REVIEW_R2 = REVISE (blocker union on CTR-MRH-003/004/005)
+R2_BLOCKERS_ADDRESSED = 3 (recovery reconciliation now requires stage-input
+  Head reverification + unreceipted-descendant inspection on the isolated
+  ref + live fencing generation + positive prior-worker exclusion, with
+  clean-worktree-only requeue and outcome_unknown erasure removed;
+  QUIESCE/WINDOW_CLOSED matrix contradiction removed via the V1 phase
+  simplification; the route restriction is lifted from DEC-MRH-005 into
+  the CTR-MRH-005 Contract text)
 IMPLEMENTATION_IN_THIS_SPEC = NO (runtime V0 already exists as prior art)
 ```
