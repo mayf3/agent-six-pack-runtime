@@ -29,7 +29,7 @@ RUNTIME_HEAD = c498e59d057756b3995b52c84e060c5b6860b1be（以 git log 为准）
 - 负例矩阵全部通过：recipient/priority/handoff-type swap、normal→terminal spoof、partial terminal、terminal priority≠00、terminal re-forward、stale receipt、QA self-certification、manual helper bypass、duplicate delivery、two write tasks/repo、two in-process/role、lease recovery、head drift、unauthorized coder entry
 
 ### LANE B — MULTI_REPO_HOST_AUTHORITY
-LANE_STATUS = SPEC_AUTHORED_PROPOSED
+LANE_STATUS = INDEPENDENT_REVIEW_RUNNING（fresh 上下文评审子代理进行中）
 AUTHORITY_ACTION = NEW
 HOST_SPEC = forge/specs/AGENT_MULTI_REPO_SIX_PACK_HOST_V1.md（status: proposed）
 Gap 结论：现有 authority 未覆盖 multi-repo host 长期语义（registry/lease/并发上限/夜间窗口/controller 权限闭合）。Profile open questions 明确把 runtime 层留白；Governance V1 明确拒绝 cross-repository controller。
@@ -77,11 +77,18 @@ automation-4cf1970a-bc60-4f89-8b24-f2435e7a4f96 每 30 分钟触发。若 canary
 
 ## NEXT
 
-1. 等 drive-all 完成（exec_55b8b6b4 后台）→ 六 receipts + terminal verify PASS for canary-version-1 与 af-verifier-1
-2. 跨仓并行证据：af-verifier-1 在不同工位与 canary-version-1 并行推进的记录
-3. quiesce/recovery 实操验证一次（quiesce → recover → resume）
+1. 等 canary QA 完成（exec_0818d97f 后台运行中，两任务 @ qa）→ done + converge + verify 双任务
+2. 固化跨仓并行证据（两任务 receipts 序列 + 时间戳，已在真实运行中交错）→ forge/PILOT_EVIDENCE.md
+3. LANE B：收独立评审报告 → 修复 blocker → Owner acceptance（OWNER_ACTION_REQUIRED）
 4. DONE_WHEN 审计（15 条逐条对照）→ FINAL REPORT
-5. OWNER_ACTION_REQUIRED：LANE B Spec 独立评审 + acceptance；首批后仓库扩容决策
+5. OWNER_ACTION_REQUIRED：LANE B Spec acceptance；首批后仓库扩容决策
+
+## 实操验证证据（quiesce/recovery，已发生三次真实恢复）
+
+1. kill drive-all（af cleaner codex 在飞）→ host recover：in_process 队列条目按 executed_handoffs 正确完成、stage_status 复位 pending、integrity OK、registry head drift 检出（dc684d0→bbdcc13）
+2. 第二次 kill 后发现 recover 空转缺陷（惰性实例化）→ 修复为固定六工位扫描 + 回归测试
+3. 中链卡死发现 ledger 驱动派发缺口 → 修复（CTR-SIX-012 wake-up 是有损 hint）
+每次恢复后 canary 均从断点继续且 receipts 无重复执行（幂等性由 executed_handoffs 保证）
 
 ## BLOCKERS
 
