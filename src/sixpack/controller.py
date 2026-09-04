@@ -367,22 +367,36 @@ class HostController:
             if role.value in self.in_process_roles:
                 continue
             queue = self.queues.queue(role.value)
+            candidates: list[str] = []
             for filename in queue.list_new():
                 envelope = queue.read_item("inbox/new", filename)
                 task_id = envelope.task_id
-                if task_id not in self.ledger.workflows():
+                instance = self.ledger.workflows().get(task_id)
+                # Terminal copies converge, they never dispatch.
+                if instance is None or instance.state in (
+                    WorkflowState.TERMINAL_BROADCAST, WorkflowState.CONVERGED
+                ) or instance.stage_pointer is not role:
                     continue
-                instance = self.ledger.workflow(task_id)
-                if instance.state in (WorkflowState.TERMINAL_BROADCAST, WorkflowState.CONVERGED):
-                    continue  # terminal copies converge, they never dispatch
-                if instance.stage_pointer is not role:
-                    continue
+                candidates.append(task_id)
+            # The specifier entry point is admission itself, not a queue
+            # item: freshly admitted tasks wait at specifier with an empty
+            # inbox.
+            if not candidates and role is Role.SPECIFIER:
+                candidates = [
+                    wf.task_id
+                    for wf in self.ledger.workflows().values()
+                    if wf.state is WorkflowState.ADMITTED
+                    and wf.stage_pointer is Role.SPECIFIER
+                ]
+            # One dispatch per station per pass: equal-priority stations
+            # rotate fairly; a second queued job waits for the next pass.
+            if candidates:
+                task_id = candidates[0]
                 self.in_process_roles[role.value] = task_id
                 try:
                     dispatched.append(self.runner.execute_stage(task_id, role))
                 finally:
                     self.in_process_roles.pop(role.value, None)
-                break
         self.save()
         return report
 
