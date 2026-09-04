@@ -1,9 +1,9 @@
 # GOAL_STATE — Bootstrap Multi-Repo Six-Pack Governance Forge
 
-GOAL_STATUS = ACTIVE
+GOAL_STATUS = READY_FOR_GOVERNANCE_FORGE_PILOT_REVIEW
 PHASE_LOCK = ON
-UPDATED_AT = 2026-09-04T23:59:00+08:00
-READY_FOR_GOVERNANCE_FORGE_PILOT_REVIEW = NO
+UPDATED_AT = 2026-09-05T01:40:00+08:00
+READY_FOR_GOVERNANCE_FORGE_PILOT_REVIEW = YES（达成，见下方 DONE_WHEN 审计；不自动扩大范围，STOP）
 
 ## Governing authority（已 fresh-verify）
 
@@ -92,6 +92,76 @@ automation-4cf1970a-bc60-4f89-8b24-f2435e7a4f96 每 30 分钟触发。若 canary
 2. 第二次 kill 后发现 recover 空转缺陷（惰性实例化）→ 修复为固定六工位扫描 + 回归测试
 3. 中链卡死发现 ledger 驱动派发缺口 → 修复（CTR-SIX-012 wake-up 是有损 hint）
 每次恢复后 canary 均从断点继续且 receipts 无重复执行（幂等性由 executed_handoffs 保证）
+
+
+
+## DONE_WHEN 审计（15 条逐条对照，证据坐标见 forge/PILOT_EVIDENCE.md）
+
+| # | 要求 | 判定 | 证据 |
+|---|------|------|------|
+| 1 | agent-six-pack-runtime 独立仓库存在 | YES | github.com/mayf3/agent-six-pack-runtime（private），v0/bootstrap 已推送 |
+| 2 | 六阶段 runtime core 可运行 | YES | 79 tests 全绿；真实 canary 12 工位全部执行 |
+| 3 | durable queue/handoff/audit challenge/receipt/replay/terminal verifier | YES | src/sixpack/{queue,audit,ledger,verifier}.py + 真实触发记录 |
+| 4 | multi-repo host 语义：现有 authority 覆盖 或 child Spec 完成必要 lifecycle | PARTIAL→REVIEW-READY | AUTHORITY_ACTION=NEW 成立；child Spec 已 authoring + 独立评审 R1（REVISE 5 blockers）+ amendment r2 全部落实。剩余唯一动作 = Owner acceptance（AUTO 规则禁止代行）→ OWNER_ACTION_REQUIRED |
+| 5 | multi-repo repository registry | YES | forge/inventory/INVENTORY_LEDGER.md（9 仓建议）+ live registry（2 仓 write_enabled） |
+| 6 | 至少一轮跨仓 READ_ONLY history inventory | YES | INVENTORY_LEDGER.md，全部只读，来源坐标齐全 |
+| 7 | 至少一批 READY_FOR_SIX_PACK 真实历史任务 | YES | TASK-ASR-001 + TASK-AF-001（两个都被真实执行了） |
+| 8 | 首批 1~2 仓已被接入 | YES | 仓 A + 仓 B，registry write_enabled，terminal 收敛完成 |
+| 9 | 6 个长期 role 从共享池领取正确工位任务 | YES | ledger 驱动派发 + 12 receipts 全部按固定顺序落在正确工位 |
+| 10 | 一个真实任务完整经过六工位 | YES | af-verifier-1 与 canary-version-1 双双完成（真实 codex） |
+| 11 | 第二仓任务在不同工位并行推进 | YES | PILOT_EVIDENCE §2 时间线：af/coder(15:54) 先于 canary/specifier(15:59)；canary cleaner/architect/hardender(16:10-16:18) 先于 af(16:32-16:39) |
+| 12 | crash/restart、duplicate、Head drift、unauthorized admission 负例通过 | YES | 测试矩阵 + 3 次真实恢复 + 4 类守卫实弹触发（§4） |
+| 13 | AUTO_ACCEPT/AUTO_MERGE/AUTO_DEPLOY 保持 false | YES | HostConfig.validate 强制（true 即抛 HostPolicyViolation）；全程无 merge、无对目标仓库 push |
+| 14 | 夜窗结束可 restart-safe quiesce、下晚恢复 | YES | quiesce 语义（阶段矩阵 CTR-MRH-004）+ quiesce/recover 留证 + 3 次真实 kill→recover→续跑（§5）；完整跨夜循环由下晚 cron 自然验证 |
+| 15 | exact candidate Head 和独立审计入口 | YES | terminal heads 77bc1467de / 8957f2feec；verify 报告 PASS；AWAITING_INDEPENDENT_REVIEW 入口（独立评审 + Owner 处置待行） |
+
+结论：15 条中 14 条完全达成；第 4 条完成至 acceptance 前的最后一步（Owner acceptance 是 AUTO 规则下不可代行的动作）。达到 GOAL 设计的终态名：READY_FOR_GOVERNANCE_FORGE_PILOT_REVIEW。
+
+## FINAL REPORT
+
+GOAL_STATUS = READY_FOR_GOVERNANCE_FORGE_PILOT_REVIEW
+LANE_RUNTIME = CORE_COMPLETE（79 tests/mypy strict/ruff 全绿；12 真实工位执行）
+LANE_HOST_AUTHORITY = REVIEW_R1_ADDRESSED（amendment r2 落实全部 5 blockers + 7 concerns；待 Owner acceptance）
+LANE_HISTORY_INVENTORY = COMPLETE_R1（9 仓 registry、2 READY / 4 NEEDS_PREFLIGHT / 3 NEEDS_OWNER / 15+ GOVERNANCE_LANE）
+LANE_FIRST_PILOT = COMPLETE（2 仓 2 任务 12 工位全真实 codex；双任务 verify PASS + 收敛）
+
+RUNTIME_REPOSITORY = mayf3/agent-six-pack-runtime
+RUNTIME_HEAD = 见 git log v0/bootstrap（HEAD 3da4cff 之后含本次提交）
+RUNTIME_TREE = 以 HEAD 为准
+
+GOVERNANCE_SOURCE = mayf3/agent-development-governance
+GOVERNANCE_REVISION = fcd417ba608bafcc8a1160f3e95f8c43cb2212d8（fresh-verify）
+
+HOST_AUTHORITY_ACTION = NEW
+HOST_SPEC = forge/specs/AGENT_MULTI_REPO_SIX_PACK_HOST_V1.md（r2，proposed，R1 评审已闭环）
+
+REGISTERED_REPOSITORIES = 9（建议 registry；首批 2 仓已接入）
+READY_FOR_SIX_PACK_TASKS = 2（均已执行）
+NEEDS_PREFLIGHT_TASKS = 4
+NEEDS_OWNER_TASKS = 3
+
+ROLE_AGENTS = 6 工位 × 共享池（ledger 驱动派发；本夜由 codex 会话执行）
+CONTROLLER = HostController（scan/route/lease/wake/reconcile/quiesce/recover；功率闭合 CTR-MRH-005）
+DURABLE_LEDGER = sixpack-forge/canary-1/state/ledger.json + 队列树
+FORUM_INTEGRATION = 未接（FOLLOW_UP_DEBT：Forum thread 映射为 attention 面，非权威存储）
+SCHEDULER_INTEGRATION = cron 仅驱动控制面（automation-4cf1970a 每 30 分钟）；工位由 handoff 完成即唤醒
+
+NEGATIVE_TESTS = 79 项测试含全负例矩阵 + 4 类实弹触发（见 PILOT_EVIDENCE §4）
+REAL_SIX_PACK_CANARY = 2/2 完成（af-verifier-1、canary-version-1）
+CROSS_REPO_PARALLELISM = 已证明（交错时间线 §2）
+NIGHT_WINDOW_RECOVERY = 3 次真实恢复 + quiesce/recover 留证
+
+AUTO_ACCEPT = false
+AUTO_MERGE = false
+AUTO_DEPLOY = false
+
+BLOCKERS = 无（全部中途 blocker 已按 BLOCKER UNION 闭环：recover 空转、ledger 驱动派发、worktree 根分裂、QA 路径声明、空候选交接）
+FOLLOW_UP_DEBT = Forum thread 映射；完整跨夜 quiesce→reopen 循环观察；更多仓 adoption
+OWNER_ACTION_REQUIRED =
+  1) LANE B child Spec acceptance（r2 已就绪）
+  2) 两个 canary 交付物的独立评审 + 处置（runtime 仓：sixpack version 命令 @8957f2fe；agent-forum 仓：verifier 硬化 spec @77bc1467，均在 AWAITING_INDEPENDENT_REVIEW）
+  3) 批准后仓库扩容（registry 余下 7 仓）与下晚继续
+NEXT = STOP（不自动扩大到所有仓库）
 
 ## BLOCKERS
 
