@@ -388,8 +388,9 @@ class HostController:
                     if wf.state is WorkflowState.ADMITTED
                     and wf.stage_pointer is Role.SPECIFIER
                 ]
-            # One dispatch per station per pass: equal-priority stations
-            # rotate fairly; a second queued job waits for the next pass.
+            # Exactly ONE dispatch per pass: tasks interleave across passes
+            # (af/specifier, canary/specifier, af/coder, ...) so the shared
+            # pool is observable and no repo monopolizes the controller.
             if candidates:
                 task_id = candidates[0]
                 self.in_process_roles[role.value] = task_id
@@ -397,6 +398,7 @@ class HostController:
                     dispatched.append(self.runner.execute_stage(task_id, role))
                 finally:
                     self.in_process_roles.pop(role.value, None)
+                break
         self.save()
         return report
 
@@ -461,6 +463,15 @@ class HostController:
         """Crash/lease recovery for next-night resume."""
         executed = self.ledger.executed()
         queue_report = self.queues.recover(executed)
+        # Crash mid-stage: the interrupted stage is not completed (only a
+        # recorded receipt proves completion); reset it for replay.
+        for instance in self.ledger.workflows().values():
+            if instance.state is WorkflowState.IN_PROGRESS:
+                pointer = instance.stage_pointer.value
+                if instance.stage_status.get(pointer) == "in_process":
+                    instance.stage_status[pointer] = "pending"
+                    instance.state = WorkflowState.IN_PROGRESS
+        self.ledger.save()
         recovered_leases: list[str] = []
         for task_id, lease in list(self.leases.items()):
             if lease.expires_at < _now():
