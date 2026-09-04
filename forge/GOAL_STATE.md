@@ -44,13 +44,14 @@ NEEDS_PREFLIGHT_TASKS = 4（dsh-agent-core #137、svc-workflow #19、auth-servic
 NEEDS_OWNER_TASKS = 3（dsh-agent-core breakglass、agent-dev-center secrets、agent-forum 分支合并）
 
 ### LANE_FIRST_PILOT
-LANE_STATUS = RUNNING
+LANE_STATUS = RUNNING（真实模型 canary 进行中）
 FORGE_WORKSPACE = /Users/yanfenma/workspace/project/sixpack-forge/canary-1（durable ledger 在此，不入产品源）
 - 仓 A = agent-six-pack-runtime（writable）：真实任务 canary-version-1 = `sixpack version` 命令（TASK-ASR-001）
 - 仓 B = agent-forum（writable）：真实任务 af-verifier-1 = subscription verifier 硬化 spec（TASK-AF-001）
-- 适配器 = ProcessAdapter("codex exec --sandbox workspace-write {prompt}")，真实模型跑全部六工位
-- 约束生效：MAX_IN_PROCESS_PER_ROLE=1、MAX_ACTIVE_WRITE_TASKS_PER_REPO=1、AUTO_*=false、REMOTE_WRITE=false（codex sandbox workspace-write 无网络）、worktree 隔离、helper 拥有 commit
-- drive-all 后台运行中（log: $FORGE/drive-all.log）
+- 适配器 = ProcessAdapter("codex exec --sandbox workspace-write {prompt}")，真实模型跑全部六工位；helper 拥有 commit（agent 不碰 git）
+- 已验证进展：af-verifier-1 specifier 完成（真实 codex，receipt=1）；coder 工位在飞。canary-version-1 等待 pass 2 入场（tick 公平轮转）
+- 约束生效：MAX_IN_PROCESS_PER_ROLE=1、MAX_ACTIVE_WRITE_TASKS_PER_REPO=1、AUTO_*=false、REMOTE_WRITE=false（codex sandbox 无网络）、worktree 隔离
+- drive-all 后台运行中（log: $FORGE/drive-all.log），完成或失败都会有通知；卡住时读 log 定位，按 BLOCKER UNION 一次修复
 
 ## HOST_POLICY（固定）
 
