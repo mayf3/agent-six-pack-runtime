@@ -49,7 +49,7 @@ FORGE_WORKSPACE = /Users/yanfenma/workspace/project/sixpack-forge/canary-1（dur
 - 仓 A = agent-six-pack-runtime（writable）：真实任务 canary-version-1 = `sixpack version` 命令（TASK-ASR-001）
 - 仓 B = agent-forum（writable）：真实任务 af-verifier-1 = subscription verifier 硬化 spec（TASK-AF-001）
 - 适配器 = ProcessAdapter("codex exec --sandbox workspace-write {prompt}")，真实模型跑全部六工位；helper 拥有 commit（agent 不碰 git）
-- 已验证进展：af-verifier-1 specifier 完成（真实 codex，receipt=1）；coder 工位在飞。canary-version-1 等待 pass 2 入场（tick 公平轮转）
+- 已验证进展：af-verifier-1 specifier+coder 完成（真实 codex，receipts=2）；crash recovery 实操验证通过（杀掉 drive-all 后 recover 将 in_process 的 cleaner 复位为 pending、queue 完整性 OK、registry head drift 被检出）。tick 已改为每 pass 单派发，两仓任务跨 pass 交错并行（af/spec → canary/spec → af/coder → ...）
 - 约束生效：MAX_IN_PROCESS_PER_ROLE=1、MAX_ACTIVE_WRITE_TASKS_PER_REPO=1、AUTO_*=false、REMOTE_WRITE=false（codex sandbox 无网络）、worktree 隔离
 - drive-all 后台运行中（log: $FORGE/drive-all.log），完成或失败都会有通知；卡住时读 log 定位，按 BLOCKER UNION 一次修复
 
@@ -71,7 +71,7 @@ automation-4cf1970a-bc60-4f89-8b24-f2435e7a4f96 每 30 分钟触发。若 canary
 
 ## NEXT
 
-1. 等 drive-all 完成 → 六 receipts + terminal verify PASS for canary-version-1
+1. 等 drive-all 完成（exec_55b8b6b4 后台）→ 六 receipts + terminal verify PASS for canary-version-1 与 af-verifier-1
 2. 跨仓并行证据：af-verifier-1 在不同工位与 canary-version-1 并行推进的记录
 3. quiesce/recovery 实操验证一次（quiesce → recover → resume）
 4. DONE_WHEN 审计（15 条逐条对照）→ FINAL REPORT
