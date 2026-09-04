@@ -29,7 +29,8 @@ RUNTIME_HEAD = c498e59d057756b3995b52c84e060c5b6860b1be（以 git log 为准）
 - 负例矩阵全部通过：recipient/priority/handoff-type swap、normal→terminal spoof、partial terminal、terminal priority≠00、terminal re-forward、stale receipt、QA self-certification、manual helper bypass、duplicate delivery、two write tasks/repo、two in-process/role、lease recovery、head drift、unauthorized coder entry
 
 ### LANE B — MULTI_REPO_HOST_AUTHORITY
-LANE_STATUS = INDEPENDENT_REVIEW_RUNNING（fresh 上下文评审子代理进行中）
+LANE_STATUS = REVIEW_R1_RECEIVED_REVISE（5 blockers，修复为 amendment r2 后再送审）
+REVIEW_REPORT = forge/specs/AGENT_MULTI_REPO_SIX_PACK_HOST_V1_REVIEW_R1.md（fresh codex 会话独立评审，逐条 A-F + blocker 最小修复建议）
 AUTHORITY_ACTION = NEW
 HOST_SPEC = forge/specs/AGENT_MULTI_REPO_SIX_PACK_HOST_V1.md（status: proposed）
 Gap 结论：现有 authority 未覆盖 multi-repo host 长期语义（registry/lease/并发上限/夜间窗口/controller 权限闭合）。Profile open questions 明确把 runtime 层留白；Governance V1 明确拒绝 cross-repository controller。
@@ -54,7 +55,9 @@ FORGE_WORKSPACE = /Users/yanfenma/workspace/project/sixpack-forge/canary-1（dur
 - canary-version-1 已推进到 QA 工位（5 receipts：spec/coder/cleaner/architect/hardender 全真实 codex）。
 - 第三个真实缺陷修复：下游工位判断"无需改动"时空候选被 helper 拒绝 → 简报强制每工位留下 stage report 工件（sixpack-artifacts/<role>.report.md），既是交接物也是更完整的 stage evidence。
 - 第四次修复（关键架构修正）：tick 派发改为 ledger 驱动（CTR-SIX-012 "wake-up 是有损 hint"），候选 = stage_pointer+pending，与队列内容解耦 → 中链 crash（投递项已消费）也能再调度。此前只有 specifier 有入口 fallback，af 卡死在 cleaner。drive-all 前置 auto-recover。
-- canary 现状：**两任务均 5/6 工位完成**（canary-version-1 @ qa、af-verifier-1 @ qa），全部真实 codex。
+- 里程碑：**af-verifier-1（agent-forum 仓）六工位全部真实 codex 完成 → terminal broadcast → 五角色 refs 收敛 → verify PASS → AWAITING_INDEPENDENT_REVIEW**（forge workspace ledger + 各仓 worktree refs 为证据；未 push 任何目标仓库）。
+- 修复第五个真实缺陷：_manager_for 不尊重 workspace worktree_root（registry 注册时用默认根建 manager 缓存）→ 已修 + 清理全部遗留默认根 worktree。
+- canary-version-1 @ qa 重跑中（后台 exec_5d9a2704）。
 - QA 自认证守卫真实触发（误报→修正）：QA 写 stage report 被当产品字节拒了——守卫机制本身工作正常；ProcessAdapter 现声明 sixpack-artifacts/ 为 QA 工件目录，守卫支持目录前缀。QA 重跑中（后台 exec_0818d97f）。
 - 约束生效：MAX_IN_PROCESS_PER_ROLE=1、MAX_ACTIVE_WRITE_TASKS_PER_REPO=1、AUTO_*=false、REMOTE_WRITE=false（codex sandbox 无网络）、worktree 隔离
 - drive-all 后台运行中（log: $FORGE/drive-all.log），完成或失败都会有通知；卡住时读 log 定位，按 BLOCKER UNION 一次修复
