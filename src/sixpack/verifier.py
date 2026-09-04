@@ -110,10 +110,49 @@ class TerminalVerifier:
             except Exception as exc:
                 failures.append(f"ancestry check failed: {exc}")
 
-        # Final QA receipt must bind the unchanged terminal candidate.
+        # Final QA receipt must bind the unchanged terminal candidate AND
+        # carry a machine verdict that independently establishes PASS
+        # (CTR-SIX-009/CTR-SIX-019; blocker-union remediation for the
+        # terminal false-pass).
         qa_entry = receipts_by_role.get(Role.QA.value)
         if qa_entry and terminal_head and str(qa_entry["output_head"]) != terminal_head:
             failures.append("final QA receipt does not bind the unchanged terminal candidate")
+        if qa_entry is not None and terminal_head:
+            qa_results = cast(
+                dict[str, object], qa_entry.get("results") or {}
+            )
+            qa_verdict = str(qa_results.get("qa_verdict", "")).upper()
+            if qa_verdict != "PASS":
+                failures.append(
+                    f"QA_VERDICT = {qa_verdict or 'MISSING'} (must be PASS)"
+                )
+            qa_checks = cast(
+                list[object], qa_results.get("qa_required_checks") or []
+            )
+            if not qa_checks:
+                failures.append("QA_REQUIRED_CHECKS missing: required checks not executed")
+            else:
+                not_passed = [
+                    str(check) if not isinstance(check, dict) else str(check.get("name"))
+                    for check in qa_checks
+                    if not isinstance(check, dict)
+                    or str(check.get("verdict", "")).upper() != "PASS"
+                ]
+                if not_passed:
+                    failures.append(
+                        f"QA_REQUIRED_CHECKS not all PASS: {not_passed}"
+                    )
+            qa_blockers = cast(list[object], qa_results.get("qa_blockers") or [])
+            if qa_blockers:
+                failures.append(f"QA_BLOCKERS = {qa_blockers}")
+            if str(qa_results.get("qa_certified_head", "")) != terminal_head:
+                failures.append(
+                    "QA_TERMINAL_CANDIDATE_UNCHANGED = NO: certified head != terminal head"
+                )
+            if str(qa_results.get("qa_certified_tree", "")) != terminal_tree:
+                failures.append(
+                    "QA_RECEIPT_BINDS_TERMINAL_TREE = NO: certified tree != terminal tree"
+                )
 
         # Impact-and-coverage matrix.
         coverage: dict[str, str] = {}

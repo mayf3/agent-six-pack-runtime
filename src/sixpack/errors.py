@@ -107,6 +107,12 @@ class ManifestMismatch(SixPackError):
     code = "MANIFEST_MISMATCH"
 
 
+class QaVerificationFailed(SixPackError):
+    """Final QA verdict is FAIL/BLOCKED or machine evidence is missing/invalid."""
+
+    code = "QA_VERIFICATION_FAILED"
+
+
 class SelfCertificationRejected(SixPackError):
     """QA attempted to certify bytes it modified after the final run started."""
 
