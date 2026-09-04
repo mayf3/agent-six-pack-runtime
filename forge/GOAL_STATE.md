@@ -51,7 +51,9 @@ FORGE_WORKSPACE = /Users/yanfenma/workspace/project/sixpack-forge/canary-1（dur
 - 适配器 = ProcessAdapter("codex exec --sandbox workspace-write {prompt}")，真实模型跑全部六工位；helper 拥有 commit（agent 不碰 git）
 - 已验证进展（真实 codex）：两任务均完成 specifier+coder（receipts=2 各），交错并行已被真实运行证明（af 与 canary 在不同工位先后推进）。
 - 修复的第二个真实缺陷：recover() 原先只遍历惰性实例化的队列 dict，独立恢复进程会空转 → 已改为固定六工位扫描 + 回归测试（fresh-process recovery）。修复后 recover 实操通过：stale in_process 条目清除、canary cleaner 项就绪。
-- canary 从 cleaner 工位续跑（后台 exec_5f0712ef），剩余 8 个工位。
+- canary-version-1 已推进到 QA 工位（5 receipts：spec/coder/cleaner/architect/hardender 全真实 codex）。
+- 第三个真实缺陷修复：下游工位判断"无需改动"时空候选被 helper 拒绝 → 简报强制每工位留下 stage report 工件（sixpack-artifacts/<role>.report.md），既是交接物也是更完整的 stage evidence。
+- af-verifier-1 cleaner 恢复后重跑中（后台 exec_189dd2f5）；canary 从 QA 续跑。
 - 约束生效：MAX_IN_PROCESS_PER_ROLE=1、MAX_ACTIVE_WRITE_TASKS_PER_REPO=1、AUTO_*=false、REMOTE_WRITE=false（codex sandbox 无网络）、worktree 隔离
 - drive-all 后台运行中（log: $FORGE/drive-all.log），完成或失败都会有通知；卡住时读 log 定位，按 BLOCKER UNION 一次修复
 
