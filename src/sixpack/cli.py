@@ -1,6 +1,7 @@
 """``sixpack`` command line interface.
 
 Commands:
+- ``version``    print runtime version and pinned governance revision
 - ``init``       create a runtime workspace (ledger, queues, audit store)
 - ``task``       create a task with its PREFLIGHT/profile record
 - ``run``        admit + drive one task through the six stations
@@ -20,6 +21,7 @@ import json
 import sys
 from pathlib import Path
 
+from . import GOVERNANCE_SOURCE_COMMIT, __version__
 from .audit import AuditGate
 from .controller import HostController, RegistryEntry
 from .errors import SixPackError
@@ -29,6 +31,12 @@ from .queue import QueueStore
 from .roles import load_role_catalog, role_catalog_digest
 from .runner import AgentAdapter, FakeAgentAdapter, ProcessAdapter, RoleRunner
 from .verifier import TerminalVerifier
+
+
+def cmd_version(args: argparse.Namespace) -> int:
+    """Print packaged runtime and governance versions without workspace access."""
+    print(f"sixpack-runtime {__version__} + governance {GOVERNANCE_SOURCE_COMMIT}")
+    return 0
 
 
 def _build_runtime(
@@ -259,6 +267,9 @@ def cmd_host(args: argparse.Namespace) -> int:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="sixpack", description="Six-Pack delivery runtime")
     sub = parser.add_subparsers(dest="command", required=True)
+
+    version_p = sub.add_parser("version", help="show runtime and governance versions")
+    version_p.set_defaults(func=cmd_version)
 
     init_p = sub.add_parser("init", help="create a runtime workspace")
     init_p.add_argument("workspace")
