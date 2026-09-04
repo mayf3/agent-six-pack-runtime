@@ -159,6 +159,56 @@ def cmd_verify(args: argparse.Namespace) -> int:
     return 0 if report.verdict == "PASS" else 1
 
 
+def cmd_drive_all(args: argparse.Namespace) -> int:
+    """Deterministic multi-task drive: tick until all tasks settle.
+
+    Proves the shared worker pool: tasks in different repositories advance
+    at different stations under MAX_IN_PROCESS_PER_ROLE=1.
+    """
+    workspace = Path(args.workspace).resolve()
+    _, _, _, controller = _build_runtime(workspace, args.provider)
+    from .model import WorkflowState
+
+    # Deterministic admission of every task record that lacks a workflow.
+    admitted: list[str] = []
+    refused: list[dict[str, str]] = []
+    for task_id in controller.ledger.tasks():
+        if task_id in controller.ledger.workflows():
+            continue
+        try:
+            controller.admit(task_id)
+            admitted.append(task_id)
+        except SixPackError as error:
+            refused.append({"task_id": task_id, "code": error.code, "detail": str(error)})
+    history: list[dict[str, object]] = [{"admitted": admitted, "refused": refused}]
+    for _ in range(args.max_passes):
+        before = {
+            key: (wf.state.value, wf.stage_pointer.value)
+            for key, wf in controller.ledger.workflows().items()
+        }
+        tick = controller.tick()
+        dispatched = tick.get("dispatched") or []
+        after = {
+            key: (wf.state.value, wf.stage_pointer.value)
+            for key, wf in controller.ledger.workflows().items()
+        }
+        history.append({"dispatched": dispatched})
+        if not dispatched and before == after:
+            break
+        if all(
+            wf.state
+            in (WorkflowState.TERMINAL_BROADCAST, WorkflowState.CONVERGED)
+            for wf in controller.ledger.workflows().values()
+        ):
+            break
+    final = {
+        key: {"state": wf.state.value, "pointer": wf.stage_pointer.value}
+        for key, wf in controller.ledger.workflows().items()
+    }
+    print(json.dumps({"final": final, "passes": history}, indent=1, default=str))
+    return 0
+
+
 def cmd_done(args: argparse.Namespace) -> int:
     """Record that the task record asserts DONE_WHEN satisfied (stop control)."""
     workspace = Path(args.workspace).resolve()
@@ -258,6 +308,14 @@ def build_parser() -> argparse.ArgumentParser:
     verify_p.add_argument("workspace")
     verify_p.add_argument("--task-id", dest="task_id", required=True)
     verify_p.set_defaults(func=cmd_verify)
+
+    drive_p = sub.add_parser(
+        "drive-all", help="tick until every admitted task settles (shared pool)"
+    )
+    drive_p.add_argument("workspace")
+    drive_p.add_argument("--provider", default="fake")
+    drive_p.add_argument("--max-passes", dest="max_passes", type=int, default=24)
+    drive_p.set_defaults(func=cmd_drive_all)
 
     done_p = sub.add_parser("done", help="record DONE_WHEN satisfied for a task")
     done_p.add_argument("workspace")
