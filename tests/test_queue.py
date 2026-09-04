@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 
 from sixpack.errors import QueueCorrupt
+from sixpack.queue import QueueStore
 from tests.conftest import RuntimeFixture, gate_and_deliver, make_repo, make_runtime  # noqa: F401
 from tests.test_model import make_envelope
 
@@ -101,3 +102,21 @@ class TestCrashRecovery:
         report = runtime.queues.recover(executed_handoffs=set())
         assert report["redelivered"] == 1
         assert queue.list_new() == [copy_name]
+
+
+class TestFreshProcessRecovery:
+    def test_recovery_covers_uninstantiated_queues(self, runtime: RuntimeFixture) -> None:
+        """Regression: a fresh recovery process must scan all six stations.
+
+        The live canary hit this: in-process items blocked a station because
+        recovery iterated only lazily-instantiated queues.
+        """
+        envelope = make_envelope()
+        gate_and_deliver(runtime, envelope)
+        queue = runtime.queues.queue("coder")
+        queue.claim_inbound(envelope.handoff_id)
+        # Simulate a fresh recovery process: no queues instantiated yet.
+        fresh = QueueStore(runtime.queues.root)
+        report = fresh.recover(executed_handoffs=set())
+        assert report["requeued"] == 1
+        assert fresh.queue("coder").list_new() == [f"{envelope.handoff_id}.json"]

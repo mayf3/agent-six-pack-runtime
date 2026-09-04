@@ -329,9 +329,17 @@ class QueueStore:
             written += 1
         return written
 
+    def known_roles(self) -> list[str]:
+        """The fixed six-station roster, independent of lazy instantiation."""
+        from .model import ROLE_RECEIVE_POLICY
+
+        return [role.value for role in ROLE_RECEIVE_POLICY]
+
     def verify_all_integrity(self) -> None:
-        for queue in self.queues.values():
-            queue.verify_integrity()
+        # Iterate the fixed roster: a fresh process has instantiated no
+        # queues, and integrity must cover every station.
+        for role in self.known_roles():
+            self.queue(role).verify_integrity()
 
     def recover(self, executed_handoffs: set[str]) -> dict[str, object]:
         """Restart recovery (CTR-SIX-012 / ACC-SIX-006).
@@ -343,7 +351,10 @@ class QueueStore:
         redelivered = 0
         requeued = 0
         refused: list[str] = []
-        for role, queue in self.queues.items():
+        # Scan the fixed roster, not the lazily-instantiated dict: a fresh
+        # recovery process has no queues instantiated yet.
+        for role in self.known_roles():
+            queue = self.queue(role)
             if len(queue.list_in_process()) > 1:
                 refused.append(f"{role}: multiple in-process items")
                 continue
