@@ -204,9 +204,10 @@ class HostController:
         """Reuse the runner's per-repo manager so worktree roots agree."""
         manager = self.runner.worktrees.get(repo_name)
         if manager is None:
-            manager = WorktreeManager(
-                Path(repo_path), Path(repo_path).parent / "sixpack-worktrees"
+            root = self.runner.default_worktree_root or (
+                Path(repo_path).parent / "sixpack-worktrees"
             )
+            manager = WorktreeManager(Path(repo_path), root)
             self.runner.worktrees[repo_name] = manager
         return manager
 
