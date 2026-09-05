@@ -2,7 +2,7 @@
 
 ## ACTIVE GOAL — 启用 Six-Pack 首次受限夜间交付（2026-09-05 启动）
 
-GOAL_STATUS = AWAITING_OWNER_TASK_DECISION（四项签字已由 Owner 2026-09-05T21:45 决定全部处置：Host 已合并+接受、PR #2 保持 Draft、窗口已授权但未用、首张维修单开工前核验判废；首批 2 仓内已无已授权可执行任务，等 Owner 唯一待决项，见下方「剩余待决」）
+GOAL_STATUS = NIGHTLY_RUN_SCHEDULED_0155（新授权轮：有界多仓维护选单完成，唯一任务已冻结并预跑一次被配额中断，一次性定时 01:55 配额重置后断点续跑；详见「第二轮授权执行记录」）
 SIGNOFF_REQUESTED_AT = 2026-09-05T18:20:00+08:00（4 项已逐项正式提请 Owner 确认；尚未签署；不代签、不把沉默当同意）
 OWNER_CONTINUED_AT = 2026-09-05T21:19:00+08:00（Owner 回复"继续"：按仅推进非签字项处理；启动脚本安全路径已实测——窗口外 WINDOW_CLOSED 正确拒绝 exit 5，registry heads 顺带刷新）
 STAGED_EXECUTION = 签字齐备后执行序列已一键化：nightly-1/bin/start-nightly-run.sh（刷新 heads→窗口相位检查→sixpack run 六角色）→ 完成后 nightly-1/bin/morning-report.sh（verify+状态→晨报 markdown）
@@ -42,6 +42,44 @@ af-verifier-impl-1 判废后，registry 首批 2 仓内不存在其他已授权�
 - (a) 确认判废，本轮按「无可执行授权任务」收口（Six-Pack 机制此前已双任务全链验证；待真实问题出现再授权开窗）；
 - (b) 从上述 NEEDS_PREFLIGHT 指定一项并授权预检 + 对应仓库入 registry（扩 registry = Owner 决定，REGISTRY_EXPANSION=FORBIDDEN 维持至该项明示）；
 - (c) 直接指定新的首批问题（须满足五条选择标准）。
+
+## 第二轮授权执行记录（2026-09-05T22:05+ Owner「有界多仓维护选单」授权 → 23:15 执行至定时待启）
+
+### 0. 旧单结项
+af-verifier-impl-1 记为「现有 Base 已满足，无需修改」（base c2f7a74 三 npm 入口实测全 PASS；证据见上节第 3 条）。不继续六工位、无空 diff、不计为新修复成果。
+
+### 1. Host 留痕纠正（第七条）
+- 顺序如实记录：**先合并**（PR #14 merge commit 68e4e743，2026-09-05T22:11:26+08:00，第二父 = 受审 head 8186595a，fresh clone 实证）→ **后生命周期接受**（9dcd0c4，仅 2 行 status 字段）。
+- 有界独立复查（fresh clone，非旧审查冒充）：merge 结果中 spec 文件字节 sha256 = 1bd455b0…（与受审 r4 字节一致）；接受提交相对 merge 的全树 delta 恰为该文件 2 行；该文件在合并前从未存在于 main 线（8186595a→9dcd0c4 树级 diff 中的其余文件全部来自合并时 main 已领先的 v1.0.3 内容，与本 PR 无关——首次复查曾如实记录此疑点，二次复查定位为谱系并合噪声，非接受提交引入）。
+- 不改写历史，未重开任何已通过的规范设计。
+
+### 2. 四仓只读核验与选单（沿用既有清单 + 当前精确版本重确认）
+只读登记 nightly-1 registry：dsh-agent-core / svc-workflow / auth-service / agent-forum（write_enabled=false；后因选定任务按第六条对 dsh-agent-core 启用受限本地写）。逐项核验结果：
+- **agent-forum**：automation 分支 3 次失败 CI = GitHub App 缺 workflows 权限被拒（权限类，属本轮禁止项）→ 最小待决 §4-1；OWN-AF-001 已自行消解（moderation 分支已并入 main，2026-09-03 验收审计 375/375 PASS）。无在案可修缺陷。
+- **auth-service**：PR #40 已 MERGED（validation 分支失败 CI 属历史陈旧）；JWKS signer 审计 = 0 blocker 0 high 收口。无可修候选。
+- **svc-workflow**：PR #19 仍 OPEN，Execution Mandate 未核实（授权缺口）→ 最小待决 §4-2；无失败 CI。
+- **dsh-agent-core**（main @ 797952e，无 CI 看护）：audit/pr140 NameError = 分支自动化废弃脚本（`false` 字面量进 Python），恢复该证据流缺本仓依据 → 最小待决 §4-3。**实测全量套件**（node v25.6.1 精确运行时 + 依赖装齐 + 代理变量隔离）：1498 测试 / 1487 过 / 6 失败 / 5 跳过。失败逐项定因：
+  - TRUSTED_INGRESS 1 例 = **真实套件回归（选定修复，见 3）**；
+  - dsh-llm 未声明 import 3 文件（demo-server×2 + production-runtime 集成×1）= 仓库 74d02d0 验证记录已在案的已知环境缺口（"8x missing dsh-tools/dsh-llm harness packages"），依赖供给策略属产品决策 → 最小待决 §4-4；
+  - agent-switch `parameters.required` undefined 1 例 = 8/22 在案清单之后的新失败，疑 dsh-tools peer 未钉版本漂移，需先核 dsh-tools 合同再定代码/测试哪边错 → 最小待决 §4-5；
+  - agent-provisioning harness identity 1 例 = 在案已知环境条件性（74d02d0 同清单）；
+  - production-runtime compose 大簇（node 版本/代理 fail-closed）与 workspace-bootstrap worktree 断言 = 规范要求的环境条件性行为，非缺陷。
+
+### 3. 选定任务（一仓一任务，已冻结、预跑被配额中断、01:55 断点续跑）
+- **TASK = dsh-trusted-ingress-align-1（dsh-agent-core @ 797952e7bc33a134e8c29d3a66dd76b1210ba721，freeze 时 remote==pin==base）**
+- 依据链：问题来源 = main 套件实测失败（TRUSTED_INGRESS deepStrictEqual：实际多出 feishuSenderOpenId）；反例 = `node --test packages/agent-router/test/feishu-regression.test.js` 在 base 上 exit 1；本仓依据 = 字段由已接受实现 bd0eeae（AGT_CTO_AGENT_ORDERED_ROUTE_CHAIN_IMPL_V2，PR #103 合并）有意加入（ingress-delivery.js:110），route-chain.js:353 消费，新测试 canary-seam.test.js:62 按含该字段+Object.freeze 断言；旧测试 3dae32e（早于 bd0eeae）从未同步且无 CI 发现；修改范围 = 仅 packages/agent-router/test/feishu-regression.test.js（预期面补第 6 字段，保留 frozen 与 no-parse 断言），禁止动 src/docs/.github/package.json；验收 = 该测试文件 exit 0 + agent-router 无新增失败 + src diff 空 + 六 receipts + verify PASS。
+- 授权链：Owner 第二轮授权第四/六条（有界修复 + 单仓受限本地写）；mandate_ref = OWNER-MANDATE-2026-09-05-BOUNDED-MULTIREPO-MAINTENANCE（已绑定 ledger，PROFILE_GATE 实测通过）。
+- 执行状态：23:07 首次启动 → PROFILE_GATE 修正（mandate_ref）→ 23:07 specifier 真实启动（worktree @797952e 创建）→ GLM 端点 500（实为 **1308 5 小时用量上限**，限额 2026-09-06 01:51:21 重置）→ 按非盲试规则安全停机：worktree 已 prune、host recover 已复位 specifier=pending、workflow 断点保留。**本轮实际消耗模型调用 ≈ 1 次失败请求。**
+- 一次性定时（非循环）：**01:55 automation-ad8fa74d** 断点续跑（脚本守卫齐全：任务授权/pin==base/远端未前移/窗口 ACTIVE；含 1302 退避与 1308 再停机规则），运行完成后立即晨报+落账；runtime 内置 09:00 窗口闸兜底。node_modules 符号链接农场已预置于 sixpack-worktrees/node_modules（QA 依赖解析用，node v25.6.1 二进制在 /tmp）。
+- 启动记录：nightly-1/state/START_RECORD_20260905_230545.md（计费时区 Asia/Shanghai +08:00、窗口、task、runtime 版本、task_base）。
+
+### 4. 最小待决集合（不阻塞其他合法工作，逐项列明）
+1. agent-forum automation CI：GitHub App 需要 `workflows` 权限才能改 workflow 文件——授予权限或改用 PAT/人工执行，属 Owner 安全决策。
+2. svc-workflow PR #19：需 Owner 核实 Execution Mandate 与 Product Boundary V5 authority 引用后才能预检。
+3. dsh-agent-core PR #140 证据流：audit 分支 workflow 内联 Python 含 `false` 字面量 NameError；恢复该自动化需要 Owner 决定是否重建证据流（本仓无既有规则要求恢复它）。
+4. dsh-agent-core dsh-llm/dsh-session 供给策略：demo-server 未声明 import 的 harness SDK 从哪来（root devDeps / 各包 peers / 内部源）——产品依赖决策，未获授权前不动。
+5. dsh-agent-core agent-switch `parameters.required` undefined：疑似 dsh-tools peer ">=0" 漂移；需先核 dsh-tools 合同再定修复方向，本轮未动。
+6. 本轮若 TRUSTED_INGRESS 候选完成：独立审查 + 处置（accept/revise）归 Owner；REMOTE_WRITE=false，候选保留本地。
 AUTO_ACCEPT = false / AUTO_MERGE = false / AUTO_DEPLOY = false / REMOTE_WRITE = false
 REGISTRY_EXPANSION = FORBIDDEN（仍限首批 2 仓）
 
