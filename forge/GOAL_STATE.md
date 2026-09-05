@@ -41,6 +41,7 @@ REGISTRY_EXPANSION = FORBIDDEN（仍限首批 2 仓）
 窗口/额度未能确认时：不启动夜间模型工作，不自动转付费调用（本机今日仅消耗最小连通验证 + 少量探测调用）。
 
 ### ENTRYPOINTS（沿用现有 CLI，无新 UI/调度平台）
+- 启动前刷新 registry pinned heads（分支有任何新提交后必须）：`sixpack host <ws> register --name agent-six-pack-runtime --path ... --base-branch v0/bootstrap --writable` ×（agent-forum 同理）。
 - 启动（窗口内）：`cd /Users/yanfenma/workspace/project/agent-six-pack-runtime && source .venv/bin/activate && sixpack run /Users/yanfenma/workspace/project/sixpack-forge/nightly-1 af-verifier-impl-1 --provider '/Users/yanfenma/workspace/project/sixpack-forge/nightly-1/bin/glm-role-exec.sh {prompt}'`（或等价 drive-all）。
 - 进度：`sixpack status <ws>` / `sixpack host <ws> status`（每个 workflow 的 state/stage_pointer/receipts）。
 - 停止：`pkill -f glm-role-exec`（+ 在飞 opencode）→ `sixpack host <ws> quiesce`。
