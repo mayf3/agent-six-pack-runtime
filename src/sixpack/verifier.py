@@ -153,6 +153,14 @@ class TerminalVerifier:
                 failures.append(
                     "QA_RECEIPT_BINDS_TERMINAL_TREE = NO: certified tree != terminal tree"
                 )
+            qa_automation = cast(
+                list[object], qa_results.get("qa_automation_entrypoints") or []
+            )
+            if not qa_automation:
+                failures.append(
+                    "EXECUTABLE_QA_AUTOMATION evidence missing from the final QA "
+                    "receipt (report-only output cannot satisfy the QA required output)"
+                )
 
         # Impact-and-coverage matrix.
         coverage: dict[str, str] = {}

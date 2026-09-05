@@ -143,3 +143,111 @@ class TestFinalQaMachineLine:
         outcome = adapter.execute_stage(context)
         assert outcome.qa_result is not None
         assert outcome.qa_result["qa_verdict"] == "PASS"
+
+
+class TestClosedRequiredCheckSet:
+    """R1: the canonical QA required-check set is closed (no substitutes)."""
+
+    def test_only_substitute_check_blocked(self, tmp_path) -> None:
+        adapter = FakeAgentAdapter(
+            qa_checks=[{"name": "foo", "verdict": "PASS"}]
+        )
+        _, rt = run_to_qa_failure(tmp_path, adapter)
+        qa_receipt = [r for r in rt.ledger.workflow("task-1").receipts if r["role"] == "qa"][-1]
+        assert qa_receipt["results"]["qa_verdict"] == "BLOCKED"
+        assert any("arbitrary substitute" in str(b) for b in qa_receipt["results"]["qa_blockers"])
+        assert TerminalVerifier(rt.ledger).verify("task-1").verdict == "FAIL"
+
+    def test_missing_crap_dry_blocked(self, tmp_path) -> None:
+        from sixpack.runner import canonical_qa_required_checks
+
+        canonical = canonical_qa_required_checks()
+        partial = [
+            {"name": name, "verdict": "PASS"}
+            for name in canonical
+            if "CRAP/DRY" not in name
+        ]
+        adapter = FakeAgentAdapter(qa_checks=partial)
+        _, rt = run_to_qa_failure(tmp_path, adapter)
+        qa_receipt = [r for r in rt.ledger.workflow("task-1").receipts if r["role"] == "qa"][-1]
+        assert qa_receipt["results"]["qa_verdict"] == "BLOCKED"
+        assert any("missing canonical" in str(b) for b in qa_receipt["results"]["qa_blockers"])
+
+    def test_missing_manifest_consistency_blocked(self, tmp_path) -> None:
+        from sixpack.runner import canonical_qa_required_checks
+
+        canonical = canonical_qa_required_checks()
+        partial = [
+            {"name": name, "verdict": "PASS"}
+            for name in canonical
+            if "manifest consistency" not in name
+        ]
+        adapter = FakeAgentAdapter(qa_checks=partial)
+        _, rt = run_to_qa_failure(tmp_path, adapter)
+        qa_receipt = [r for r in rt.ledger.workflow("task-1").receipts if r["role"] == "qa"][-1]
+        assert qa_receipt["results"]["qa_verdict"] == "BLOCKED"
+        assert any("missing canonical" in str(b) for b in qa_receipt["results"]["qa_blockers"])
+
+    def test_duplicate_check_replacing_another_blocked(self, tmp_path) -> None:
+        from sixpack.runner import canonical_qa_required_checks
+
+        canonical = canonical_qa_required_checks()
+        duplicated = [
+            {"name": canonical[0], "verdict": "PASS"},
+            {"name": canonical[0], "verdict": "PASS"},
+        ]
+        adapter = FakeAgentAdapter(qa_checks=duplicated)
+        _, rt = run_to_qa_failure(tmp_path, adapter)
+        qa_receipt = [r for r in rt.ledger.workflow("task-1").receipts if r["role"] == "qa"][-1]
+        assert qa_receipt["results"]["qa_verdict"] == "BLOCKED"
+        assert any(
+            "duplicate required check" in str(b) or "missing canonical" in str(b)
+            for b in qa_receipt["results"]["qa_blockers"]
+        )
+
+
+class TestQaBlockersSchema:
+    """R2: qa_blockers MUST be list[str]; malformed evidence fails closed."""
+
+    @pytest.mark.parametrize(
+        "malformed",
+        [
+            "database unavailable",  # bare string
+            {"reason": "database unavailable"},  # dict
+            None,  # null
+            42,  # number
+        ],
+    )
+    def test_malformed_blockers_fail_closed(self, tmp_path, malformed) -> None:
+        adapter = FakeAgentAdapter(qa_blockers_malformed=malformed)
+        _, rt = run_to_qa_failure(tmp_path, adapter)
+        qa_receipt = [r for r in rt.ledger.workflow("task-1").receipts if r["role"] == "qa"][-1]
+        results = qa_receipt["results"]
+        assert results["qa_verdict"] == "BLOCKED"
+        assert any(
+            "qa_blockers must be a list[str]" in str(b) or "missing/null" in str(b)
+            for b in results["qa_blockers"]
+        )
+        report = TerminalVerifier(rt.ledger).verify("task-1")
+        assert report.verdict == "FAIL"
+
+
+class TestExecutableQaAutomationGate:
+    """R3: report-only QA output cannot start the final QA run."""
+
+    def test_report_only_qa_rejected_before_commit(self, tmp_path) -> None:
+        adapter = FakeAgentAdapter(qa_report_only=True)
+        repo = make_repo(tmp_path / "ro-repo")
+        rt = make_runtime(tmp_path / "ro-ws", repo, adapter)
+        seed_task(rt, repo)
+        rt.controller.admit("task-1")
+        with pytest.raises(Exception) as excinfo:
+            rt.controller.drive("task-1")
+        assert "executable QA automation gate" in str(excinfo.value)
+        instance = rt.ledger.workflow("task-1")
+        # The QA stage never commits: no terminal, no QA receipt.
+        assert instance.terminal_head == ""
+        assert not [r for r in instance.receipts if r["role"] == "qa"]
+        assert not [r for r in instance.receipts if r["role"] == "qa"]
+        report = TerminalVerifier(rt.ledger).verify("task-1")
+        assert report.verdict == "FAIL"

@@ -20,6 +20,7 @@ Adapters:
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import time
 from dataclasses import dataclass, field
@@ -94,15 +95,34 @@ QA_FAIL = "FAIL"
 QA_BLOCKED = "BLOCKED"
 
 
+_CANONICAL_CHECKS_CACHE: list[str] | None = None
+_UNSET = object()
+
+
+def canonical_qa_required_checks() -> list[str]:
+    """The closed canonical required-check set, pinned by the QA role def."""
+    global _CANONICAL_CHECKS_CACHE
+    if _CANONICAL_CHECKS_CACHE is None:
+        from .roles import load_role_catalog
+
+        _CANONICAL_CHECKS_CACHE = list(
+            load_role_catalog().definition(Role.QA).required_checks
+        )
+    return list(_CANONICAL_CHECKS_CACHE)
+
+
 def _validate_qa_machine(
     qa_result: dict[str, object] | None, certified_head: str, certified_tree: str
 ) -> dict[str, object]:
     """Validate the final-QA machine verdict against the certified candidate.
 
-    A PASS verdict is only legal when every required check is PASS, no
-    blocker is open, and the certified head/tree equal the exact candidate
-    the final run executed on. Anything else downgrades to BLOCKED with the
-    reason recorded -- a fake PASS must never reach the terminal verifier.
+    A PASS verdict is only legal when the CLOSED canonical required-check
+    set is covered exactly (every check PASS; no missing check, no
+    duplicate, no arbitrary substitute), ``qa_blockers`` is a valid
+    list[str], no blocker is open, and the certified head/tree equal the
+    exact candidate the final run executed on. Anything else downgrades to
+    BLOCKED with the reason recorded -- a fake PASS must never reach the
+    terminal verifier.
     """
     blockers: list[str] = []
     if qa_result is None:
@@ -112,15 +132,66 @@ def _validate_qa_machine(
     if verdict not in (QA_PASS, QA_FAIL, QA_BLOCKED):
         blockers.append(f"invalid qa_verdict: {qa_result.get('qa_verdict')!r}")
         verdict = QA_BLOCKED
-    checks = qa_result.get("qa_required_checks")
-    if not isinstance(checks, list) or not checks:
-        checks = []
+
+    canonical = canonical_qa_required_checks()
+    raw_checks = qa_result.get("qa_required_checks")
+    checks: list[object] = []
+    if not isinstance(raw_checks, list) or not raw_checks:
         blockers.append("qa_required_checks missing or empty (required checks not executed)")
+        verdict = QA_BLOCKED
     else:
-        for check in checks:
-            if not isinstance(check, dict) or str(check.get("verdict", "")).upper() != QA_PASS:
-                name = check.get("name") if isinstance(check, dict) else check
-                blockers.append(f"required check not PASS: {name}")
+        seen: dict[str, str] = {}
+        malformed = False
+        for check in raw_checks:
+            if not isinstance(check, dict):
+                blockers.append(f"malformed required check entry: {check!r}")
+                malformed = True
+                continue
+            name = str(check.get("name", ""))
+            check_verdict = str(check.get("verdict", "")).upper()
+            if name in seen:
+                blockers.append(
+                    f"duplicate required check {name!r}: the required set is "
+                    "closed and a duplicate replaces nothing"
+                )
+                continue
+            seen[name] = check_verdict
+            checks.append(check)
+        if malformed:
+            verdict = QA_BLOCKED
+        missing = [name for name in canonical if name not in seen]
+        extras = [name for name in seen if name not in canonical]
+        if missing:
+            blockers.append(f"missing canonical required checks: {missing}")
+        if extras:
+            blockers.append(
+                f"arbitrary substitute checks outside the canonical set: {extras}"
+            )
+        failed = [name for name, cv in seen.items() if cv != QA_PASS]
+        if failed:
+            blockers.append(f"required checks not PASS: {failed}")
+        if set(seen) != set(canonical) or len(raw_checks) != len(canonical):
+            verdict = QA_BLOCKED
+
+    # qa_blockers schema: MUST be list[str]; malformed evidence fails closed.
+    stated_blockers = qa_result.get("qa_blockers", "__missing__")
+    if stated_blockers == "__missing__" or stated_blockers is None:
+        blockers.append("qa_blockers missing/null (schema requires list[str])")
+        verdict = QA_BLOCKED
+    elif not isinstance(stated_blockers, list):
+        blockers.append(
+            f"qa_blockers must be a list[str], got {type(stated_blockers).__name__}"
+        )
+        verdict = QA_BLOCKED
+    else:
+        for item in stated_blockers:
+            if not isinstance(item, str):
+                blockers.append(
+                    f"qa_blockers entries must be str, got {type(item).__name__}: {item!r}"
+                )
+                verdict = QA_BLOCKED
+        blockers.extend(str(item) for item in stated_blockers if isinstance(item, str))
+
     cert_head = str(qa_result.get("qa_certified_head", ""))
     cert_tree = str(qa_result.get("qa_certified_tree", ""))
     if cert_head != certified_head or cert_tree != certified_tree:
@@ -128,9 +199,6 @@ def _validate_qa_machine(
             f"QA certified ({cert_head[:12]}, {cert_tree[:12]}) but the final-run "
             f"candidate is ({certified_head[:12]}, {certified_tree[:12]})"
         )
-    stated_blockers = qa_result.get("qa_blockers")
-    if isinstance(stated_blockers, list):
-        blockers.extend(str(item) for item in stated_blockers)
     if blockers and verdict == QA_PASS:
         # Fake PASS: a PASS verdict with failing/missing evidence is invalid.
         verdict = QA_BLOCKED
@@ -141,6 +209,47 @@ def _validate_qa_machine(
     result["qa_certified_head"] = cert_head if cert_head == certified_head else certified_head
     result["qa_certified_tree"] = cert_tree if cert_tree == certified_tree else certified_tree
     return result
+
+
+
+
+def _validate_qa_automation(worktree: Path) -> tuple[list[str] | None, str | None]:
+    """Mechanical gate for the QA-exclusive executable automation (CTR-SIX-005/010).
+
+    Requires ``sixpack-artifacts/qa.automation.json`` declaring entrypoints,
+    each of which must exist under ``sixpack-artifacts/``, be non-empty, and
+    carry an executable signature (exec bit or shebang). Report-only output
+    does not satisfy the gate. Returns (entrypoints, error).
+    """
+    manifest_path = worktree / "sixpack-artifacts" / "qa.automation.json"
+    if not manifest_path.exists():
+        return None, (
+            "executable QA automation missing: sixpack-artifacts/qa.automation.json "
+            "not found; report-only output cannot satisfy the QA required output"
+        )
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except ValueError as exc:
+        return None, f"qa.automation.json is not valid JSON: {exc}"
+    entrypoints = manifest.get("entrypoints") if isinstance(manifest, dict) else None
+    if not isinstance(entrypoints, list) or not entrypoints:
+        return None, "qa.automation.json declares no entrypoints"
+    for entry in entrypoints:
+        if not isinstance(entry, str) or not entry.strip():
+            return None, f"malformed automation entrypoint: {entry!r}"
+        script = worktree / "sixpack-artifacts" / entry
+        if not script.exists():
+            return None, f"declared automation entrypoint does not exist: {entry}"
+        content = script.read_bytes()
+        if not content.strip():
+            return None, f"automation entrypoint is empty: {entry}"
+        executable = os.access(script, os.X_OK) or content.startswith(b"#!")
+        if not executable:
+            return None, (
+                f"automation entrypoint has no executable signature (exec bit or "
+                f"shebang): {entry}"
+            )
+    return [str(entry) for entry in entrypoints], None
 
 
 class FakeAgentAdapter:
@@ -162,17 +271,20 @@ class FakeAgentAdapter:
         qa_blockers: list[str] | None = None,
         qa_fake_pass_with_failing_checks: bool = False,
         qa_write_after_final: bool = False,
+        qa_blockers_malformed: object = _UNSET,
+        qa_report_only: bool = False,
     ) -> None:
         self.fail_at = fail_at or []
         self.qa_product_fix = qa_product_fix
         self.qa_final_verdict = qa_final_verdict
         self.qa_checks = qa_checks or [
-            {"name": "end-to-end public boundary", "verdict": "PASS"},
-            {"name": "final CRAP/DRY", "verdict": "PASS"},
+            {"name": name, "verdict": "PASS"} for name in canonical_qa_required_checks()
         ]
         self.qa_blockers = qa_blockers or []
         self.qa_fake_pass_with_failing_checks = qa_fake_pass_with_failing_checks
         self.qa_write_after_final = qa_write_after_final
+        self.qa_blockers_malformed = qa_blockers_malformed
+        self.qa_report_only = qa_report_only
 
     def execute_stage(self, context: StageContext) -> StageOutcome:
         if context.role.value in self.fail_at:
@@ -182,8 +294,19 @@ class FakeAgentAdapter:
                 stray = context.worktree_path / "sixpack-artifacts" / "post-final.txt"
                 stray.parent.mkdir(exist_ok=True)
                 stray.write_text("bytes changed after the final QA run\n", encoding="utf-8")
-            if self.qa_fake_pass_with_failing_checks:
-                qa_result: dict[str, object] = {
+            if self.qa_blockers_malformed is not _UNSET or self.qa_report_only:
+                qa_result = {
+                    "qa_verdict": "PASS",
+                    "qa_required_checks": [
+                        {"name": name, "verdict": "PASS"}
+                        for name in canonical_qa_required_checks()
+                    ],
+                    "qa_blockers": self.qa_blockers_malformed,
+                    "qa_certified_head": context.certified_head,
+                    "qa_certified_tree": context.certified_tree,
+                }
+            elif self.qa_fake_pass_with_failing_checks:
+                qa_result = {
                     "qa_verdict": "PASS",
                     "qa_required_checks": [
                         {"name": "end-to-end public boundary", "verdict": "FAIL"}
@@ -215,7 +338,7 @@ class FakeAgentAdapter:
             )
         qa_paths: list[str] = []
         if context.role is Role.QA:
-            qa_dir = context.worktree_path / "qa"
+            qa_dir = context.worktree_path / "sixpack-artifacts"
             qa_dir.mkdir(exist_ok=True)
             artifact = qa_dir / f"{context.task_id}.{context.role.value}.md"
             artifact.write_text(
@@ -223,11 +346,50 @@ class FakeAgentAdapter:
                 f"task: {context.task_id}\nrole: {context.role.value}\n\n{context.goal}\n",
                 encoding="utf-8",
             )
-            check = qa_dir / f"{context.task_id}.check.md"
-            check.write_text(f"executable QA automation for {context.task_id}\n", encoding="utf-8")
+            # Executable QA automation (QA-exclusive required output): a real
+            # script with an executable bit, declared by the automation
+            # manifest. Report-only output does not satisfy the gate.
+            automation = None
+            if self.qa_report_only:
+                artifact_only = qa_dir / "qa.report.md"
+                artifact_only.write_text("report-only QA output\n", encoding="utf-8")
+                qa_paths = [f"sixpack-artifacts/{artifact_only.name}"]
+                if self.qa_product_fix:
+                    src = context.worktree_path / "src" / "feature.txt"
+                    src.parent.mkdir(exist_ok=True)
+                    src.write_text("product fix written by QA\n", encoding="utf-8")
+                return StageOutcome(
+                    success=True,
+                    message="QA stage complete (report-only)",
+                    checks=["report written"],
+                    artifacts=qa_paths,
+                    results={"adapter": "fake"},
+                    qa_automation_paths=qa_paths,
+                )
+            automation = qa_dir / "qa.verify.sh"
+            automation.write_text(
+                "#!/bin/sh\n"
+                f"echo 'executable QA automation for {context.task_id}'\n"
+                "exit 0\n",
+                encoding="utf-8",
+            )
+            automation.chmod(0o755)
+            manifest = qa_dir / "qa.automation.json"
+            manifest.write_text(
+                json.dumps(
+                    {
+                        "task_id": context.task_id,
+                        "entrypoints": ["qa.verify.sh"],
+                        "procedure_alignment": "specifier end-to-end QA procedure",
+                    },
+                    indent=1,
+                ),
+                encoding="utf-8",
+            )
             qa_paths = [
-                f"qa/{context.task_id}.{context.role.value}.md",
-                f"qa/{context.task_id}.check.md",
+                f"sixpack-artifacts/{context.task_id}.{context.role.value}.md",
+                "sixpack-artifacts/qa.verify.sh",
+                "sixpack-artifacts/qa.automation.json",
             ]
             if self.qa_product_fix:
                 src = context.worktree_path / "src" / "feature.txt"
@@ -242,12 +404,15 @@ class FakeAgentAdapter:
                 f"task: {context.task_id}\nrole: {context.role.value}\n\n{context.goal}\n",
                 encoding="utf-8",
             )
+        results: dict[str, object] = {"adapter": "fake"}
+        if context.role is Role.QA:
+            results["qa_automation_entrypoints"] = ["qa.verify.sh"]
         return StageOutcome(
             success=True,
             message=f"{context.role.value} stage complete",
             checks=[f"{context.role.value} local checks"],
             artifacts=[str(artifact.relative_to(context.worktree_path))],
-            results={"adapter": "fake"},
+            results=results,
             qa_automation_paths=qa_paths,
         )
 
@@ -278,7 +443,7 @@ class ProcessAdapter:
         not_owns = "; ".join(definition.does_not_own)
         checks = "; ".join(definition.required_checks)
         done = "; ".join(definition.done_criteria)
-        return (
+        prompt = (
             "You are the "
             f"{context.role.value} station of a six-stage software delivery "
             "pipeline (specifier -> coder -> cleaner -> architect -> "
@@ -303,6 +468,16 @@ class ProcessAdapter:
             "the blocker into a file named SPEC_GAP.md instead of inventing "
             "a product contract."
         )
+        if context.role is Role.QA and not context.qa_final_run:
+            prompt += (
+                "\nQA AUTOMATION GATE: before finishing you MUST write your "
+                "executable QA automation under sixpack-artifacts/ and declare "
+                'it in sixpack-artifacts/qa.automation.json as {"entrypoints": '
+                '[ "<script>" ]}. Each entrypoint must be a real executable '
+                "script (shebang or exec bit). A report alone will be "
+                "mechanically rejected."
+            )
+        return prompt
 
     def execute_stage(self, context: StageContext) -> StageOutcome:
         if context.qa_final_run:
@@ -480,6 +655,21 @@ class RoleRunner:
                     "self-certification forbidden"
                 )
 
+        qa_automation_entrypoints: list[str] | None = None
+        if role is Role.QA:
+            # The QA-exclusive required output is executable QA automation
+            # (CTR-SIX-005/010): it must exist, be declared, and be bound
+            # before the final QA run. Report-only output fails here.
+            qa_automation_entrypoints, automation_error = _validate_qa_automation(
+                worktree.path
+            )
+            if automation_error is not None or qa_automation_entrypoints is None:
+                instance.stage_status[role.value] = "pending"
+                self.ledger.save()
+                raise WorkflowStateInvalid(
+                    f"executable QA automation gate: {automation_error}"
+                )
+
         head, tree = manager.commit_all(worktree.path, f"sixpack({role.value}): {task_id}")
         manager.verify_candidate(head, tree)
 
@@ -535,7 +725,11 @@ class RoleRunner:
                     output_tree=tree,
                     checks=[f"final QA verdict: {qa_machine['qa_verdict']}"],
                     artifacts=[],
-                    results={**qa_machine, "adapter": "qa-final"},
+                    results={
+                        **qa_machine,
+                        "adapter": "qa-final",
+                        "qa_automation_entrypoints": qa_automation_entrypoints or [],
+                    },
                     limitations=[
                         str(item)
                         for item in cast("list[object]", qa_machine.get("qa_blockers", []))
@@ -554,6 +748,8 @@ class RoleRunner:
         surfaces = self._changed_files(worktree.path, input_head)
 
         results = dict(outcome.results)
+        if qa_automation_entrypoints is not None:
+            results["qa_automation_entrypoints"] = qa_automation_entrypoints
         if qa_machine is not None:
             results.update(qa_machine)
             results["adapter"] = "qa-final"
