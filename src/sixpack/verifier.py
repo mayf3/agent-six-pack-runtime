@@ -26,6 +26,7 @@ from .gitx import WorktreeManager
 from .gitx import git as _git
 from .ledger import Ledger
 from .model import Role, WorkflowState
+from .qa_gate import automation_tree_binding_failures, qa_pass_eligibility_failures
 
 
 @dataclass
@@ -110,10 +111,34 @@ class TerminalVerifier:
             except Exception as exc:
                 failures.append(f"ancestry check failed: {exc}")
 
-        # Final QA receipt must bind the unchanged terminal candidate.
+        # Final QA receipt must bind the unchanged terminal candidate AND
+        # carry a machine verdict that independently establishes PASS
+        # (CTR-SIX-009/CTR-SIX-019; blocker-union remediation for the
+        # terminal false-pass).
         qa_entry = receipts_by_role.get(Role.QA.value)
         if qa_entry and terminal_head and str(qa_entry["output_head"]) != terminal_head:
             failures.append("final QA receipt does not bind the unchanged terminal candidate")
+        if qa_entry is not None and terminal_head:
+            qa_results = cast(
+                dict[str, object], qa_entry.get("results") or {}
+            )
+            # Independent re-check: the SAME full PASS-eligibility judgment
+            # the runner normalizes with, applied directly to the STORED
+            # receipt -- a runner that failed to downgrade a fake PASS (or
+            # one that overwrote a mismatching certified-Head echo) cannot
+            # hide it here.
+            failures.extend(
+                qa_pass_eligibility_failures(qa_results, terminal_head, terminal_tree)
+            )
+            # Tree-level re-check of the automation binding: every declared
+            # entrypoint's blob must exist in the certified tree with the
+            # exact SHA the receipt recorded.
+            bindings = cast(
+                list[object], qa_results.get("qa_automation_bindings") or []
+            )
+            failures.extend(
+                automation_tree_binding_failures(manager, terminal_tree, bindings)
+            )
 
         # Impact-and-coverage matrix.
         coverage: dict[str, str] = {}

@@ -19,6 +19,7 @@ Adapters:
 
 from __future__ import annotations
 
+import json
 import subprocess
 import time
 from dataclasses import dataclass, field
@@ -30,10 +31,11 @@ from .canonical import canonical_hash
 from .errors import (
     AuditRequired,
     CorrectionRequired,
+    QaVerificationFailed,
     SelfCertificationRejected,
     WorkflowStateInvalid,
 )
-from .gitx import WorktreeManager
+from .gitx import WorktreeManager, git
 from .ledger import Ledger, TaskRecord, WorkflowInstance
 from .model import (
     TERMINAL_PRIORITY,
@@ -43,9 +45,17 @@ from .model import (
     StageReceipt,
     WorkflowState,
 )
+from .qa_gate import (
+    automation_bindings_from_tree,
+    canonical_qa_required_checks,
+    validate_qa_machine,
+    worktree_automation_gate,
+)
 from .queue import QueueStore
 
 NORMAL_PRIORITY = "10"
+
+_UNSET = object()
 
 
 def _now() -> str:
@@ -61,6 +71,9 @@ class StageContext:
     base_head: str
     goal: str
     instructions: str
+    qa_final_run: bool = False
+    certified_head: str = ""
+    certified_tree: str = ""
 
 
 @dataclass
@@ -72,6 +85,7 @@ class StageOutcome:
     results: dict[str, object] = field(default_factory=dict)
     limitations: list[str] = field(default_factory=list)
     qa_automation_paths: list[str] = field(default_factory=list)
+    qa_result: dict[str, object] | None = None  # final-QA machine verdict only
 
 
 class AgentAdapter(Protocol):
@@ -79,6 +93,13 @@ class AgentAdapter(Protocol):
 
     def execute_stage(self, context: StageContext) -> StageOutcome:
         ...
+
+
+
+
+QA_PASS = "PASS"
+QA_FAIL = "FAIL"
+QA_BLOCKED = "BLOCKED"
 
 
 class FakeAgentAdapter:
@@ -95,16 +116,108 @@ class FakeAgentAdapter:
         *,
         fail_at: list[str] | None = None,
         qa_product_fix: bool = False,
+        qa_final_verdict: str = "PASS",
+        qa_checks: list[dict[str, str]] | None = None,
+        qa_blockers: list[str] | None = None,
+        qa_fake_pass_with_failing_checks: bool = False,
+        qa_write_after_final: bool = False,
+        qa_blockers_malformed: object = _UNSET,
+        qa_report_only: bool = False,
+        qa_automation_entrypoints_override: list[str] | None = None,
+        qa_symlink_automation: bool = False,
+        qa_ignore_automation: bool = False,
+        qa_fake_automation_binding: bool = False,
     ) -> None:
         self.fail_at = fail_at or []
         self.qa_product_fix = qa_product_fix
+        self.qa_final_verdict = qa_final_verdict
+        self.qa_checks = qa_checks or [
+            {"name": name, "verdict": "PASS"} for name in canonical_qa_required_checks()
+        ]
+        self.qa_blockers = qa_blockers or []
+        self.qa_fake_pass_with_failing_checks = qa_fake_pass_with_failing_checks
+        self.qa_write_after_final = qa_write_after_final
+        self.qa_blockers_malformed = qa_blockers_malformed
+        self.qa_report_only = qa_report_only
+        self.qa_automation_entrypoints_override = qa_automation_entrypoints_override
+        self.qa_symlink_automation = qa_symlink_automation
+        self.qa_ignore_automation = qa_ignore_automation
+        self.qa_fake_automation_binding = qa_fake_automation_binding
 
     def execute_stage(self, context: StageContext) -> StageOutcome:
         if context.role.value in self.fail_at:
             return StageOutcome(success=False, message=f"scripted failure at {context.role.value}")
+        if context.qa_final_run:
+            qa_result: dict[str, object]
+            if self.qa_write_after_final:
+                stray = context.worktree_path / "sixpack-artifacts" / "post-final.txt"
+                stray.parent.mkdir(exist_ok=True)
+                stray.write_text("bytes changed after the final QA run\n", encoding="utf-8")
+            if self.qa_fake_automation_binding:
+                qa_result = {
+                    "qa_verdict": "PASS",
+                    "qa_required_checks": [
+                        {"name": name, "verdict": "PASS"}
+                        for name in canonical_qa_required_checks()
+                    ],
+                    "qa_blockers": [],
+                    "qa_certified_head": context.certified_head,
+                    "qa_certified_tree": context.certified_tree,
+                    # QA-returned JSON tries to override the runtime binding.
+                    "qa_automation_entrypoints": ["qa.verify.sh"],
+                    "qa_automation_bindings": [
+                        {
+                            "path": "sixpack-artifacts/qa.verify.sh",
+                            "blob_sha": "f" * 40,
+                            "size": 1,
+                        }
+                    ],
+                }
+            elif self.qa_blockers_malformed is not _UNSET or self.qa_report_only:
+                qa_result = {
+                    "qa_verdict": "PASS",
+                    "qa_required_checks": [
+                        {"name": name, "verdict": "PASS"}
+                        for name in canonical_qa_required_checks()
+                    ],
+                    "qa_blockers": self.qa_blockers_malformed,
+                    "qa_certified_head": context.certified_head,
+                    "qa_certified_tree": context.certified_tree,
+                }
+            elif self.qa_fake_pass_with_failing_checks:
+                qa_result = {
+                    "qa_verdict": "PASS",
+                    "qa_required_checks": [
+                        {"name": "end-to-end public boundary", "verdict": "FAIL"}
+                    ],
+                    "qa_blockers": [],
+                    "qa_certified_head": context.certified_head,
+                    "qa_certified_tree": context.certified_tree,
+                }
+            else:
+                verdict = self.qa_final_verdict
+                check_verdict = "PASS" if verdict == "PASS" else verdict
+                qa_result = {
+                    "qa_verdict": verdict,
+                    "qa_required_checks": [
+                        {"name": c["name"], "verdict": check_verdict}
+                        for c in self.qa_checks
+                    ]
+                    if verdict != "PASS"
+                    else [dict(c) for c in self.qa_checks],
+                    "qa_blockers": list(self.qa_blockers),
+                    "qa_certified_head": context.certified_head,
+                    "qa_certified_tree": context.certified_tree,
+                }
+            return StageOutcome(
+                success=True,
+                message="final QA verification run (no bytes changed)",
+                checks=["final QA verification"],
+                qa_result=qa_result,
+            )
         qa_paths: list[str] = []
         if context.role is Role.QA:
-            qa_dir = context.worktree_path / "qa"
+            qa_dir = context.worktree_path / "sixpack-artifacts"
             qa_dir.mkdir(exist_ok=True)
             artifact = qa_dir / f"{context.task_id}.{context.role.value}.md"
             artifact.write_text(
@@ -112,11 +225,65 @@ class FakeAgentAdapter:
                 f"task: {context.task_id}\nrole: {context.role.value}\n\n{context.goal}\n",
                 encoding="utf-8",
             )
-            check = qa_dir / f"{context.task_id}.check.md"
-            check.write_text(f"executable QA automation for {context.task_id}\n", encoding="utf-8")
+            # Executable QA automation (QA-exclusive required output): a real
+            # script with an executable bit, declared by the automation
+            # manifest. Report-only output does not satisfy the gate.
+            automation = None
+            if self.qa_report_only:
+                artifact_only = qa_dir / "qa.report.md"
+                artifact_only.write_text("report-only QA output\n", encoding="utf-8")
+                qa_paths = [f"sixpack-artifacts/{artifact_only.name}"]
+                if self.qa_product_fix:
+                    src = context.worktree_path / "src" / "feature.txt"
+                    src.parent.mkdir(exist_ok=True)
+                    src.write_text("product fix written by QA\n", encoding="utf-8")
+                return StageOutcome(
+                    success=True,
+                    message="QA stage complete (report-only)",
+                    checks=["report written"],
+                    artifacts=qa_paths,
+                    results={"adapter": "fake"},
+                    qa_automation_paths=qa_paths,
+                )
+            entrypoints = (
+                list(self.qa_automation_entrypoints_override)
+                if self.qa_automation_entrypoints_override
+                else ["qa.verify.sh"]
+            )
+            automation = qa_dir / "qa.verify.sh"
+            if self.qa_symlink_automation:
+                outside = qa_dir / "outside-target.txt"
+                outside.write_text("external target\n", encoding="utf-8")
+                automation.symlink_to(outside.name)
+            else:
+                automation.write_text(
+                    "#!/bin/sh\n"
+                    f"echo 'executable QA automation for {context.task_id}'\n"
+                    "exit 0\n",
+                    encoding="utf-8",
+                )
+                automation.chmod(0o755)
+            if self.qa_ignore_automation:
+                gitignore = context.worktree_path / ".gitignore"
+                gitignore.write_text(
+                    "sixpack-artifacts/qa.verify.sh\n", encoding="utf-8"
+                )
+            manifest = qa_dir / "qa.automation.json"
+            manifest.write_text(
+                json.dumps(
+                    {
+                        "task_id": context.task_id,
+                        "entrypoints": entrypoints,
+                        "procedure_alignment": "specifier end-to-end QA procedure",
+                    },
+                    indent=1,
+                ),
+                encoding="utf-8",
+            )
             qa_paths = [
-                f"qa/{context.task_id}.{context.role.value}.md",
-                f"qa/{context.task_id}.check.md",
+                f"sixpack-artifacts/{context.task_id}.{context.role.value}.md",
+                "sixpack-artifacts/qa.verify.sh",
+                "sixpack-artifacts/qa.automation.json",
             ]
             if self.qa_product_fix:
                 src = context.worktree_path / "src" / "feature.txt"
@@ -131,12 +298,15 @@ class FakeAgentAdapter:
                 f"task: {context.task_id}\nrole: {context.role.value}\n\n{context.goal}\n",
                 encoding="utf-8",
             )
+        results: dict[str, object] = {"adapter": "fake"}
+        if context.role is Role.QA:
+            results["qa_automation_entrypoints"] = ["qa.verify.sh"]
         return StageOutcome(
             success=True,
             message=f"{context.role.value} stage complete",
             checks=[f"{context.role.value} local checks"],
             artifacts=[str(artifact.relative_to(context.worktree_path))],
-            results={"adapter": "fake"},
+            results=results,
             qa_automation_paths=qa_paths,
         )
 
@@ -167,7 +337,7 @@ class ProcessAdapter:
         not_owns = "; ".join(definition.does_not_own)
         checks = "; ".join(definition.required_checks)
         done = "; ".join(definition.done_criteria)
-        return (
+        prompt = (
             "You are the "
             f"{context.role.value} station of a six-stage software delivery "
             "pipeline (specifier -> coder -> cleaner -> architect -> "
@@ -192,9 +362,36 @@ class ProcessAdapter:
             "the blocker into a file named SPEC_GAP.md instead of inventing "
             "a product contract."
         )
+        if context.role is Role.QA and not context.qa_final_run:
+            prompt += (
+                "\nQA AUTOMATION GATE: before finishing you MUST write your "
+                "executable QA automation under sixpack-artifacts/ and declare "
+                'it in sixpack-artifacts/qa.automation.json as {"entrypoints": '
+                '[ "<script>" ]}. Each entrypoint must be a real executable '
+                "script (shebang or exec bit). A report alone will be "
+                "mechanically rejected."
+            )
+        return prompt
 
     def execute_stage(self, context: StageContext) -> StageOutcome:
-        prompt = self._briefing(context)
+        if context.qa_final_run:
+            final_line = (
+                'QA_FINAL_JSON: {"qa_verdict": "PASS|FAIL|BLOCKED", '
+                '"qa_required_checks": [{"name": "...", "verdict": "PASS|FAIL|NOT_EXECUTED"}], '
+                '"qa_blockers": [], '
+                f'"qa_certified_head": "{context.certified_head}", '
+                f'"qa_certified_tree": "{context.certified_tree}"}}'
+            )
+            prompt = (
+                "FINAL VERIFICATION RUN. Do not create, modify, or delete any "
+                "file. Verify the candidate at the exact HEAD/tree you are on "
+                f"(HEAD {context.certified_head}, tree {context.certified_tree}).\n"
+                "As the LAST line of your output print exactly one machine line:\n"
+                + final_line
+                + "\n\nStation briefing:\n" + self._briefing(context)
+            )
+        else:
+            prompt = self._briefing(context)
         command = [
             part.format(
                 role=context.role.value,
@@ -224,11 +421,22 @@ class ProcessAdapter:
                 message=f"provider exited {result.returncode}: {result.stderr[-500:]}",
             )
         qa_paths = ["sixpack-artifacts/"] if context.role is Role.QA else []
+        qa_result = None
+        if context.qa_final_run:
+            for line in reversed(result.stdout.splitlines()):
+                line = line.strip()
+                if line.startswith("QA_FINAL_JSON:"):
+                    try:
+                        qa_result = dict(json.loads(line[len("QA_FINAL_JSON:"):].strip()))
+                    except ValueError:
+                        qa_result = None
+                    break
         return StageOutcome(
             success=True,
             message="provider stage complete",
             results={"adapter": "process"},
             qa_automation_paths=qa_paths,
+            qa_result=qa_result,
         )
 
 
@@ -341,10 +549,131 @@ class RoleRunner:
                     "self-certification forbidden"
                 )
 
+        qa_automation_entrypoints: list[str] | None = None
+        qa_automation_bindings: list[dict[str, object]] | None = None
+        if role is Role.QA:
+            # The QA-exclusive required output is executable QA automation
+            # (CTR-SIX-005/010): it must exist, be declared, and be bound
+            # before the final QA run. Report-only, out-of-bounds paths,
+            # symlinks, and git-ignored entrypoints fail here.
+            qa_automation_entrypoints, automation_error = worktree_automation_gate(
+                worktree.path
+            )
+            if automation_error is not None or qa_automation_entrypoints is None:
+                instance.stage_status[role.value] = "pending"
+                self.ledger.save()
+                raise WorkflowStateInvalid(
+                    f"executable QA automation gate: {automation_error}"
+                )
+
         head, tree = manager.commit_all(worktree.path, f"sixpack({role.value}): {task_id}")
         manager.verify_candidate(head, tree)
+        if role is Role.QA:
+            # Bind the automation to the certified Git tree itself: the
+            # manifest and every entrypoint must exist as blobs in the
+            # committed tree (untracked/ignored/symlinked files cannot).
+            qa_automation_bindings, binding_failures = automation_bindings_from_tree(
+                manager, tree
+            )
+            if binding_failures or qa_automation_bindings is None:
+                instance.stage_status[role.value] = "pending"
+                self.ledger.save()
+                raise QaVerificationFailed(
+                    "QA automation is not bound to the certified tree: "
+                    + "; ".join(binding_failures or ["unknown binding failure"])
+                )
+
+        # Final QA runs ON the committed candidate and may not change any
+        # certified byte afterwards (CTR-SIX-009 / CTR-SIX-019): QA-owned
+        # artifacts are committed first, then the final QA run executes on
+        # that exact head/tree and returns its machine verdict.
+        qa_machine: dict[str, object] | None = None
+        if role is Role.QA:
+            final_context = StageContext(
+                task_id=task_id,
+                repository=record.repository,
+                role=role,
+                worktree_path=worktree.path,
+                base_head=input_head,
+                goal=record.goal,
+                instructions=record.done_when,
+                qa_final_run=True,
+                certified_head=head,
+                certified_tree=tree,
+            )
+            final_outcome = self.adapter.execute_stage(final_context)
+            if not final_outcome.success:
+                instance.stage_status[role.value] = "pending"
+                self.ledger.save()
+                raise WorkflowStateInvalid(
+                    f"final QA run failed: {final_outcome.message}"
+                )
+            dirty = self._working_tree_changes(worktree.path)
+            current_head = git("rev-parse", "HEAD", cwd=worktree.path, check=False)
+            if dirty or current_head != head:
+                instance.stage_status[role.value] = "pending"
+                self.ledger.save()
+                raise SelfCertificationRejected(
+                    "QA changed bytes after the final verification run "
+                    f"({dirty or 'HEAD advanced'}); the certified tree is no "
+                    "longer the terminal tree"
+                )
+            qa_machine = validate_qa_machine(
+                final_outcome.qa_result,
+                head,
+                tree,
+                qa_automation_entrypoints=qa_automation_entrypoints,
+                qa_automation_bindings=qa_automation_bindings,
+            )
+            if qa_machine["qa_verdict"] != "PASS":
+                receipt_id = (
+                    f"receipt-{task_id}-{role.value}-"
+                    f"{canonical_hash({'head': head})[:8]}"
+                )
+                receipt_qa = StageReceipt(
+                    receipt_id=receipt_id,
+                    task_id=task_id,
+                    repository=record.repository,
+                    role=role.value,
+                    input_head=input_head,
+                    input_tree=input_tree,
+                    output_head=head,
+                    output_tree=tree,
+                    checks=[f"final QA verdict: {qa_machine['qa_verdict']}"],
+                    artifacts=[],
+                    results={
+                        **qa_machine,
+                        "adapter": "qa-final",
+                        "qa_automation_entrypoints": qa_automation_entrypoints or [],
+                        "qa_automation_bindings": qa_automation_bindings or [],
+                    },
+                    limitations=[
+                        str(item)
+                        for item in cast("list[object]", qa_machine.get("qa_blockers", []))
+                    ],
+                    surfaces_touched=[],
+                    created_at=_now(),
+                )
+                self.ledger.append_receipt(task_id, receipt_qa)
+                instance.state = WorkflowState.FAILED
+                self.ledger.save()
+                raise QaVerificationFailed(
+                    f"final QA verdict = {qa_machine['qa_verdict']}; "
+                    f"blockers={qa_machine.get('qa_blockers')}; terminal is BLOCKED, not PASS"
+                )
+
         surfaces = self._changed_files(worktree.path, input_head)
 
+        results = dict(outcome.results)
+        if qa_machine is not None:
+            results.update(qa_machine)
+            results["adapter"] = "qa-final"
+        # Runtime-generated artifact binding wins: the QA-returned JSON may
+        # not override the helper's certified-tree bindings.
+        if qa_automation_entrypoints is not None:
+            results["qa_automation_entrypoints"] = qa_automation_entrypoints
+        if qa_automation_bindings is not None:
+            results["qa_automation_bindings"] = qa_automation_bindings
         receipt = StageReceipt(
             receipt_id=f"receipt-{task_id}-{role.value}-{canonical_hash({'head': head})[:8]}",
             task_id=task_id,
@@ -356,7 +685,7 @@ class RoleRunner:
             output_tree=tree,
             checks=outcome.checks,
             artifacts=outcome.artifacts,
-            results=outcome.results,
+            results=results,
             limitations=outcome.limitations,
             surfaces_touched=surfaces,
             created_at=_now(),

@@ -1,10 +1,13 @@
 # GOAL_STATE — Bootstrap Multi-Repo Six-Pack Governance Forge
 
-GOAL_STATUS = AWAITING_INDEPENDENT_PILOT_REVIEWS
+GOAL_STATUS = AWAITING_SECOND_BLOCKER_UNION_REVIEW
 PHASE_LOCK = ON
-UPDATED_AT = 2026-09-05T09:20:00+08:00
+CURRENT_PHASE = SECOND_BLOCKER_UNION_REMEDIATION（Runtime PR #2 两项剩余缺口已关闭，等 ONE 有界复审）
+INDEPENDENT_PILOT_REVIEW = REVISE
+SECOND_INDEPENDENT_REVIEW = Host r4 ACCEPT；Runtime replacement Head REVISE（2 blockers，已关闭）
+UPDATED_AT = 2026-09-05T12:30:00+08:00
 READY_FOR_GOVERNANCE_FORGE_PILOT_REVIEW = YES（历史里程碑，见 DONE_WHEN 审计）
-AWAITING_INDEPENDENT_PILOT_REVIEWS = YES（REVIEW_PREPARATION 完成，三个 exact review surfaces 已冻结，STOP）
+REGISTRY_EXPANSION = FORBIDDEN
 
 ## Governing authority（已 fresh-verify）
 
@@ -86,9 +89,59 @@ RUNTIME_REVIEW_PR = mayf3/agent-six-pack-runtime#1（Draft，base v0/bootstrap�
 AGENT_FORUM_REVIEW_PR = mayf3/agent-forum#18（Draft，base main（fb11552 已含于 main），head 77bc1467dedea95bcaa7db250303232263ce6e5e，tree 74a10b68b13074d1e601f67e6f372950605a96eb）
 CANDIDATE_BYTES_CHANGED = NO；REGISTRY_EXPANDED = NO；AUTO_MERGE = false；AUTO_DEPLOY = false
 
+## PILOT_BLOCKER_UNION_REMEDIATION 结果（2026-09-05）
+
+HOST_SPEC_PR = mayf3/agent-development-governance#14（proposed docs PR，branch governance/agent-multi-repo-six-pack-host-v1）
+HOST_SPEC_R3_HEAD = governance 仓该 PR 的 exact head（见 PR 页面 / git ls-remote）
+HOST_SPEC_R3_TREE = 见 PR；r3 bytes SHA256 = 443008559fed1bc8c0fd03fc52a0fbebb8587310dfb8121062372f1d103ffb65
+  仅修 CTR-MRH-003（recovery 四要件 + outcome_unknown 保留）、CTR-MRH-004（QUIESCE/WINDOW_CLOSED 矛盾消除，V1 相位简化）、CTR-MRH-005（route 限制从 DEC 提升进 Contract）；其余 r2 语义未动
+HOST_SPEC_STATUS = READY_FOR_EXACT_R3_REVIEW
+
+RUNTIME_FIX_HEAD = 0c61bfa（v0/bootstrap，BLOCKER-UNION Lane B commit；fix 直接落在 v0/bootstrap 分支上，评审绑定该 exact head）
+RUNTIME_FIX_TREE = 见 `git rev-parse 0c61bfa^{tree}`
+  修复：QA 两阶段协议（artifacts 先提交 → final QA 在该 candidate 上执行 → final 后字节不可变）+ _validate_qa_machine（fake PASS 机械降级 BLOCKED）+ verifier PASS 强制绑定 QA_VERDICT / QA_REQUIRED_CHECKS / QA_BLOCKERS / QA_TERMINAL_CANDIDATE_UNCHANGED / QA_RECEIPT_BINDS_TERMINAL_TREE
+FALSE_PASS_REGRESSION_TESTS = 7 个新负向测试（tests/test_qa_final_gate.py）：QA FAIL / QA BLOCKED / required check NOT_EXECUTED / final 后字节变动 / fake PASS with failing checks / terminal tree ≠ certified tree / ProcessAdapter QA_FINAL_JSON 解析；全量 86 tests + ruff + mypy strict 全绿
+
+OLD_CANARY_HISTORY_CHANGED = NO（仅追加 PILOT_EVIDENCE §8 定位更正：两旧 run 为 pilot evidence，非正式 CTR-SIX-021 canary，不可追溯宣称 QA PASS / SPEC_GAP closure）
+REGISTRY_EXPANDED = NO
+AUTO_ACCEPT = false
+AUTO_MERGE = false
+AUTO_DEPLOY = false
+
+## SECOND_BLOCKER_UNION_REMEDIATION 结果（2026-09-05）
+
+HOST_SPEC_PR = mayf3/agent-development-governance#14（同 PR，r4 已推送）
+HOST_SPEC_R4_HEAD = 8186595a9abb93bfdb75c21c6d0be9e93abdc863
+HOST_SPEC_R4_TREE = ff4e78a0b77b5d118a02844b5cf8fb1df793a935
+  （r4 bytes SHA256 = 1bd455b0c726951430653c6cd6169234df6981b8af2001524add4e7add3bf24a）
+  H1：DEC-MRH-003 与 CTR-MRH-003 对齐（删除 clean-worktree requeueable 旧语义，四要件 + outcome_unknown 保留）
+  H2：ACC-MRH-002 补齐 recovery 负例全集 + deterministic positive case
+  H3：ACC-MRH-003 补齐完整 QUIESCE / WINDOW_CLOSED phase 行为
+  其余 r3 已通过语义未动；status 保持 proposed
+HOST_SPEC_STATUS = READY_FOR_EXACT_R4_REVIEW
+
+RUNTIME_FIX_PR = mayf3/agent-six-pack-runtime#2（head branch 已更新为最新 replacement head）
+RUNTIME_REPLACEMENT_HEAD = 6497b065decbf726b827c3ecb7c86e41ea52d84d
+RUNTIME_REPLACEMENT_TREE = 707fdb88b90a4cfdc8ba8a0176ae08ac8b0b46e9
+  （取代 61121538…；本轮新增：qa_gate.py 共享规则模块——Runner 规范化与独立
+   TerminalVerifier 复检同一套闭合集/schema/绑定规则；可执行自动化绑定认证
+   Git tree（post-commit blob 绑定 + 越界/symlink/ignored 拒绝 + QA JSON 不可覆盖）；
+   8 个新测试，全量 103 passed）
+REQUIRED_CHECK_SET_GATE = PASS（闭合集：从 pinned QA role definition 导出三 canonical checks；missing/duplicate/substitute 一律降级 BLOCKED）
+QA_BLOCKERS_SCHEMA_GATE = PASS（list[str] 严格 schema；missing/null/non-list/non-str → BLOCKED，不静默忽略）
+EXECUTABLE_QA_AUTOMATION_GATE = PASS（qa.automation.json manifest + entrypoint 存在/非空/shebang-or-exec-bit；report-only 在 commit 前被拒；证据绑定 QA receipt）
+TESTS = 95 passed（含 9 个新负例）+ ruff clean + mypy strict clean，exact-Head 执行证据 = forge/QA_GATE_FIX_EVIDENCE.md（本仓无 CI workflow，未为此新增 CI 平台）
+
+OLD_CANARIES_CHANGED = NO（canary-version-1 / af-verifier-1 历史与 §8 定位更正不变；未重跑正式 canary）
+REGISTRY_EXPANDED = NO
+AUTO_ACCEPT = false
+AUTO_MERGE = false
+AUTO_DEPLOY = false
+
 ## NEXT
 
-STOP —— 等待三个独立评审（Reviewer 完成后由 Owner 处置）。不 merge、不 accept、不 deploy、不扩 registry、不开新任务。
+one independent re-audit of Host r4（PR #14 @ 8186595a）+ one independent re-audit of Runtime replacement Head（PR #2 @ 61121538）。
+STOP —— AWAITING_SECOND_BLOCKER_UNION_REVIEW；不扩 registry、不跑新 canary、不新增功能、无 accept/merge/deploy。
 
 ## 实操验证证据（quiesce/recovery，已发生三次真实恢复）
 

@@ -88,3 +88,21 @@ QA 站自产报告（`sixpack-artifacts/qa.report.md`，QA 工位真实输出）
 | agent-forum af-verifier-1 | 77bc1467dedea95bcaa7db250303232263ce6e5e（tree 74a10b68…） | branch `review/af-verifier-1` + Draft PR mayf3/agent-forum#18 |
 
 candidate bytes 未因 review preparation 改变（推送的是已存在 commit）；registry 未扩大；无 merge/accept/deploy；GOAL_STATUS → AWAITING_INDEPENDENT_PILOT_REVIEWS。
+
+## 8. 历史定位更正（PILOT_BLOCKER_UNION_REMEDIATION，2026-09-05）
+
+`canary-version-1` 与 `af-verifier-1` 两个旧 run 的定位更正（本节为追加说明，第 1–7 节历史记录与 receipts 保持 immutable，未改写）：
+
+- 它们**不是** CTR-SIX-021 意义上的正式 canary：`canary-version-1` 不构成 public-interface SPEC_GAP → authority closure 的证明；两者的 QA PASS 声明产生于 terminal false-pass 修复（final-QA machine gate）之前，不能再被追溯宣称为独立可认证的 QA PASS。
+- 它们继续作为以下证据有效：shared-worker-pool pilot evidence（跨仓交错时间线）、false-pass discovery evidence（QA self-cert 守卫触发 → 终验漏洞被发现）、crash/recovery evidence（3 次真实恢复）。
+- 各自的 exact candidate 已冻结为独立 review surfaces（runtime PR #1 @ 8957f2fe、agent-forum PR #18 @ 77bc1467），由独立 Reviewer 在其自身 merit 上评审，不享有正式 canary 地位。
+- 正式的 CTR-SIX-021 双 canary（medium internal feature + new public-interface feature，含 load-bearing gap detection 与 authority closure）必须在新标准（final-QA machine gate）下另行执行。
+
+## 8. 历史定位更正（PILOT_BLOCKER_UNION_REMEDIATION，2026-09-05）
+
+`canary-version-1` 与 `af-verifier-1` 两个旧 run 的定位更正（本节为追加说明，第 1–7 节历史记录与 receipts 保持 immutable，未改写）：
+
+- 它们**不是** CTR-SIX-021 意义上的正式 canary：`canary-version-1` 不构成 public-interface SPEC_GAP → authority closure 的证明；两者的 QA PASS 声明产生于 terminal false-pass 修复（final-QA machine gate）之前，不能再被追溯宣称为独立可认证的 QA PASS。
+- 它们继续作为以下证据有效：shared-worker-pool pilot evidence（跨仓交错时间线）、false-pass discovery evidence（QA self-cert 守卫触发 → 终验漏洞被发现）、crash/recovery evidence（3 次真实恢复）。
+- 各自的 exact candidate 已冻结为独立 review surfaces（runtime PR #1 @ 8957f2fe、agent-forum PR #18 @ 77bc1467），由独立 Reviewer 在其自身 merit 上评审，不享有正式 canary 地位。
+- 正式的 CTR-SIX-021 双 canary（medium internal feature + new public-interface feature，含 load-bearing gap detection 与 authority closure）必须在新标准（final-QA machine gate）下另行执行。
