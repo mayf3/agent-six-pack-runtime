@@ -4,6 +4,7 @@
 
 GOAL_STATUS = READY_FOR_OWNER_SIGNOFF（准备与预检全部完成；启动夜间模型工作被 4 项 Owner 签字阻塞，见 OWNER_ACTION_REQUIRED）
 SIGNOFF_REQUESTED_AT = 2026-09-05T18:20:00+08:00（4 项已逐项正式提请 Owner 确认；尚未签署；不代签、不把沉默当同意）
+OWNER_CONTINUED_AT = 2026-09-05T21:19:00+08:00（Owner 回复"继续"：按仅推进非签字项处理；启动脚本安全路径已实测——窗口外 WINDOW_CLOSED 正确拒绝 exit 5，registry heads 顺带刷新）
 STAGED_EXECUTION = 签字齐备后执行序列已一键化：nightly-1/bin/start-nightly-run.sh（刷新 heads→窗口相位检查→sixpack run 六角色）→ 完成后 nightly-1/bin/morning-report.sh（verify+状态→晨报 markdown）
 UPDATED_AT = 2026-09-05T17:00:00+08:00
 AUTO_ACCEPT = false / AUTO_MERGE = false / AUTO_DEPLOY = false / REMOTE_WRITE = false
