@@ -2,7 +2,7 @@
 
 ## ACTIVE GOAL — 启用 Six-Pack 首次受限夜间交付（2026-09-05 启动）
 
-GOAL_STATUS = READY_FOR_OWNER_SIGNOFF（准备与预检全部完成；启动夜间模型工作被 4 项 Owner 签字阻塞，见 OWNER_ACTION_REQUIRED）
+GOAL_STATUS = AWAITING_OWNER_TASK_DECISION（四项签字已由 Owner 2026-09-05T21:45 决定全部处置：Host 已合并+接受、PR #2 保持 Draft、窗口已授权但未用、首张维修单开工前核验判废；首批 2 仓内已无已授权可执行任务，等 Owner 唯一待决项，见下方「剩余待决」）
 SIGNOFF_REQUESTED_AT = 2026-09-05T18:20:00+08:00（4 项已逐项正式提请 Owner 确认；尚未签署；不代签、不把沉默当同意）
 OWNER_CONTINUED_AT = 2026-09-05T21:19:00+08:00（Owner 回复"继续"：按仅推进非签字项处理；启动脚本安全路径已实测——窗口外 WINDOW_CLOSED 正确拒绝 exit 5，registry heads 顺带刷新）
 STAGED_EXECUTION = 签字齐备后执行序列已一键化：nightly-1/bin/start-nightly-run.sh（刷新 heads→窗口相位检查→sixpack run 六角色）→ 完成后 nightly-1/bin/morning-report.sh（verify+状态→晨报 markdown）
@@ -23,7 +23,25 @@ STAGED_EXECUTION = 签字齐备后执行序列已一键化：nightly-1/bin/start
 - **暂停（依赖授权缺口，最小待决策，不进本轮）**：TASK-DAC-001（dsh-agent-core：修正案 lifecycle acceptance 未完成 + 非 registry 首批）、TASK-SVW-001（svc-workflow：Execution Mandate 未核实 + 非首批）、TASK-AUT-001/002（auth-service：CONTROLLED 凭据 mandate / Owner 权链未核实 + 非首批）。
 - **待 Owner（无决策不动）**：OWN-DAC-001 breakglass、OWN-ADC-001 secrets、OWN-AF-001 分支合并处置。
 - 不为凑任务新增候选；纯规范项继续走 governance 仓既有流程（GOVERNANCE_LANE 清单不变）。
-UPDATED_AT = 2026-09-05T21:46:00+08:00
+UPDATED_AT = 2026-09-05T22:40:00+08:00
+
+## Owner 决定执行记录（2026-09-05T21:45 Owner 决定 → 22:40 执行完毕，全部有坐标）
+
+1. **Host r4 — 已接受并合入治理仓库**。合并前 final-head recheck 全部成立：PR #14 head = 8186595a9abb93bfdb75c21c6d0be9e93abdc863（未变）、tree = ff4e78a0（fresh clone 实测）、spec 字节 sha256 = 1bd455b0…（docs/specs/AGENT_MULTI_REPO_SIX_PACK_HOST_V1.md 实测，与账面 r4 一致）、独立评审 5119235263 正文 ACCEPT 且绑定同一 commit、PR OPEN/MERGEABLE。**PR #14 merge commit = 68e4e743886e1266b0c3a3a30192b3c11dc53535（2026-09-05T22:11:26+08:00）**。生命周期接受变更 = governance main **9dcd0c4**（diff 恰好 2 行：status: proposed→accepted + OPEN_OWNER_DECISIONS 决议记录；规范内容字节零改动）。规范含义未动。
+2. **Runtime — 运行版本已按决定固定；PR #2 保持 Draft**。运行版本 = v0/bootstrap @ c07c7fd（其后各账目提交同理）：src/ tests/ pyproject.toml 与受审 4199be02 diff = **空**（本机实测），仅 forge/ 账目与 nightly-1 脚本变化；加载路径 = 本仓 .venv editable 安装，start 脚本 gate 强制产品字节 == 4199be02 否则 exit 7。PR #2 = Draft/Open @ 4199be02，按 Owner 决定不合并。
+3. **首张维修单 af-verifier-impl-1 — 开工前核验判废，未开工**（依据齐全）：
+   - 授权前提「svc-forum/package.json 三个 test:subscription-* 入口尚未接线」在受审 base c2f7a74 上**不成立**：三入口由 c2f7a74 本身（commit "test: add Forum subscription verifier hardening"）加入——git log -S 实证；本地分支 = 远端分支 = PR #15 head = c2f7a74，无漂移（预检"尚未接线"结论系误读主 checkout 工作区，非分支字节）。
+   - 实测（一次性 PG sixpack-nightly-pg @127.0.0.1:55470，forum_app 角色在、22 表已迁移；临时 worktree @c2f7a74，用后已清理）：三入口 `npm run` 全部 **exit=0 且打出最终 PASS 标记**（SUBSCRIPTION_VERIFIER_CLEANUP_FAULT_TESTS / …_PARALLEL_ISOLATION_TESTS / …_COORDINATOR_FAILURE_RECOVERY_TESTS 均 =PASS）；DATABASE_URL 回退探针 exit=0（25 个 PASS 标记）；无前置探针 exit=2 带明确报错。BEHAVIOR_SPEC §2 四条义务全部满足 → **done_when 已被 base 本身满足，修复候选 = 空集**。
+   - 处置 = 按 Owner 既有规则只停该任务：不 admit、不跑工位、不消耗模型调用、不自行改选替代任务。
+4. **窗口 — 授权已记录，本轮未行使**。有界定时启动授权**未行使**：唯一已授权任务判废后，无合法可跑任务，定时启动 = 制造空转工作（违反 Owner"不制造工作"）。今晚模型调用消耗 = **0**。计费时区 = Asia/Shanghai（+08:00）；窗口 23:00–09:00；启动记录模板已内置时区/起止日期/任务/版本/pins 字段（nightly-1/bin/start-nightly-run.sh 第 4/5 步自动写 START_RECORD_*）。旧 30 分钟 cron 保持 paused；未新建任何循环定时。
+   - 启动脚本已按 Owner 新规改造：任务 id 显式传入 + ledger 授权守卫；Base 三方一致（pin==本地==远端）否则 exit 6 拒绝（影响检查后需 Owner 可见决定才能重钉）；runtime 产品字节 != 受审 4199be02 则 exit 7 拒绝；**--ack-window 参数旁路已删除**，窗口非 ACTIVE 一律 exit 5。
+
+## 剩余待决（唯一一项，一次列明）
+
+af-verifier-impl-1 判废后，registry 首批 2 仓内不存在其他已授权写任务。盘点中其余真实缺口全部依赖未完成授权链：TASK-DAC-001（dsh-agent-core：修正案 lifecycle acceptance 未完成）、TASK-SVW-001（svc-workflow：Execution Mandate 未核实）、TASK-AUT-001（auth-service：CONTROLLED 凭据需 mandate+runbook）、TASK-AUT-002（auth-service：Owner 权链未核实）；OWN-DAC-001/OWN-ADC-001/OWN-AF-001 属 Owner 处置项。**请 Owner 三选一**：
+- (a) 确认判废，本轮按「无可执行授权任务」收口（Six-Pack 机制此前已双任务全链验证；待真实问题出现再授权开窗）；
+- (b) 从上述 NEEDS_PREFLIGHT 指定一项并授权预检 + 对应仓库入 registry（扩 registry = Owner 决定，REGISTRY_EXPANSION=FORBIDDEN 维持至该项明示）；
+- (c) 直接指定新的首批问题（须满足五条选择标准）。
 AUTO_ACCEPT = false / AUTO_MERGE = false / AUTO_DEPLOY = false / REMOTE_WRITE = false
 REGISTRY_EXPANSION = FORBIDDEN（仍限首批 2 仓）
 
@@ -53,12 +71,11 @@ REGISTRY_EXPANSION = FORBIDDEN（仍限首批 2 仓）
 - 测试环境实跑证明：一次性 PG（docker sixpack-nightly-pg，127.0.0.1:55470，已迁移，需预建 forum_app 角色）上 PR #15 三套件 **全部 PASS（exit=0）**；node v26.7.0。
 - 状态：任务已创建（preflight completed），**未 admit、未跑任何工位、未消耗任何模型调用**。
 
-### OWNER_ACTION_REQUIRED（集中列出；不得代签；逐项确认后才启动夜间模型工作）
-1. **Host Spec r4 正式接受并落位**：governance PR #14 @ 8186595a（merge 或按治理流程宣告 accepted）。评审 ACCEPT ≠ 已接受。
-2. **Runtime 版本与 PR #2 处置**：确认运行版本 = v0/bootstrap @ 76aaca6（src 与受审 4199be02 一致）；PR #2 merge/保留由 Owner 定。
-3. **任务授权**：批准 af-verifier-impl-1（goal/done-when 见 nightly-1/state/ledger.json）或指定改选其他首批问题。注：按 2026-09-05 优先级纠偏重筛，它是唯一满足全部五条选择标准的候选；但本次纠偏是对目标优先级的指令，不视为对该任务的签署——授权仍需逐项明示。
-4. **夜间窗口确认**：runtime 默认 window_open=23:00 / window_close=09:00（本地时钟，可用 nightly-1/host.json 覆写）。默认提案 = 今晚 23:00 启动、09:00 前收口。
-窗口/额度未能确认时：不启动夜间模型工作，不自动转付费调用（本机今日仅消耗最小连通验证 + 少量探测调用）。
+### OWNER_ACTION_REQUIRED → 已全部处置（2026-09-05T21:45 Owner 决定，执行记录见上节）
+1. Host r4 acceptance — ✅ 已合并（68e4e743）+ 生命周期接受（9dcd0c4）。
+2. PR #2 处置 — ✅ 按 Owner 决定保持 Draft/Open @ 4199be02；运行版本固定为含同字节的 v0/bootstrap。
+3. 任务授权 — ⚠️ af-verifier-impl-1 获授权但开工前核验判废（缺口在 base 不存在，证据见上节）；替代任务待 Owner 三选一（见「剩余待决」）。
+4. 夜间窗口 — ✅ 已授权（23:00–09:00 Asia/Shanghai，仅本轮）；本轮未行使（无合法任务可跑），模型调用消耗 0。
 
 ### ENTRYPOINTS（沿用现有 CLI，无新 UI/调度平台）
 - **一键启动**（窗口内）：`bash /Users/yanfenma/workspace/project/sixpack-forge/nightly-1/bin/start-nightly-run.sh`（内部完成：刷新 registry pinned heads → window_phase 检查（非 ACTIVE 拒绝，`--ack-window` 需 Owner 已确认的窗口）→ 后台 sixpack run 六角色 + 日志 drive-all.log）。
@@ -72,7 +89,7 @@ REGISTRY_EXPANSION = FORBIDDEN（仍限首批 2 仓）
 ### 完成标准对照（本 Goal）
 | 要求 | 状态 |
 |---|---|
-| 已授权真实任务交出修复候选（问题依据/改动/精确版本/实测/限制/独立审查状态；本地候选，具备既有写授权才 Draft PR） | 待窗口运行（阻塞于 Owner 签字 3/4）；交付物定义见「优先级纠偏」节 |
+| 已授权真实任务交出修复候选（问题依据/改动/精确版本/实测/限制/独立审查状态；本地候选，具备既有写授权才 Draft PR） | 本轮判废：唯一授权任务的缺口在 base 不存在（实测三入口全 PASS，候选=空集）；修复候选交付等 Owner 三选一后再开窗 |
 | 实际运行版本/模型/窗口有可查记录 | 版本+模型已留账（本文件）；窗口待 Owner 确认后记录 |
 | 窗口结束停止新工作、状态可保存恢复 | quiesce/recover 语义 + 实操序列已就绪 |
 | 启动/停止方式 + 看得懂的成果报告 | 启动/停止已在 ENTRYPOINTS；晨报待运行后按本节模板产出（处理了什么/交付物在哪/哪些测试实际通过/哪些没做/是否可采用/需要 Owner 决定什么） |
