@@ -2,7 +2,7 @@
 
 ## ACTIVE GOAL — 启用 Six-Pack 首次受限夜间交付（2026-09-05 启动）
 
-GOAL_STATUS = NIGHTLY_RUN_SCHEDULED_0155（新授权轮：有界多仓维护选单完成，唯一任务已冻结并预跑一次被配额中断，一次性定时 01:55 配额重置后断点续跑；详见「第二轮授权执行记录」）
+GOAL_STATUS = FIRST_FIX_CANDIDATE_DELIVERED（2026-09-06 03:5x：dsh-trusted-ingress-align-1 六工位+QA 纠正重放全链完成，verify PASS，五角色收敛 AWAITING_INDEPENDENT_REVIEW；本地候选，待 Owner 独立审查处置。详见「夜间轮终局」节）
 SIGNOFF_REQUESTED_AT = 2026-09-05T18:20:00+08:00（4 项已逐项正式提请 Owner 确认；尚未签署；不代签、不把沉默当同意）
 OWNER_CONTINUED_AT = 2026-09-05T21:19:00+08:00（Owner 回复"继续"：按仅推进非签字项处理；启动脚本安全路径已实测——窗口外 WINDOW_CLOSED 正确拒绝 exit 5，registry heads 顺带刷新）
 STAGED_EXECUTION = 签字齐备后执行序列已一键化：nightly-1/bin/start-nightly-run.sh（刷新 heads→窗口相位检查→sixpack run 六角色）→ 完成后 nightly-1/bin/morning-report.sh（verify+状态→晨报 markdown）
@@ -73,8 +73,7 @@ af-verifier-impl-1 记为「现有 Base 已满足，无需修改」（base c2f7a
 - 一次性定时（非循环）：**01:55 automation-ad8fa74d** 断点续跑（脚本守卫齐全：任务授权/pin==base/远端未前移/窗口 ACTIVE；含 1302 退避与 1308 再停机规则），运行完成后立即晨报+落账；runtime 内置 09:00 窗口闸兜底。node_modules 符号链接农场已预置于 sixpack-worktrees/node_modules（QA 依赖解析用，node v25.6.1 二进制在 /tmp）。
 - 启动记录：nightly-1/state/START_RECORD_20260905_230545.md（计费时区 Asia/Shanghai +08:00、窗口、task、runtime 版本、task_base）。
 
-### 4. 最小待决集合（不阻塞其他合法工作，逐项列明）
-1. agent-forum automation CI：GitHub App 需要 `workflows` 权限才能改 workflow 文件——授予权限或改用 PAT/人工执行，属 Owner 安全决策。
+### 4. 最小待决集合（不阻塞其他合法工作，逐项列明）1. agent-forum automation CI：GitHub App 需要 `workflows` 权限才能改 workflow 文件——授予权限或改用 PAT/人工执行，属 Owner 安全决策。
 2. svc-workflow PR #19：需 Owner 核实 Execution Mandate 与 Product Boundary V5 authority 引用后才能预检。
 3. dsh-agent-core PR #140 证据流：audit 分支 workflow 内联 Python 含 `false` 字面量 NameError；恢复该自动化需要 Owner 决定是否重建证据流（本仓无既有规则要求恢复它）。
 4. dsh-agent-core dsh-llm/dsh-session 供给策略：demo-server 未声明 import 的 harness SDK 从哪来（root devDeps / 各包 peers / 内部源）——产品依赖决策，未获授权前不动。
@@ -358,3 +357,22 @@ NEXT = STOP（不自动扩大到所有仓库）
 ## BLOCKERS
 
 （无当前阻塞。风险：codex 沙箱内 git 不可用 → 已由 helper commit 兜底；stage 失败则按 BLOCKER UNION 处理）
+
+## 夜间轮终局（2026-09-06 01:55–04:00，Owner 授权有界维护轮）
+
+### 结果：首个跨仓修复候选交付
+- **任务**：dsh-trusted-ingress-align-1（dsh-agent-core，冻结 base 797952e7bc33a134e8c29d3a66dd76b1210ba721）
+- **terminal head** = dd100382a23509c67a35cf919e8cda07da1d43d0（六角色分支全部收敛于该 head）
+- **receipts** = 7（specifier 68b2565a / coder 6788e22e / cleaner da30525e / architect fd48b025 / hardender 5f4b2e84 / qa 794e2609+qa-final d76bfad3，全真实 GLM glm-5.3-flash 经本地 forwarder）
+- **verify** = PASS（failures=[]，done_when_met=true，五角色 converge 完成，state=AWAITING_INDEPENDENT_REVIEW）
+- **修复内容**（测试专用，src/docs/package.json 零改动）：packages/agent-router/test/feishu-regression.test.js TRUSTED_INGRESS 用例对齐已接受实现表面——预期 ingressContext 补入第 6 字段 feishuSenderOpenId（bd0eeae/PR #103 有意加入），并加固测试：输入 text 嵌入诱饵自报 openId，断言 trusted context 只取认证 sender 元数据、冻结名不变；另保留 no-parse（conversationId ≠ chatId）断言。sixpack-artifacts/ 含全部工位报告 + qa_required_checks.sh + qa.automation.json（entrypoint=裸文件名）。
+- **操作者独立实测**（terminal candidate 上）：① feishu-regression.test.js 9/9 PASS；② base→terminal 改动 = 仅该测试文件 + sixpack-artifacts/（src diff 空）；③ agent-router 全套 240 测试 239 过 0 失败 1 跳过（base 上唯一失败 TRUSTED_INGRESS 归零，无新增失败）。
+- **独立审查入口**：`git -C dsh-agent-core diff 797952e7bc33a134e8c29d3a66dd76b1210ba721 dd100382a23509c67a35cf919e8cda07da1d43d0 -- packages/agent-router/test/feishu-regression.test.js`；sixpack/* 分支保留本地。REMOTE_WRITE=false，未 push、未建 PR；处置（accept/revise）归 Owner。
+- 晨报 = nightly-1/MORNING_REPORT_2026-09-06.md；启动记录 = nightly-1/state/START_RECORD_20260905_230545.md（计费时区 Asia/Shanghai +08:00；窗口 23:00–09:00 内运行完毕并收口）。
+
+### 过程留痕（01:55 定时 → 04:00 收口，全部非盲试）
+1. 01:56 pin 被 recover 回退（recover 以本地分支 head 重写 registry pin 的行为已记录）→ 影响检查（远端仍==冻结 base）→ 恢复 pin。
+2. resume 路径修复：cmd_run 无条件 admit 与断点 workflow 冲突 → 启动器改 recover()+drive()（runtime 公开 API，未改 runtime）。
+3. glm-role-exec.sh 三修（直接阻塞本轮的 forge 工具）：BSD mktemp 后缀模板；"Unexpected server error" 有界重试（30s×3）；**根因定案 = OPENCODE_CONFIG 指向不存在的 bin/glm-provider.json → opencode 回落全局配置打向 api.anthropic.com**（此前所有 500 与昨晚"GLM 500"均系此误诊；GLM 端点本身健康）。bin/glm-provider.json（baseURL=127.0.0.1:18930）+ bin/glm-forwarder.py（python HTTP/1.1 转发，SSE 透传）落地后全链 200——bun 直连 bigmodel 的 TLS 路径 500 而同请求经转发成功，属环境级发现。
+4. 六工位 02:26–02:53 一次通过（specifier→coder→cleaner→architect→hardender）；QA 经 4 次有界纠正重放通过（每次独立根因+针对性 ledger done_when 指令：check 名逐字复制 → automation 平铺 → 补 manifest → entrypoint 裸文件名）；重放期间修复 HeadDrift 操作序列（qa 受管分支复位到候选 head + worktree 清理）。
+5. 03:54 TERMINAL_BROADCAST → converge → 操作者独立实测 done-when → done 标记 → verify PASS。窗口内完成，无延期、无付费回退。
