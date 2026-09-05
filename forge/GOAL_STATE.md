@@ -3,6 +3,8 @@
 ## ACTIVE GOAL — 启用 Six-Pack 首次受限夜间交付（2026-09-05 启动）
 
 GOAL_STATUS = READY_FOR_OWNER_SIGNOFF（准备与预检全部完成；启动夜间模型工作被 4 项 Owner 签字阻塞，见 OWNER_ACTION_REQUIRED）
+SIGNOFF_REQUESTED_AT = 2026-09-05T18:20:00+08:00（4 项已逐项正式提请 Owner 确认；尚未签署；不代签、不把沉默当同意）
+STAGED_EXECUTION = 签字齐备后执行序列已一键化：nightly-1/bin/start-nightly-run.sh（刷新 heads→窗口相位检查→sixpack run 六角色）→ 完成后 nightly-1/bin/morning-report.sh（verify+状态→晨报 markdown）
 UPDATED_AT = 2026-09-05T17:00:00+08:00
 AUTO_ACCEPT = false / AUTO_MERGE = false / AUTO_DEPLOY = false / REMOTE_WRITE = false
 REGISTRY_EXPANSION = FORBIDDEN（仍限首批 2 仓）
@@ -41,11 +43,12 @@ REGISTRY_EXPANSION = FORBIDDEN（仍限首批 2 仓）
 窗口/额度未能确认时：不启动夜间模型工作，不自动转付费调用（本机今日仅消耗最小连通验证 + 少量探测调用）。
 
 ### ENTRYPOINTS（沿用现有 CLI，无新 UI/调度平台）
-- 启动前刷新 registry pinned heads（分支有任何新提交后必须）：`sixpack host <ws> register --name agent-six-pack-runtime --path ... --base-branch v0/bootstrap --writable` ×（agent-forum 同理）。
-- 启动（窗口内）：`cd /Users/yanfenma/workspace/project/agent-six-pack-runtime && source .venv/bin/activate && sixpack run /Users/yanfenma/workspace/project/sixpack-forge/nightly-1 af-verifier-impl-1 --provider '/Users/yanfenma/workspace/project/sixpack-forge/nightly-1/bin/glm-role-exec.sh {prompt}'`（或等价 drive-all）。
+- **一键启动**（窗口内）：`bash /Users/yanfenma/workspace/project/sixpack-forge/nightly-1/bin/start-nightly-run.sh`（内部完成：刷新 registry pinned heads → window_phase 检查（非 ACTIVE 拒绝，`--ack-window` 需 Owner 已确认的窗口）→ 后台 sixpack run 六角色 + 日志 drive-all.log）。
+- **晨报**：`bash /Users/yanfenma/workspace/project/sixpack-forge/nightly-1/bin/morning-report.sh`（verify + ledger → MORNING_REPORT_<date>.md：处理了什么/交付物在哪/哪些测试实际通过/哪些没做/是否可采用/需要 Owner 决定什么）。
+- 手动刷新 pinned heads（分支有任何新提交后必须）：`sixpack host <ws> register --name agent-six-pack-runtime --path ... --base-branch v0/bootstrap --writable` ×（agent-forum 同理）。
 - 进度：`sixpack status <ws>` / `sixpack host <ws> status`（每个 workflow 的 state/stage_pointer/receipts）。
 - 停止：`pkill -f glm-role-exec`（+ 在飞 opencode）→ `sixpack host <ws> quiesce`。
-- 恢复：目标仓清理脏 worktree 后 `sixpack host <ws> recover` → 重跑 run/drive-all（自带 auto-recover；禁止盲目重试）。
+- 恢复：目标仓清理脏 worktree 后 `sixpack host <ws> recover` → 重跑启动脚本（自带 auto-recover；禁止盲目重试）。
 - 窗口参数：`nightly-1/host.json` 写 `{"window_open":"23:00","window_close":"09:00"}`（或 window_override 强制相位，仅测试用）。
 
 ### 完成标准对照（本 Goal）
