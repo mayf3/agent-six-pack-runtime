@@ -117,15 +117,20 @@ def qa_rule_failures(
 
     cert_head = str(results.get("qa_certified_head", ""))
     cert_tree = str(results.get("qa_certified_tree", ""))
+    # The QA's ORIGINAL declaration is preserved verbatim in the receipt and
+    # compared against the actual candidate here. A mismatch invalidates any
+    # PASS claim; the runtime must not erase it by overwriting coordinates.
     if cert_head != certified_head:
         failures.append(
             f"QA_TERMINAL_CANDIDATE_UNCHANGED = NO: certified head "
-            f"{cert_head[:12] or 'missing'} != terminal head {certified_head[:12]}"
+            f"{cert_head[:12] or 'missing'} != actual candidate head "
+            f"{certified_head[:12]}"
         )
     if cert_tree != certified_tree:
         failures.append(
             f"QA_RECEIPT_BINDS_TERMINAL_TREE = NO: certified tree "
-            f"{cert_tree[:12] or 'missing'} != terminal tree {certified_tree[:12]}"
+            f"{cert_tree[:12] or 'missing'} != actual candidate tree "
+            f"{certified_tree[:12]}"
         )
 
     entrypoints = _require_list_of_str(results.get("qa_automation_entrypoints"))
@@ -147,6 +152,49 @@ def qa_rule_failures(
     return failures
 
 
+def qa_pass_eligibility_failures(
+    results: dict[str, object], certified_head: str, certified_tree: str
+) -> list[str]:
+    """The FULL PASS-eligibility judgment, shared by runner and verifier.
+
+    A final-QA receipt may claim PASS only when ALL of these hold:
+
+    - format is legal (schema, closed canonical check set, verdict field);
+    - the canonical required-check set is complete and every required
+      check verdict is PASS;
+    - ``qa_blockers`` is empty;
+    - the QA-certified head/tree equal the actual candidate head/tree;
+    - the committed automation binding is present and valid at the schema
+      level (the Git-tree blob match is re-checked separately by the
+      caller, which owns repository access).
+    """
+    failures = qa_rule_failures(results, certified_head, certified_tree)
+
+    verdict = str(results.get("qa_verdict", "")).upper()
+    if verdict != QA_PASS:
+        failures.append(f"QA_VERDICT = {verdict or 'MISSING'} (must be PASS)")
+
+    raw_checks = results.get("qa_required_checks")
+    if isinstance(raw_checks, list):
+        failed = [
+            str(cast(dict[str, object], check).get("name"))
+            for check in raw_checks
+            if isinstance(check, dict)
+            and str(check.get("verdict", "")).upper() != QA_PASS
+        ]
+        if failed:
+            failures.append(f"required checks not PASS: {failed}")
+
+    stated_blockers = _require_list_of_str(results.get("qa_blockers"))
+    if stated_blockers:
+        # Open blockers mean the candidate is not delivery-passed, whatever
+        # the stated verdict says; a PASS claim with open blockers is a
+        # fake PASS and is downgraded by validate_qa_machine.
+        failures.append(f"QA_BLOCKERS non-empty: {stated_blockers}")
+
+    return failures
+
+
 def validate_qa_machine(
     qa_result: dict[str, object] | None,
     certified_head: str,
@@ -156,26 +204,27 @@ def validate_qa_machine(
 ) -> dict[str, object]:
     """Runner-side normalization of a raw final-QA result.
 
-    The runtime-generated artifact bindings are authoritative: any
-    automation keys in the QA-returned JSON are stripped and replaced with
-    the helper-computed certified-tree bindings before the rules run. The
-    certified head/tree are likewise runtime facts; a mismatching QA echo
-    is recorded as a rule failure. Any rule violation downgrades the
-    verdict to BLOCKED so a fake PASS never survives into a receipt. A
-    truthful FAIL verdict with schema-valid evidence is preserved.
+    Contract (B-QA-01):
+
+    - The QA's ORIGINAL valid blockers are preserved and merged with the
+      validator-generated errors; normalization never wipes them.
+    - The QA's original certified head/tree echo is preserved verbatim so
+      the TerminalVerifier can independently re-detect a mismatch; the
+      runtime does NOT overwrite the echo to erase the rejection. The
+      actual candidate coordinates live in the receipt's output_head/
+      output_tree, keeping declaration and fact distinguishable.
+    - The full shared PASS-eligibility judgment decides the downgrade: a
+      PASS claim with any eligibility failure becomes BLOCKED. A truthful
+      FAIL/BLOCKED verdict with schema-valid evidence is preserved as
+      history and can never count as delivery-passed.
+    - The runtime-generated automation bindings are authoritative: any
+      automation keys in the QA-returned JSON are stripped and replaced
+      with the helper-computed certified-tree bindings.
     """
     blockers: list[str] = []
     raw = dict(qa_result) if qa_result is not None else {"qa_verdict": QA_BLOCKED}
     if qa_result is None:
         blockers.append("no machine QA verdict (QA_FINAL_JSON / qa_result) produced")
-
-    raw_head = str(raw.get("qa_certified_head", ""))
-    raw_tree = str(raw.get("qa_certified_tree", ""))
-    if (raw_head or raw_tree) and (raw_head != certified_head or raw_tree != certified_tree):
-        blockers.append(
-            f"QA certified ({raw_head[:12] or 'missing'}, {raw_tree[:12] or 'missing'}) "
-            f"but the final-run candidate is ({certified_head[:12]}, {certified_tree[:12]})"
-        )
 
     result = dict(raw)
     result.pop("qa_automation_entrypoints", None)
@@ -186,33 +235,25 @@ def validate_qa_machine(
         result["qa_automation_bindings"] = [
             dict(binding) for binding in qa_automation_bindings
         ]
-    result["qa_certified_head"] = certified_head
-    result["qa_certified_tree"] = certified_tree
+    # The QA's original echo is preserved, never overwritten.
 
-    rule_failures = qa_rule_failures(result, certified_head, certified_tree)
-    blockers.extend(item for item in rule_failures if item not in blockers)
+    # Full shared PASS-eligibility judgment: produces every validator error
+    # (integrity + outcome). The QA's original valid blockers are merged
+    # with these; nothing is wiped during normalization.
+    eligibility = qa_pass_eligibility_failures(result, certified_head, certified_tree)
+
+    stated = _require_list_of_str(result.get("qa_blockers"))
+    if stated is not None:
+        blockers.extend(item for item in stated if item not in blockers)
 
     verdict = str(result.get("qa_verdict", "")).upper()
     if verdict not in (QA_PASS, QA_FAIL, QA_BLOCKED):
-        blockers.append(f"invalid qa_verdict: {result.get('qa_verdict')!r}")
+        eligibility.append(f"invalid qa_verdict: {result.get('qa_verdict')!r}")
         verdict = QA_BLOCKED
-    if rule_failures and verdict == QA_PASS:
-        # Fake PASS: integrity violations invalidate the PASS claim itself.
+    if verdict == QA_PASS and eligibility:
+        # Fake PASS: any eligibility failure invalidates the PASS claim.
         verdict = QA_BLOCKED
-
-    # Check-outcome quality: a FAILing canonical check is truthful evidence,
-    # but it must block a PASS verdict.
-    raw_checks = result.get("qa_required_checks")
-    if isinstance(raw_checks, list):
-        failed = [
-            str(cast(dict[str, object], check).get("name"))
-            for check in raw_checks
-            if isinstance(check, dict)
-            and str(check.get("verdict", "")).upper() != QA_PASS
-        ]
-        if failed and verdict == QA_PASS:
-            verdict = QA_BLOCKED
-            blockers.append(f"required checks not PASS: {failed}")
+    blockers.extend(item for item in eligibility if item not in blockers)
 
     result["qa_verdict"] = verdict
     result["qa_blockers"] = blockers

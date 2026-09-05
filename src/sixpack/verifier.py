@@ -26,7 +26,7 @@ from .gitx import WorktreeManager
 from .gitx import git as _git
 from .ledger import Ledger
 from .model import Role, WorkflowState
-from .qa_gate import automation_tree_binding_failures, qa_rule_failures
+from .qa_gate import automation_tree_binding_failures, qa_pass_eligibility_failures
 
 
 @dataclass
@@ -122,21 +122,14 @@ class TerminalVerifier:
             qa_results = cast(
                 dict[str, object], qa_entry.get("results") or {}
             )
-            qa_verdict = str(qa_results.get("qa_verdict", "")).upper()
-            if qa_verdict != "PASS":
-                failures.append(
-                    f"QA_VERDICT = {qa_verdict or 'MISSING'} (must be PASS)"
-                )
-            stated_blockers = cast(
-                list[object], qa_results.get("qa_blockers") or []
+            # Independent re-check: the SAME full PASS-eligibility judgment
+            # the runner normalizes with, applied directly to the STORED
+            # receipt -- a runner that failed to downgrade a fake PASS (or
+            # one that overwrote a mismatching certified-Head echo) cannot
+            # hide it here.
+            failures.extend(
+                qa_pass_eligibility_failures(qa_results, terminal_head, terminal_tree)
             )
-            if stated_blockers and qa_verdict != "PASS":
-                failures.append(f"QA_BLOCKERS = {stated_blockers} (verdict {qa_verdict})")
-            # Independent re-check: the SAME closed-set rules the runner
-            # normalizes with, applied directly to the STORED receipt --
-            # a runner that failed to downgrade a fake PASS cannot hide it.
-            rule_failures = qa_rule_failures(qa_results, terminal_head, terminal_tree)
-            failures.extend(rule_failures)
             # Tree-level re-check of the automation binding: every declared
             # entrypoint's blob must exist in the certified tree with the
             # exact SHA the receipt recorded.
