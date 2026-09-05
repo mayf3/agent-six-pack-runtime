@@ -222,14 +222,16 @@ implementation outside its own scope.
 - Decision: admission creates a lease binding task, repository, role, and
   expiry, plus a monotonically increasing fencing generation recorded with
   every stage claim. A stage worker may record outcomes only under its own
-  live generation; the controller treats an expired lease as
-  `outcome_unknown` for the interrupted stage until reconciliation proves
-  otherwise (recorded receipt = completed; no receipt and clean worktree
-  revalidation = requeueable). Expired leases never automatically restore
-  admissibility: recovery must positively exclude the prior worker (fresh
-  head revalidation + queue idempotency by handoff identity) before a task
-  becomes admittable again, and `outcome_unknown` blocks dependent
-  admission until reconciled.
+  live generation. An interrupted stage without a durable receipt is
+  `outcome_unknown`; a clean worktree is not proof of non-execution and
+  never requalifies the stage by itself. Reconciliation follows
+  `CTR-MRH-003` exactly: stage input exact Head reverification, isolated-
+  ref inspection for unreceipted descendants, a live fencing generation,
+  and positive prior-worker exclusion — all four are required before the
+  stage may re-dispatch; an ambiguous mutation stays `outcome_unknown` and
+  blocks re-admission of the task and dependent work until an
+  Owner-visible reconciliation classifies it. Recorded handoffs are never
+  re-executed (idempotency by handoff identity).
 - Rejected alternatives: advisory locks without expiry; manual recovery.
 - Reason: night windows end mid-task; recovery must be routine.
 - Owner decision remaining: NONE
@@ -416,20 +418,44 @@ the ledger and queues only.
 
 - Contracts: `CTR-MRH-002`, `CTR-MRH-003`
 - Method: attempt duplicate role dispatch and dual write admission;
-  simulate crash mid-stage; run recovery.
-- Expected result: typed refusals for both concurrency cases; recovery
-  requeues unexecuted work, never re-executes recorded handoffs; expired
-  leases clear deterministically.
-- Failure condition: double execution or ambiguous multi-in-process state.
+  simulate crash mid-stage; run recovery under each reconciliation input
+  class below.
+- Expected result:
+  - typed refusals for both concurrency cases;
+  - recorded handoffs are never re-executed;
+  - no durable receipt + clean worktree + an unreceipted descendant commit
+    on the station's isolated ref → MUST NOT requeue (`outcome_unknown`
+    preserved);
+  - stale fencing generation → outcome recording MUST be refused and the
+    task MUST NOT be re-admitted under it;
+  - prior worker not positively excluded → MUST NOT re-admit;
+  - `outcome_unknown` → dependent admission MUST be blocked;
+  - positive case: all four reconciliation requirements of `CTR-MRH-003`
+    satisfied (input Head reverised, no unreceipted descendant, live
+    generation, prior worker excluded) → deterministic legal recovery
+    (requeue or complete-by-receipt, classified explicitly).
+- Failure condition: double execution, ambiguous multi-in-process state,
+  or any reconciliation that requeues an `outcome_unknown` stage without
+  satisfying all four requirements.
 
-### ACC-MRH-003 — Window gating and quiesce safety
+### ACC-MRH-003 — Window gating and complete phase behavior
 
 - Contracts: `CTR-MRH-004`
-- Method: attempt admission in every phase; quiesce with queued items;
-  resume after closed window.
-- Expected result: admission only in `WINDOW_OPEN`/`ACTIVE`; quiesce
-  preserves queues and leases; resume continues without loss.
-- Failure condition: cron-polling stations or lost queue state.
+- Method: attempt every matrix row in every phase; quiesce with queued
+  items and an in-flight bounded stage; resume after the closed window.
+- Expected result:
+  - `QUIESCE`: new admission rejected; a new model-backed stage rejected;
+    an already-running bounded stage MAY finish or save a restart-safe
+    checkpoint;
+  - `WINDOW_CLOSED`: model-backed work rejected; only control-plane
+    bookkeeping/recovery (checkpoint save, lease renewal, recover/tick
+    control operations) allowed;
+  - `WINDOW_OPEN`/`ACTIVE`: admission and stage work allowed;
+  - quiesce preserves queues and leases; resume continues without loss;
+    phase language stays provider-neutral.
+- Failure condition: cron-polling stations, lost queue state, model-backed
+  work starting in `QUIESCE`/`WINDOW_CLOSED`, or a phase claiming to gate
+  admission while still admitting.
 
 ### ACC-MRH-004 — Controller power closure
 
@@ -520,5 +546,13 @@ R2_BLOCKERS_ADDRESSED = 3 (recovery reconciliation now requires stage-input
   QUIESCE/WINDOW_CLOSED matrix contradiction removed via the V1 phase
   simplification; the route restriction is lifted from DEC-MRH-005 into
   the CTR-MRH-005 Contract text)
+SECOND_INDEPENDENT_REVIEW = REVISE, 3 blockers (H1 DEC-MRH-003/CTR-MRH-003
+  alignment; H2 ACC-MRH-002 recovery negatives + positive case; H3
+  ACC-MRH-003 complete phase behavior)
+R4_BLOCKERS_ADDRESSED = 3 (H1 DEC-MRH-003 old requeueable semantics removed,
+  Decision now restates the CTR-MRH-003 four-requirement reconciliation;
+  H2 ACC-MRH-002 extended with the recovery input classes and the
+  deterministic positive case; H3 ACC-MRH-003 extended with complete
+  QUIESCE/WINDOW_CLOSED behavior; no other r3-passed semantics changed)
 IMPLEMENTATION_IN_THIS_SPEC = NO (runtime V0 already exists as prior art)
 ```

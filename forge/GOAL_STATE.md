@@ -1,10 +1,11 @@
 # GOAL_STATE — Bootstrap Multi-Repo Six-Pack Governance Forge
 
-GOAL_STATUS = AWAITING_BLOCKER_UNION_REVIEW
+GOAL_STATUS = AWAITING_SECOND_BLOCKER_UNION_REVIEW
 PHASE_LOCK = ON
-CURRENT_PHASE = PILOT_BLOCKER_UNION_REMEDIATION
+CURRENT_PHASE = SECOND_BLOCKER_UNION_REMEDIATION
 INDEPENDENT_PILOT_REVIEW = REVISE
-UPDATED_AT = 2026-09-05T10:30:00+08:00
+SECOND_INDEPENDENT_REVIEW = REVISE（6 blockers：H1/H2/H3 + R1/R2/R3，已全部关闭）
+UPDATED_AT = 2026-09-05T11:40:00+08:00
 READY_FOR_GOVERNANCE_FORGE_PILOT_REVIEW = YES（历史里程碑，见 DONE_WHEN 审计）
 REGISTRY_EXPANSION = FORBIDDEN
 
@@ -107,10 +108,36 @@ AUTO_ACCEPT = false
 AUTO_MERGE = false
 AUTO_DEPLOY = false
 
+## SECOND_BLOCKER_UNION_REMEDIATION 结果（2026-09-05）
+
+HOST_SPEC_PR = mayf3/agent-development-governance#14（同 PR，r4 已推送）
+HOST_SPEC_R4_HEAD = 8186595a9abb93bfdb75c21c6d0be9e93abdc863
+HOST_SPEC_R4_TREE = ff4e78a0b77b5d118a02844b5cf8fb1df793a935
+  （r4 bytes SHA256 = 1bd455b0c726951430653c6cd6169234df6981b8af2001524add4e7add3bf24a）
+  H1：DEC-MRH-003 与 CTR-MRH-003 对齐（删除 clean-worktree requeueable 旧语义，四要件 + outcome_unknown 保留）
+  H2：ACC-MRH-002 补齐 recovery 负例全集 + deterministic positive case
+  H3：ACC-MRH-003 补齐完整 QUIESCE / WINDOW_CLOSED phase 行为
+  其余 r3 已通过语义未动；status 保持 proposed
+HOST_SPEC_STATUS = READY_FOR_EXACT_R4_REVIEW
+
+RUNTIME_FIX_PR = mayf3/agent-six-pack-runtime#2（head branch 已更新为 replacement head）
+RUNTIME_REPLACEMENT_HEAD = 611215381c221a208caa57d035eb1b61871b42e8
+RUNTIME_REPLACEMENT_TREE = 3ecdeb5e9dd8576f3928cf9eb94c02ccf0935631
+REQUIRED_CHECK_SET_GATE = PASS（闭合集：从 pinned QA role definition 导出三 canonical checks；missing/duplicate/substitute 一律降级 BLOCKED）
+QA_BLOCKERS_SCHEMA_GATE = PASS（list[str] 严格 schema；missing/null/non-list/non-str → BLOCKED，不静默忽略）
+EXECUTABLE_QA_AUTOMATION_GATE = PASS（qa.automation.json manifest + entrypoint 存在/非空/shebang-or-exec-bit；report-only 在 commit 前被拒；证据绑定 QA receipt）
+TESTS = 95 passed（含 9 个新负例）+ ruff clean + mypy strict clean，exact-Head 执行证据 = forge/QA_GATE_FIX_EVIDENCE.md（本仓无 CI workflow，未为此新增 CI 平台）
+
+OLD_CANARIES_CHANGED = NO（canary-version-1 / af-verifier-1 历史与 §8 定位更正不变；未重跑正式 canary）
+REGISTRY_EXPANDED = NO
+AUTO_ACCEPT = false
+AUTO_MERGE = false
+AUTO_DEPLOY = false
+
 ## NEXT
 
-independent Host Spec review（governance PR #14 exact head）+ independent Runtime fix review（0c61bfa exact head）。
-STOP —— AWAITING_BLOCKER_UNION_REVIEW；不扩 registry、无新 consumer task、无 accept/merge/deploy。
+one independent re-audit of Host r4（PR #14 @ 8186595a）+ one independent re-audit of Runtime replacement Head（PR #2 @ 61121538）。
+STOP —— AWAITING_SECOND_BLOCKER_UNION_REVIEW；不扩 registry、不跑新 canary、不新增功能、无 accept/merge/deploy。
 
 ## 实操验证证据（quiesce/recovery，已发生三次真实恢复）
 
