@@ -6,7 +6,24 @@ GOAL_STATUS = READY_FOR_OWNER_SIGNOFF（准备与预检全部完成；启动夜�
 SIGNOFF_REQUESTED_AT = 2026-09-05T18:20:00+08:00（4 项已逐项正式提请 Owner 确认；尚未签署；不代签、不把沉默当同意）
 OWNER_CONTINUED_AT = 2026-09-05T21:19:00+08:00（Owner 回复"继续"：按仅推进非签字项处理；启动脚本安全路径已实测——窗口外 WINDOW_CLOSED 正确拒绝 exit 5，registry heads 顺带刷新）
 STAGED_EXECUTION = 签字齐备后执行序列已一键化：nightly-1/bin/start-nightly-run.sh（刷新 heads→窗口相位检查→sixpack run 六角色）→ 完成后 nightly-1/bin/morning-report.sh（verify+状态→晨报 markdown）
-UPDATED_AT = 2026-09-05T17:00:00+08:00
+
+### 优先级纠偏（2026-09-05T21:45 Owner 指令，对 ACTIVE GOAL 生效）
+- **交付物重定义**：本轮交付 = 其他仓库中的实际修复候选，含问题依据、改动内容、精确版本、实际测试、限制、独立审查状态。"启动脚本准备好了"与"发现一批问题"均不算本轮交付。
+- **集成冻结**：本阶段不做 Six-Pack 与飞书、Workflow、ADC、Agent 记忆系统的集成；不把 Dashboard、系统集成、新治理平台、统一发行加为前置条件。前置条件维持 Owner 授权 / 仓库范围 / 模型窗口 / 实际运行版本 / 安全停止机制五项，无新增。
+- **仓库角色**：dsh-agent-core、auth-service、agent-forum、svc-workflow 等首先是维护对象，不是集成依赖；实际执行限于既有 registry 已确认的首批 2 仓与既有任务授权范围（REGISTRY_EXPANSION=FORBIDDEN 不变）。
+- **流程分流**：纯规范纠偏走既有 AUTHOR/REVIEW 流程（governance 仓 PR）；非平凡实现修复按 Six-Pack 执行；不为让六个工位都忙而制造工作。
+- **缺口处理**：长期规则/授权存在缺口时，只暂停依赖该缺口的任务并给出最小待决策项，继续处理其他合法任务。
+- **运行时自律**：runtime 自身只有出现直接阻止本轮任务的缺陷才修；夜间工作不得变成 Six-Pack 自身开发。
+- **交付形式**：REMOTE_WRITE=false（无既有远端写授权）→ 本轮产出可审阅本地候选（worktree 分支 + receipt 链 + verify 报告）；仅当存在既有远端写授权时提交 Draft PR。不自动接受规范、不自动合并、不部署、不扩大权限。
+- **首批规模**：小范围，每仓最多一个活动写任务。
+
+### 任务候选重筛（沿用既有盘点 forge/inventory/INVENTORY_LEDGER.md @ 2026-09-04，未重新调查）
+按 Owner 五条标准（有明确问题来源 / 当前版本仍可复现 / 既有规则与任务授权足以支持修复 / 测试环境可用 / 能在有界范围内交付修复候选）：
+- **合格（唯一进入本轮的写任务）= af-verifier-impl-1（agent-forum）**：来源 = PR #15 + canary spec af-verifier-1 @ b89f370 + TASK-AF-001 盘点坐标（明确）；PR #15 三套件已在一次性 PG 实测全 PASS、node v26.7.0（可复现 + 测试环境可用）；authority=fcd417ba、profile=SIX_PACK_V1（既有授权足以支持）；改动界 = 仅 svc-forum/package.json 接线 3 个既有 npm 入口（有界）。每仓 ≤1 活动写任务满足。
+- **暂停（依赖授权缺口，最小待决策，不进本轮）**：TASK-DAC-001（dsh-agent-core：修正案 lifecycle acceptance 未完成 + 非 registry 首批）、TASK-SVW-001（svc-workflow：Execution Mandate 未核实 + 非首批）、TASK-AUT-001/002（auth-service：CONTROLLED 凭据 mandate / Owner 权链未核实 + 非首批）。
+- **待 Owner（无决策不动）**：OWN-DAC-001 breakglass、OWN-ADC-001 secrets、OWN-AF-001 分支合并处置。
+- 不为凑任务新增候选；纯规范项继续走 governance 仓既有流程（GOVERNANCE_LANE 清单不变）。
+UPDATED_AT = 2026-09-05T21:46:00+08:00
 AUTO_ACCEPT = false / AUTO_MERGE = false / AUTO_DEPLOY = false / REMOTE_WRITE = false
 REGISTRY_EXPANSION = FORBIDDEN（仍限首批 2 仓）
 
@@ -39,7 +56,7 @@ REGISTRY_EXPANSION = FORBIDDEN（仍限首批 2 仓）
 ### OWNER_ACTION_REQUIRED（集中列出；不得代签；逐项确认后才启动夜间模型工作）
 1. **Host Spec r4 正式接受并落位**：governance PR #14 @ 8186595a（merge 或按治理流程宣告 accepted）。评审 ACCEPT ≠ 已接受。
 2. **Runtime 版本与 PR #2 处置**：确认运行版本 = v0/bootstrap @ 76aaca6（src 与受审 4199be02 一致）；PR #2 merge/保留由 Owner 定。
-3. **任务授权**：批准 af-verifier-impl-1（goal/done-when 见 nightly-1/state/ledger.json）或指定改选其他首批问题。
+3. **任务授权**：批准 af-verifier-impl-1（goal/done-when 见 nightly-1/state/ledger.json）或指定改选其他首批问题。注：按 2026-09-05 优先级纠偏重筛，它是唯一满足全部五条选择标准的候选；但本次纠偏是对目标优先级的指令，不视为对该任务的签署——授权仍需逐项明示。
 4. **夜间窗口确认**：runtime 默认 window_open=23:00 / window_close=09:00（本地时钟，可用 nightly-1/host.json 覆写）。默认提案 = 今晚 23:00 启动、09:00 前收口。
 窗口/额度未能确认时：不启动夜间模型工作，不自动转付费调用（本机今日仅消耗最小连通验证 + 少量探测调用）。
 
@@ -55,7 +72,7 @@ REGISTRY_EXPANSION = FORBIDDEN（仍限首批 2 仓）
 ### 完成标准对照（本 Goal）
 | 要求 | 状态 |
 |---|---|
-| 已授权真实任务交出通过独立审查的候选 | 待窗口运行（阻塞于 Owner 签字 3/4） |
+| 已授权真实任务交出修复候选（问题依据/改动/精确版本/实测/限制/独立审查状态；本地候选，具备既有写授权才 Draft PR） | 待窗口运行（阻塞于 Owner 签字 3/4）；交付物定义见「优先级纠偏」节 |
 | 实际运行版本/模型/窗口有可查记录 | 版本+模型已留账（本文件）；窗口待 Owner 确认后记录 |
 | 窗口结束停止新工作、状态可保存恢复 | quiesce/recover 语义 + 实操序列已就绪 |
 | 启动/停止方式 + 看得懂的成果报告 | 启动/停止已在 ENTRYPOINTS；晨报待运行后按本节模板产出（处理了什么/交付物在哪/哪些测试实际通过/哪些没做/是否可采用/需要 Owner 决定什么） |
