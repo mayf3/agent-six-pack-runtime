@@ -2,7 +2,28 @@
 
 ## ACTIVE GOAL — 启用 Six-Pack 首次受限夜间交付（2026-09-05 启动）
 
-GOAL_STATUS = FIRST_FIX_CANDIDATE_DELIVERED（2026-09-06 03:5x：dsh-trusted-ingress-align-1 六工位+QA 纠正重放全链完成，verify PASS，五角色收敛 AWAITING_INDEPENDENT_REVIEW；本地候选，待 Owner 独立审查处置。详见「夜间轮终局」节）
+GOAL_STATUS = FIRST_NIGHTLY_CANDIDATE_REVIEW_SURFACE_EXPOSED（2026-09-06：dsh-trusted-ingress-align-1 独立评审面已暴露 = dsh-agent-core PR #177 Draft；STOP——不领下一项仓库任务，处置归 Owner/独立 Reviewer）
+REVIEW_PR = mayf3/dsh-agent-core#177（Draft/Open；base=main@797952e7bc33a134e8c29d3a66dd76b1210ba721==冻结 Base；head=review/dsh-trusted-ingress-align-1@dd100382a23509c67a35cf919e8cda07da1d43d0 原样推送零改写；tree=0f5815369e9e7705edc54bf1d8e8634c31838dbc）
+REVIEW_PREPARATION_EVIDENCE = 2026-09-06 fresh：verify PASS（failures=[]、7 receipts、首跑 QA 794e2609 如实 BLOCKED → correction 重放 → final QA d76bfad3 绑定 terminal tree）；目标测试 9/9 PASS（terminal commit 上 fresh 复跑）；origin/main == 冻结 Base（0 前移，无 bounded impact 需要）；PRODUCT_DIFF = packages/agent-router/test/feishu-regression.test.js 单文件；SIXPACK_ARTIFACT_DIFF = 8 文件（PR 内已列全并提请 Reviewer 裁决是否属本仓 artifact）
+REMOTE_WRITE_USED = 仅 review 分支推送 + Draft PR 创建（Owner 2026-09-06 授权范围；无 Ready/merge/deploy/改写）
+
+### FOLLOW_UP_DEBT — 夜间工具问题（2026-09-06 Owner 归档指令；不阻塞 PR #177 评审；下次长期无人值守夜间运行前须形成独立 tooling candidate 并审查）
+1. registry pin 被 recover 以本地分支 head 重写（01:56 实录；影响检查后恢复）。
+2. restart/resume 启动逻辑：cmd_run 无条件 admit 与断点 workflow 冲突 → 现以启动器 recover()+drive() 规避（未改 runtime）。
+3. BSD mktemp 模板后缀兼容（glm-role-exec.sh）。
+4. OPENCODE_CONFIG 错误路径 → opencode 静默回落全局配置打向 api.anthropic.com（"GLM 500" 实为误诊；GLM 端点健康）。
+5. GLM forwarder：bun 直连 bigmodel TLS 500、经本地转发 200（bin/glm-forwarder.py 现役）——环境级根因未定。
+6. QA mechanical-format adherence：4 次有界纠正重放（check 名逐字/automation 平铺/manifest/entrypoint 裸文件名）。
+另记：GLM 1302 限流退避与 1308 五小时用量上限停机规则已验证有效。
+
+### 多仓受限流水线 — 常设规则（2026-09-06 Owner 指令，自本 PHASE 起生效）
+- 授权维护仓 = mayf3/{dsh-agent-core, svc-workflow, auth-service, agent-forum}；并发继续 MAX_IN_PROCESS_PER_ROLE=1 / MAX_ACTIVE_WRITE_TASKS_PER_REPO=1 / AUTO_*=false；新增 MAX_CONCURRENT_MODEL_CALLS=3（稳定后逐轮 4→6，不一次突破 accepted invariants）。
+- 双 lane：Governance lane（现行 authority 核验→proposed 修订→独立 Review→Draft PR→STOP at Owner；纯 authoring 不强迫进 Six-Pack）；Implementation lane（current-base 可复现非平凡代码问题+本仓 Authority+PREFLIGHT 通过→六工位→terminal verify→独立 Review→Draft PR→STOP at Owner）。
+- 选单：每个历史问题先在精确当前 Base 上证明仍存在；过期待办 NO_CHANGE 关闭本轮不造 diff；执行 Agent 只能在四仓+既有问题来源内选下一项；Controller 不得自创任务/产品规则。
+- 每仓最多一个活动写候选；不同仓可并行成 Draft PR；独立 Reviewer 不得由候选作者充当，可并行但不改候选。
+- REMOTE_WRITE 扩围（仅此两项）：create/update dedicated candidate branch + create/update Draft PR。明确禁止：mark Ready / accept proposed Spec / merge / deploy / production mutation / Grant-Credential-Secret changes / branch protection changes / force-push shared branch。
+- 优先序：1) current-base 核验 2) 有依据治理 Draft PR 3) 已授权代码缺口 Six-Pack 修复 4) 已完成候选独立 Review。不建 Dashboard/飞书/Workflow 集成，不为优化夜间系统暂停真实仓库工作。
+- 晨报按仓列：REPOSITORY/TASK/OUTCOME(NO_CHANGE|DRAFT_PR|BLOCKED)/BASE/HEAD/PR/TESTS_ACTUALLY_RUN/INDEPENDENT_REVIEW/OWNER_DECISION_REQUIRED。成效度量 = 有效关闭的陈旧问题 + 可审阅 Draft PR 数，不是模型运行数。
 SIGNOFF_REQUESTED_AT = 2026-09-05T18:20:00+08:00（4 项已逐项正式提请 Owner 确认；尚未签署；不代签、不把沉默当同意）
 OWNER_CONTINUED_AT = 2026-09-05T21:19:00+08:00（Owner 回复"继续"：按仅推进非签字项处理；启动脚本安全路径已实测——窗口外 WINDOW_CLOSED 正确拒绝 exit 5，registry heads 顺带刷新）
 STAGED_EXECUTION = 签字齐备后执行序列已一键化：nightly-1/bin/start-nightly-run.sh（刷新 heads→窗口相位检查→sixpack run 六角色）→ 完成后 nightly-1/bin/morning-report.sh（verify+状态→晨报 markdown）
