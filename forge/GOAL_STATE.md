@@ -1,11 +1,66 @@
-# GOAL_STATE — Bootstrap Multi-Repo Six-Pack Governance Forge
+# GOAL_STATE — Six-Pack Runtime
 
-GOAL_STATUS = AWAITING_SECOND_BLOCKER_UNION_REVIEW
+## ACTIVE GOAL — 启用 Six-Pack 首次受限夜间交付（2026-09-05 启动）
+
+GOAL_STATUS = READY_FOR_OWNER_SIGNOFF（准备与预检全部完成；启动夜间模型工作被 4 项 Owner 签字阻塞，见 OWNER_ACTION_REQUIRED）
+UPDATED_AT = 2026-09-05T17:00:00+08:00
+AUTO_ACCEPT = false / AUTO_MERGE = false / AUTO_DEPLOY = false / REMOTE_WRITE = false
+REGISTRY_EXPANSION = FORBIDDEN（仍限首批 2 仓）
+
+### 承接成果核验（2026-09-05 下午 fresh-fetch）
+- Host r4：governance PR #14 Review 5119235263 = **ACCEPT，0 blockers**（REVIEWED_SPEC_COMMIT=8186595a，TREE=ff4e78a0；PR head 至今未变，仍 OPEN/unmerged）。
+- Runtime B-QA-01：runtime PR #2 Review 5119786442 = **ACCEPT，0 blockers**（REVIEW_TARGET_HEAD=4199be02，TREE=f892d1fc；PR 仍 Draft/Open）。评审明示：下一授权 canary 的准备不再被 QA gate 阻塞；勿为 merged 徽章合并快照分支；Owner 处置须指明实际运行 revision。
+- 评审通过 ≠ 已接受：Owner acceptance 仍待行（见 OWNER_ACTION_REQUIRED）。
+
+### 本机运行版本固定（步骤二完成）
+- 运行版本 = mayf3/agent-six-pack-runtime v0/bootstrap @ 76aaca6。
+- 76aaca6 与受审 head 4199be02 的 src/ tests/ pyproject.toml diff = 空（受审字节 = 运行字节；76aaca6 仅更新 forge 账目）。
+- 本机实跑全量质量门：**107 tests passed + ruff clean + mypy strict clean**。
+- 停止/恢复/并发证据：负例矩阵在 107 套件内（two write tasks/repo、two in-process/role、lease recovery、head drift、duplicate delivery 等）+ 先导 run 3 次真实 kill→host recover→断点续跑；窗口相位语义（QUIESCE/WINDOW_CLOSED）已随 Host r4 ACCEPT（ACC-MRH-003）。未重复全审，未改任何受审字节。
+
+### 模型接通（步骤三完成）
+- 账户 = BigModel Coding Plan（zcode entryStatus=**available**；key 仅存 ~/.zcode，指纹 sha256:65fa121e7d75）。
+- 入口 = https://open.bigmodel.cn/api/anthropic（Anthropic 兼容）；时区 = Asia/Shanghai（+08:00）。
+- 最小连通验证 = 真实 HTTP 调用 glm-5.3-flash 回复 "OK"（17+3 tokens，非 Codex 代跑）。
+- 执行器选定（实测排除法）：claude -p 挂起复现（45s 无输出）→ 不可用；codex 0.144.4 已移除 wire_api="chat" 且 bigmodel coding 端点无 /responses（404）→ 不可用；**opencode 1.18.23 + 项目级 provider 配置（glm-provider.json）→ 全链路验证通过**（模型→Write 工具→正确目录落盘 "OK"）。
+- 已知限制：GLM 账户限流 [1302] 会在连续请求中触发 → bin/glm-role-exec.sh 内置 60s×≤20 次有界退避 + opencode --continue 续会话（非 BLIND_RETRY：仅对 1302 且保留会话语境）。
+- opencode 按 PWD 环境变量解析项目根 → wrapper 内 `export PWD=$(/bin/pwd -P)` 修正（ProcessAdapter 以 worktree 为 cwd 派发，runner.py:408）。
+
+### 任务预检与预置（步骤四前置完成，未启动）
+- NIGHTLY_WORKSPACE = /Users/yanfenma/workspace/project/sixpack-forge/nightly-1（旧 canary-1 原样保留为历史证据）。
+- Registry（2 仓 write_enabled）：agent-six-pack-runtime @ v0/bootstrap/76aaca6；agent-forum @ agent/forum-subscription-advanced-tooling-v1/c2f7a74（PR #15 head，capability 分支）。
+- TASK_PROPOSED = **af-verifier-impl-1**（TASK-AF-001 的实现收尾；base_head=c2f7a74；authority=fcd417ba；profile=SIX_PACK_V1；provider=bin/glm-role-exec.sh {prompt}）。真实缺口（盘点+spec 双确认）：BEHAVIOR_SPEC §2 要求 svc-forum/package.json 暴露 3 个 test:subscription-* npm 入口，PR #15 分支尚未接线；脚本本体只用 Node 内置模块。
+- 测试环境实跑证明：一次性 PG（docker sixpack-nightly-pg，127.0.0.1:55470，已迁移，需预建 forum_app 角色）上 PR #15 三套件 **全部 PASS（exit=0）**；node v26.7.0。
+- 状态：任务已创建（preflight completed），**未 admit、未跑任何工位、未消耗任何模型调用**。
+
+### OWNER_ACTION_REQUIRED（集中列出；不得代签；逐项确认后才启动夜间模型工作）
+1. **Host Spec r4 正式接受并落位**：governance PR #14 @ 8186595a（merge 或按治理流程宣告 accepted）。评审 ACCEPT ≠ 已接受。
+2. **Runtime 版本与 PR #2 处置**：确认运行版本 = v0/bootstrap @ 76aaca6（src 与受审 4199be02 一致）；PR #2 merge/保留由 Owner 定。
+3. **任务授权**：批准 af-verifier-impl-1（goal/done-when 见 nightly-1/state/ledger.json）或指定改选其他首批问题。
+4. **夜间窗口确认**：runtime 默认 window_open=23:00 / window_close=09:00（本地时钟，可用 nightly-1/host.json 覆写）。默认提案 = 今晚 23:00 启动、09:00 前收口。
+窗口/额度未能确认时：不启动夜间模型工作，不自动转付费调用（本机今日仅消耗最小连通验证 + 少量探测调用）。
+
+### ENTRYPOINTS（沿用现有 CLI，无新 UI/调度平台）
+- 启动（窗口内）：`cd /Users/yanfenma/workspace/project/agent-six-pack-runtime && source .venv/bin/activate && sixpack run /Users/yanfenma/workspace/project/sixpack-forge/nightly-1 af-verifier-impl-1 --provider '/Users/yanfenma/workspace/project/sixpack-forge/nightly-1/bin/glm-role-exec.sh {prompt}'`（或等价 drive-all）。
+- 进度：`sixpack status <ws>` / `sixpack host <ws> status`（每个 workflow 的 state/stage_pointer/receipts）。
+- 停止：`pkill -f glm-role-exec`（+ 在飞 opencode）→ `sixpack host <ws> quiesce`。
+- 恢复：目标仓清理脏 worktree 后 `sixpack host <ws> recover` → 重跑 run/drive-all（自带 auto-recover；禁止盲目重试）。
+- 窗口参数：`nightly-1/host.json` 写 `{"window_open":"23:00","window_close":"09:00"}`（或 window_override 强制相位，仅测试用）。
+
+### 完成标准对照（本 Goal）
+| 要求 | 状态 |
+|---|---|
+| 已授权真实任务交出通过独立审查的候选 | 待窗口运行（阻塞于 Owner 签字 3/4） |
+| 实际运行版本/模型/窗口有可查记录 | 版本+模型已留账（本文件）；窗口待 Owner 确认后记录 |
+| 窗口结束停止新工作、状态可保存恢复 | quiesce/recover 语义 + 实操序列已就绪 |
+| 启动/停止方式 + 看得懂的成果报告 | 启动/停止已在 ENTRYPOINTS；晨报待运行后按本节模板产出（处理了什么/交付物在哪/哪些测试实际通过/哪些没做/是否可采用/需要 Owner 决定什么） |
+
+## PRIOR GOAL — Bootstrap Multi-Repo Six-Pack Governance Forge（已并入上方 ACTIVE GOAL）
+
+GOAL_STATUS = SECOND_BLOCKER_UNION_REVIEWS_VERIFIED（双 ACCEPT 已核验；剩余 Owner acceptance 项归入 ACTIVE GOAL 的 OWNER_ACTION_REQUIRED 1/2）
 PHASE_LOCK = ON
-CURRENT_PHASE = SECOND_BLOCKER_UNION_REMEDIATION（Runtime PR #2 两项剩余缺口已关闭，等 ONE 有界复审）
 INDEPENDENT_PILOT_REVIEW = REVISE
-SECOND_INDEPENDENT_REVIEW = Host r4 ACCEPT；Runtime replacement Head REVISE（2 blockers，已关闭）
-UPDATED_AT = 2026-09-05T12:30:00+08:00
+SECOND_INDEPENDENT_REVIEW = Host r4 ACCEPT（5119235263）；Runtime replacement Head ACCEPT（5119786442，B-QA-01 CLOSED）
 READY_FOR_GOVERNANCE_FORGE_PILOT_REVIEW = YES（历史里程碑，见 DONE_WHEN 审计）
 REGISTRY_EXPANSION = FORBIDDEN
 
@@ -142,8 +197,9 @@ AUTO_DEPLOY = false
 
 ## NEXT
 
-one independent re-audit of Host r4（PR #14 @ 8186595a）+ one independent re-audit of Runtime replacement Head（PR #2 @ 61121538）。
-STOP —— AWAITING_SECOND_BLOCKER_UNION_REVIEW；不扩 registry、不跑新 canary、不新增功能、无 accept/merge/deploy。
+DONE：Host r4 复审（5119235263 ACCEPT）与 Runtime replacement Head 复审（5119786442 ACCEPT，B-QA-01 CLOSED）均已核验，绑定 head/tree 与 PR 页面一致。
+剩余动作已并入 ACTIVE GOAL 的 OWNER_ACTION_REQUIRED（Host r4 acceptance、PR #2 处置、任务授权、窗口确认）。
+STOP —— 窗口确认前不启动夜间模型工作；不扩 registry、不新增功能、无 accept/merge/deploy。
 
 ## 实操验证证据（quiesce/recovery，已发生三次真实恢复）
 
