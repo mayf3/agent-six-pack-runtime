@@ -405,3 +405,11 @@ NEXT = STOP（不自动扩大到所有仓库）
 - CODE-1 候选（条件性，dsh-agent-core agent-switch parameters.required 失败）｜先证明缺口+固定 Base+accepted Contract 依据→才冻结进 Six-Pack（GLM 顺序执行，并发 1）｜唯一受限本地写仓=dsh-agent-core（已启用）
 - 调度=窗口已 ACTIVE 无需定时启动；08:30 收口停止新工位，09:00 runtime 窗口闸兜底｜日志=nightly-1/drive-all.log + 本节+晨报｜停止=pkill -f glm-role-exec && sixpack host nightly-1 quiesce
 - 前置核验：Host accepted head 9dcd0c49 有界独立复查已完成并留账（见「第二轮授权执行记录」§1），本批均为本地候选，无绕过。
+
+## 第三批授权执行结果（2026-09-06 05:52–06:20，窗口内提前收口；GLM 调用 0 次）
+- **V-1 #137**：仍适用未被替代；未关闭 = 独立试跑审计+Owner 生命周期、fixture provisioning（Owner 生产侧）、G0 census。零评审、base 840d2f4 落后。按授权不执行生产 canary → 结束留证。
+- **V-2 #19**：**实质被取代**——accepted V6 已盘点（NON_AUTHORITATIVE/REWRITE_REQUIRED），且 PR #26（WORK_ELIGIBILITY_PROJECTION_V1，Owner 2026-09-06 精确头验收，main e297ff1）以合法路径落地同问题域。按"已替代即结束"收卷；预建的本地修订分支已撤销（不与 accepted 权威竞争、不伪造工作）。建议 Owner 以 superseded 关闭 PR#19。
+- **V-3 #36**：docs-only、DB/Grant 写 0；审查史公开（5058182073=REVISE 3/5，round-2 后无复审）；私有评审包 OWNER_HELD（证据可访问性=部分，如实标记）。待其自身补权复审 → 结束留证。
+- **CODE-1 已交付**：本地分支 fix/agent-switch-dsh-tools-peer-pin @ commit 2558958（base 797952e；新 main 16e14233 影响检查=peer 行与测试逐字节未变）。一行 peer 修复 ">=0"→">=0.1.0-rc"（同 broker 先例）；stub 选中有实测反例（switch.test.js TypeError），真版 0.1.2-rc.1 闭包下 5/5 PASS（dsh-tools lib/index.js:806 编译顶层 required）。trivial 类按流程规则未入六工位；GLM 调用 0。
+- 附带发现：真闭包使 demo-server 缺依赖失败转绿；agent-memory 4 文件全量跑挂/单跑绿（干扰类）；agent-memory 同款 ">=0" peer 未动（无失败测试可锚定）。
+- 晨报 = nightly-1/MORNING_REPORT_2026-09-06_batch2.md。GOAL_STATUS 维持 FIRST_FIX_CANDIDATE_DELIVERED（现含两个待独立评审候选：dd100382a235 与 2558958）。
