@@ -20,7 +20,6 @@ Adapters:
 from __future__ import annotations
 
 import json
-import os
 import subprocess
 import time
 from dataclasses import dataclass, field
@@ -46,9 +45,17 @@ from .model import (
     StageReceipt,
     WorkflowState,
 )
+from .qa_gate import (
+    automation_bindings_from_tree,
+    canonical_qa_required_checks,
+    validate_qa_machine,
+    worktree_automation_gate,
+)
 from .queue import QueueStore
 
 NORMAL_PRIORITY = "10"
+
+_UNSET = object()
 
 
 def _now() -> str:
@@ -95,163 +102,6 @@ QA_FAIL = "FAIL"
 QA_BLOCKED = "BLOCKED"
 
 
-_CANONICAL_CHECKS_CACHE: list[str] | None = None
-_UNSET = object()
-
-
-def canonical_qa_required_checks() -> list[str]:
-    """The closed canonical required-check set, pinned by the QA role def."""
-    global _CANONICAL_CHECKS_CACHE
-    if _CANONICAL_CHECKS_CACHE is None:
-        from .roles import load_role_catalog
-
-        _CANONICAL_CHECKS_CACHE = list(
-            load_role_catalog().definition(Role.QA).required_checks
-        )
-    return list(_CANONICAL_CHECKS_CACHE)
-
-
-def _validate_qa_machine(
-    qa_result: dict[str, object] | None, certified_head: str, certified_tree: str
-) -> dict[str, object]:
-    """Validate the final-QA machine verdict against the certified candidate.
-
-    A PASS verdict is only legal when the CLOSED canonical required-check
-    set is covered exactly (every check PASS; no missing check, no
-    duplicate, no arbitrary substitute), ``qa_blockers`` is a valid
-    list[str], no blocker is open, and the certified head/tree equal the
-    exact candidate the final run executed on. Anything else downgrades to
-    BLOCKED with the reason recorded -- a fake PASS must never reach the
-    terminal verifier.
-    """
-    blockers: list[str] = []
-    if qa_result is None:
-        qa_result = {"qa_verdict": QA_BLOCKED}
-        blockers.append("no machine QA verdict (QA_FINAL_JSON / qa_result) produced")
-    verdict = str(qa_result.get("qa_verdict", "")).upper()
-    if verdict not in (QA_PASS, QA_FAIL, QA_BLOCKED):
-        blockers.append(f"invalid qa_verdict: {qa_result.get('qa_verdict')!r}")
-        verdict = QA_BLOCKED
-
-    canonical = canonical_qa_required_checks()
-    raw_checks = qa_result.get("qa_required_checks")
-    checks: list[object] = []
-    if not isinstance(raw_checks, list) or not raw_checks:
-        blockers.append("qa_required_checks missing or empty (required checks not executed)")
-        verdict = QA_BLOCKED
-    else:
-        seen: dict[str, str] = {}
-        malformed = False
-        for check in raw_checks:
-            if not isinstance(check, dict):
-                blockers.append(f"malformed required check entry: {check!r}")
-                malformed = True
-                continue
-            name = str(check.get("name", ""))
-            check_verdict = str(check.get("verdict", "")).upper()
-            if name in seen:
-                blockers.append(
-                    f"duplicate required check {name!r}: the required set is "
-                    "closed and a duplicate replaces nothing"
-                )
-                continue
-            seen[name] = check_verdict
-            checks.append(check)
-        if malformed:
-            verdict = QA_BLOCKED
-        missing = [name for name in canonical if name not in seen]
-        extras = [name for name in seen if name not in canonical]
-        if missing:
-            blockers.append(f"missing canonical required checks: {missing}")
-        if extras:
-            blockers.append(
-                f"arbitrary substitute checks outside the canonical set: {extras}"
-            )
-        failed = [name for name, cv in seen.items() if cv != QA_PASS]
-        if failed:
-            blockers.append(f"required checks not PASS: {failed}")
-        if set(seen) != set(canonical) or len(raw_checks) != len(canonical):
-            verdict = QA_BLOCKED
-
-    # qa_blockers schema: MUST be list[str]; malformed evidence fails closed.
-    stated_blockers = qa_result.get("qa_blockers", "__missing__")
-    if stated_blockers == "__missing__" or stated_blockers is None:
-        blockers.append("qa_blockers missing/null (schema requires list[str])")
-        verdict = QA_BLOCKED
-    elif not isinstance(stated_blockers, list):
-        blockers.append(
-            f"qa_blockers must be a list[str], got {type(stated_blockers).__name__}"
-        )
-        verdict = QA_BLOCKED
-    else:
-        for item in stated_blockers:
-            if not isinstance(item, str):
-                blockers.append(
-                    f"qa_blockers entries must be str, got {type(item).__name__}: {item!r}"
-                )
-                verdict = QA_BLOCKED
-        blockers.extend(str(item) for item in stated_blockers if isinstance(item, str))
-
-    cert_head = str(qa_result.get("qa_certified_head", ""))
-    cert_tree = str(qa_result.get("qa_certified_tree", ""))
-    if cert_head != certified_head or cert_tree != certified_tree:
-        blockers.append(
-            f"QA certified ({cert_head[:12]}, {cert_tree[:12]}) but the final-run "
-            f"candidate is ({certified_head[:12]}, {certified_tree[:12]})"
-        )
-    if blockers and verdict == QA_PASS:
-        # Fake PASS: a PASS verdict with failing/missing evidence is invalid.
-        verdict = QA_BLOCKED
-    result = dict(qa_result)
-    result["qa_verdict"] = verdict
-    result["qa_required_checks"] = checks
-    result["qa_blockers"] = blockers
-    result["qa_certified_head"] = cert_head if cert_head == certified_head else certified_head
-    result["qa_certified_tree"] = cert_tree if cert_tree == certified_tree else certified_tree
-    return result
-
-
-
-
-def _validate_qa_automation(worktree: Path) -> tuple[list[str] | None, str | None]:
-    """Mechanical gate for the QA-exclusive executable automation (CTR-SIX-005/010).
-
-    Requires ``sixpack-artifacts/qa.automation.json`` declaring entrypoints,
-    each of which must exist under ``sixpack-artifacts/``, be non-empty, and
-    carry an executable signature (exec bit or shebang). Report-only output
-    does not satisfy the gate. Returns (entrypoints, error).
-    """
-    manifest_path = worktree / "sixpack-artifacts" / "qa.automation.json"
-    if not manifest_path.exists():
-        return None, (
-            "executable QA automation missing: sixpack-artifacts/qa.automation.json "
-            "not found; report-only output cannot satisfy the QA required output"
-        )
-    try:
-        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    except ValueError as exc:
-        return None, f"qa.automation.json is not valid JSON: {exc}"
-    entrypoints = manifest.get("entrypoints") if isinstance(manifest, dict) else None
-    if not isinstance(entrypoints, list) or not entrypoints:
-        return None, "qa.automation.json declares no entrypoints"
-    for entry in entrypoints:
-        if not isinstance(entry, str) or not entry.strip():
-            return None, f"malformed automation entrypoint: {entry!r}"
-        script = worktree / "sixpack-artifacts" / entry
-        if not script.exists():
-            return None, f"declared automation entrypoint does not exist: {entry}"
-        content = script.read_bytes()
-        if not content.strip():
-            return None, f"automation entrypoint is empty: {entry}"
-        executable = os.access(script, os.X_OK) or content.startswith(b"#!")
-        if not executable:
-            return None, (
-                f"automation entrypoint has no executable signature (exec bit or "
-                f"shebang): {entry}"
-            )
-    return [str(entry) for entry in entrypoints], None
-
-
 class FakeAgentAdapter:
     """Deterministic adapter: each role writes its artifact and commits.
 
@@ -273,6 +123,10 @@ class FakeAgentAdapter:
         qa_write_after_final: bool = False,
         qa_blockers_malformed: object = _UNSET,
         qa_report_only: bool = False,
+        qa_automation_entrypoints_override: list[str] | None = None,
+        qa_symlink_automation: bool = False,
+        qa_ignore_automation: bool = False,
+        qa_fake_automation_binding: bool = False,
     ) -> None:
         self.fail_at = fail_at or []
         self.qa_product_fix = qa_product_fix
@@ -285,16 +139,41 @@ class FakeAgentAdapter:
         self.qa_write_after_final = qa_write_after_final
         self.qa_blockers_malformed = qa_blockers_malformed
         self.qa_report_only = qa_report_only
+        self.qa_automation_entrypoints_override = qa_automation_entrypoints_override
+        self.qa_symlink_automation = qa_symlink_automation
+        self.qa_ignore_automation = qa_ignore_automation
+        self.qa_fake_automation_binding = qa_fake_automation_binding
 
     def execute_stage(self, context: StageContext) -> StageOutcome:
         if context.role.value in self.fail_at:
             return StageOutcome(success=False, message=f"scripted failure at {context.role.value}")
         if context.qa_final_run:
+            qa_result: dict[str, object]
             if self.qa_write_after_final:
                 stray = context.worktree_path / "sixpack-artifacts" / "post-final.txt"
                 stray.parent.mkdir(exist_ok=True)
                 stray.write_text("bytes changed after the final QA run\n", encoding="utf-8")
-            if self.qa_blockers_malformed is not _UNSET or self.qa_report_only:
+            if self.qa_fake_automation_binding:
+                qa_result = {
+                    "qa_verdict": "PASS",
+                    "qa_required_checks": [
+                        {"name": name, "verdict": "PASS"}
+                        for name in canonical_qa_required_checks()
+                    ],
+                    "qa_blockers": [],
+                    "qa_certified_head": context.certified_head,
+                    "qa_certified_tree": context.certified_tree,
+                    # QA-returned JSON tries to override the runtime binding.
+                    "qa_automation_entrypoints": ["qa.verify.sh"],
+                    "qa_automation_bindings": [
+                        {
+                            "path": "sixpack-artifacts/qa.verify.sh",
+                            "blob_sha": "f" * 40,
+                            "size": 1,
+                        }
+                    ],
+                }
+            elif self.qa_blockers_malformed is not _UNSET or self.qa_report_only:
                 qa_result = {
                     "qa_verdict": "PASS",
                     "qa_required_checks": [
@@ -366,20 +245,35 @@ class FakeAgentAdapter:
                     results={"adapter": "fake"},
                     qa_automation_paths=qa_paths,
                 )
-            automation = qa_dir / "qa.verify.sh"
-            automation.write_text(
-                "#!/bin/sh\n"
-                f"echo 'executable QA automation for {context.task_id}'\n"
-                "exit 0\n",
-                encoding="utf-8",
+            entrypoints = (
+                list(self.qa_automation_entrypoints_override)
+                if self.qa_automation_entrypoints_override
+                else ["qa.verify.sh"]
             )
-            automation.chmod(0o755)
+            automation = qa_dir / "qa.verify.sh"
+            if self.qa_symlink_automation:
+                outside = qa_dir / "outside-target.txt"
+                outside.write_text("external target\n", encoding="utf-8")
+                automation.symlink_to(outside.name)
+            else:
+                automation.write_text(
+                    "#!/bin/sh\n"
+                    f"echo 'executable QA automation for {context.task_id}'\n"
+                    "exit 0\n",
+                    encoding="utf-8",
+                )
+                automation.chmod(0o755)
+            if self.qa_ignore_automation:
+                gitignore = context.worktree_path / ".gitignore"
+                gitignore.write_text(
+                    "sixpack-artifacts/qa.verify.sh\n", encoding="utf-8"
+                )
             manifest = qa_dir / "qa.automation.json"
             manifest.write_text(
                 json.dumps(
                     {
                         "task_id": context.task_id,
-                        "entrypoints": ["qa.verify.sh"],
+                        "entrypoints": entrypoints,
                         "procedure_alignment": "specifier end-to-end QA procedure",
                     },
                     indent=1,
@@ -656,11 +550,13 @@ class RoleRunner:
                 )
 
         qa_automation_entrypoints: list[str] | None = None
+        qa_automation_bindings: list[dict[str, object]] | None = None
         if role is Role.QA:
             # The QA-exclusive required output is executable QA automation
             # (CTR-SIX-005/010): it must exist, be declared, and be bound
-            # before the final QA run. Report-only output fails here.
-            qa_automation_entrypoints, automation_error = _validate_qa_automation(
+            # before the final QA run. Report-only, out-of-bounds paths,
+            # symlinks, and git-ignored entrypoints fail here.
+            qa_automation_entrypoints, automation_error = worktree_automation_gate(
                 worktree.path
             )
             if automation_error is not None or qa_automation_entrypoints is None:
@@ -672,6 +568,20 @@ class RoleRunner:
 
         head, tree = manager.commit_all(worktree.path, f"sixpack({role.value}): {task_id}")
         manager.verify_candidate(head, tree)
+        if role is Role.QA:
+            # Bind the automation to the certified Git tree itself: the
+            # manifest and every entrypoint must exist as blobs in the
+            # committed tree (untracked/ignored/symlinked files cannot).
+            qa_automation_bindings, binding_failures = automation_bindings_from_tree(
+                manager, tree
+            )
+            if binding_failures or qa_automation_bindings is None:
+                instance.stage_status[role.value] = "pending"
+                self.ledger.save()
+                raise QaVerificationFailed(
+                    "QA automation is not bound to the certified tree: "
+                    + "; ".join(binding_failures or ["unknown binding failure"])
+                )
 
         # Final QA runs ON the committed candidate and may not change any
         # certified byte afterwards (CTR-SIX-009 / CTR-SIX-019): QA-owned
@@ -708,7 +618,13 @@ class RoleRunner:
                     f"({dirty or 'HEAD advanced'}); the certified tree is no "
                     "longer the terminal tree"
                 )
-            qa_machine = _validate_qa_machine(final_outcome.qa_result, head, tree)
+            qa_machine = validate_qa_machine(
+                final_outcome.qa_result,
+                head,
+                tree,
+                qa_automation_entrypoints=qa_automation_entrypoints,
+                qa_automation_bindings=qa_automation_bindings,
+            )
             if qa_machine["qa_verdict"] != "PASS":
                 receipt_id = (
                     f"receipt-{task_id}-{role.value}-"
@@ -729,6 +645,7 @@ class RoleRunner:
                         **qa_machine,
                         "adapter": "qa-final",
                         "qa_automation_entrypoints": qa_automation_entrypoints or [],
+                        "qa_automation_bindings": qa_automation_bindings or [],
                     },
                     limitations=[
                         str(item)
@@ -748,11 +665,15 @@ class RoleRunner:
         surfaces = self._changed_files(worktree.path, input_head)
 
         results = dict(outcome.results)
-        if qa_automation_entrypoints is not None:
-            results["qa_automation_entrypoints"] = qa_automation_entrypoints
         if qa_machine is not None:
             results.update(qa_machine)
             results["adapter"] = "qa-final"
+        # Runtime-generated artifact binding wins: the QA-returned JSON may
+        # not override the helper's certified-tree bindings.
+        if qa_automation_entrypoints is not None:
+            results["qa_automation_entrypoints"] = qa_automation_entrypoints
+        if qa_automation_bindings is not None:
+            results["qa_automation_bindings"] = qa_automation_bindings
         receipt = StageReceipt(
             receipt_id=f"receipt-{task_id}-{role.value}-{canonical_hash({'head': head})[:8]}",
             task_id=task_id,

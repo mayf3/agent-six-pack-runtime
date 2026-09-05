@@ -26,6 +26,7 @@ from .gitx import WorktreeManager
 from .gitx import git as _git
 from .ledger import Ledger
 from .model import Role, WorkflowState
+from .qa_gate import automation_tree_binding_failures, qa_rule_failures
 
 
 @dataclass
@@ -126,41 +127,25 @@ class TerminalVerifier:
                 failures.append(
                     f"QA_VERDICT = {qa_verdict or 'MISSING'} (must be PASS)"
                 )
-            qa_checks = cast(
-                list[object], qa_results.get("qa_required_checks") or []
+            stated_blockers = cast(
+                list[object], qa_results.get("qa_blockers") or []
             )
-            if not qa_checks:
-                failures.append("QA_REQUIRED_CHECKS missing: required checks not executed")
-            else:
-                not_passed = [
-                    str(check) if not isinstance(check, dict) else str(check.get("name"))
-                    for check in qa_checks
-                    if not isinstance(check, dict)
-                    or str(check.get("verdict", "")).upper() != "PASS"
-                ]
-                if not_passed:
-                    failures.append(
-                        f"QA_REQUIRED_CHECKS not all PASS: {not_passed}"
-                    )
-            qa_blockers = cast(list[object], qa_results.get("qa_blockers") or [])
-            if qa_blockers:
-                failures.append(f"QA_BLOCKERS = {qa_blockers}")
-            if str(qa_results.get("qa_certified_head", "")) != terminal_head:
-                failures.append(
-                    "QA_TERMINAL_CANDIDATE_UNCHANGED = NO: certified head != terminal head"
-                )
-            if str(qa_results.get("qa_certified_tree", "")) != terminal_tree:
-                failures.append(
-                    "QA_RECEIPT_BINDS_TERMINAL_TREE = NO: certified tree != terminal tree"
-                )
-            qa_automation = cast(
-                list[object], qa_results.get("qa_automation_entrypoints") or []
+            if stated_blockers and qa_verdict != "PASS":
+                failures.append(f"QA_BLOCKERS = {stated_blockers} (verdict {qa_verdict})")
+            # Independent re-check: the SAME closed-set rules the runner
+            # normalizes with, applied directly to the STORED receipt --
+            # a runner that failed to downgrade a fake PASS cannot hide it.
+            rule_failures = qa_rule_failures(qa_results, terminal_head, terminal_tree)
+            failures.extend(rule_failures)
+            # Tree-level re-check of the automation binding: every declared
+            # entrypoint's blob must exist in the certified tree with the
+            # exact SHA the receipt recorded.
+            bindings = cast(
+                list[object], qa_results.get("qa_automation_bindings") or []
             )
-            if not qa_automation:
-                failures.append(
-                    "EXECUTABLE_QA_AUTOMATION evidence missing from the final QA "
-                    "receipt (report-only output cannot satisfy the QA required output)"
-                )
+            failures.extend(
+                automation_tree_binding_failures(manager, terminal_tree, bindings)
+            )
 
         # Impact-and-coverage matrix.
         coverage: dict[str, str] = {}

@@ -8,6 +8,9 @@ terminal tree must never produce TERMINAL_VERIFY = PASS.
 
 from __future__ import annotations
 
+import subprocess
+from unittest.mock import ANY
+
 import pytest
 
 from sixpack.errors import QaVerificationFailed, SelfCertificationRejected
@@ -249,5 +252,190 @@ class TestExecutableQaAutomationGate:
         assert instance.terminal_head == ""
         assert not [r for r in instance.receipts if r["role"] == "qa"]
         assert not [r for r in instance.receipts if r["role"] == "qa"]
+        report = TerminalVerifier(rt.ledger).verify("task-1")
+        assert report.verdict == "FAIL"
+
+
+class TestVerifierDirectFeed:
+    """Verifier must catch wrong receipts directly, without runner help."""
+
+    def _run_to_terminal(self, tmp_path):
+        from tests.conftest import make_repo, make_runtime, seed_task
+
+        repo = make_repo(tmp_path / "vd-repo")
+        rt = make_runtime(tmp_path / "vd-ws", repo)
+        seed_task(rt, repo)
+        rt.controller.admit("task-1")
+        instance = rt.ledger.workflow("task-1")
+        instance.done_when_met = True
+        rt.ledger.save()
+        rt.controller.drive("task-1")
+        rt.controller.converge_terminal("task-1")
+        return rt
+
+    def _mutate_qa_results(self, rt, mutation: dict) -> None:
+        instance = rt.ledger.workflow("task-1")
+        for receipt in instance.receipts:
+            if receipt["role"] == "qa":
+                receipt["results"].update(mutation)
+        rt.ledger.save()
+
+    def test_fake_pass_with_substitute_only_check_fails_verifier(
+        self, tmp_path
+    ) -> None:
+        rt = self._run_to_terminal(tmp_path)
+        # Hand-feed a receipt that claims PASS with a substitute check.
+        self._mutate_qa_results(
+            rt,
+            {
+                "qa_verdict": "PASS",
+                "qa_required_checks": [{"name": "foo", "verdict": "PASS"}],
+            },
+        )
+        report = TerminalVerifier(rt.ledger).verify("task-1")
+        assert report.verdict == "FAIL"
+        assert any("canonical" in failure for failure in report.failures)
+        assert any(
+            "QA_VERDICT" in failure or "substitute" in failure
+            for failure in report.failures
+        )
+
+    def test_fake_pass_with_string_blockers_fails_verifier(self, tmp_path) -> None:
+        rt = self._run_to_terminal(tmp_path)
+        self._mutate_qa_results(
+            rt,
+            {"qa_verdict": "PASS", "qa_blockers": "database unavailable"},
+        )
+        report = TerminalVerifier(rt.ledger).verify("task-1")
+        assert report.verdict == "FAIL"
+        assert any(
+            "qa_blockers must be a list[str]" in failure for failure in report.failures
+        )
+
+    def test_fake_pass_with_null_blockers_fails_verifier(self, tmp_path) -> None:
+        rt = self._run_to_terminal(tmp_path)
+        self._mutate_qa_results(rt, {"qa_verdict": "PASS", "qa_blockers": None})
+        report = TerminalVerifier(rt.ledger).verify("task-1")
+        assert report.verdict == "FAIL"
+        assert any("missing/null" in failure for failure in report.failures)
+
+
+class TestAutomationTreeBinding:
+    """R: executable automation must bind to the certified Git tree."""
+
+    def test_positive_binding_matches_certified_tree(self, tmp_path) -> None:
+        from sixpack.verifier import TerminalVerifier
+        from tests.conftest import make_repo, make_runtime, seed_task
+
+        repo = make_repo(tmp_path / "bind-pos-repo")
+        rt = make_runtime(tmp_path / "bind-pos-ws", repo)
+        seed_task(rt, repo)
+        rt.controller.admit("task-1")
+        instance = rt.ledger.workflow("task-1")
+        instance.done_when_met = True
+        rt.ledger.save()
+        rt.controller.drive("task-1")
+        rt.controller.converge_terminal("task-1")
+        instance = rt.ledger.workflow("task-1")
+        qa_receipt = [r for r in instance.receipts if r["role"] == "qa"][-1]
+        bindings = qa_receipt["results"]["qa_automation_bindings"]
+        assert bindings == [
+            {
+                "path": "sixpack-artifacts/qa.verify.sh",
+                "blob_sha": ANY,
+                "size": ANY,
+            }
+        ]
+        # The bound blob is exactly what the certified tree contains.
+        import subprocess
+
+        out = subprocess.run(
+            [
+                "git", "ls-tree", instance.terminal_tree,
+                "--", "sixpack-artifacts/qa.verify.sh",
+            ],
+            cwd=repo.path, capture_output=True, text=True, check=True,
+        ).stdout.strip()
+        assert bindings[0]["blob_sha"] in out
+        report = TerminalVerifier(rt.ledger).verify("task-1")
+        assert report.verdict == "PASS"
+        assert not any("AUTOMATION" in failure for failure in report.failures)
+
+    def test_qa_json_cannot_override_runtime_binding(self, tmp_path) -> None:
+        from tests.conftest import make_repo, make_runtime, seed_task
+
+        adapter = FakeAgentAdapter(qa_fake_automation_binding=True)
+        repo = make_repo(tmp_path / "ovr-repo")
+        rt = make_runtime(tmp_path / "ovr-ws", repo, adapter)
+        seed_task(rt, repo)
+        rt.controller.admit("task-1")
+        instance = rt.ledger.workflow("task-1")
+        instance.done_when_met = True
+        rt.ledger.save()
+        # The QA JSON carries a forged binding; the runner must overwrite it.
+        rt.controller.drive("task-1")
+        rt.controller.converge_terminal("task-1")
+        instance = rt.ledger.workflow("task-1")
+        qa_receipt = [r for r in instance.receipts if r["role"] == "qa"][-1]
+        stored = qa_receipt["results"]["qa_automation_bindings"][0]
+        assert stored["blob_sha"] != "f" * 40
+        report = TerminalVerifier(rt.ledger).verify("task-1")
+        assert report.verdict == "PASS"
+
+    def test_out_of_bounds_entrypoint_rejected(self, tmp_path) -> None:
+        adapter = FakeAgentAdapter(
+            qa_automation_entrypoints_override=["../evil.sh"]
+        )
+        repo = make_repo(tmp_path / "oob-repo")
+        rt = make_runtime(tmp_path / "oob-ws", repo, adapter)
+        seed_task(rt, repo)
+        rt.controller.admit("task-1")
+        with pytest.raises(Exception) as excinfo:
+            rt.controller.drive("task-1")
+        assert "escapes sixpack-artifacts" in str(excinfo.value)
+        assert rt.ledger.workflow("task-1").terminal_head == ""
+
+    def test_symlink_entrypoint_rejected(self, tmp_path) -> None:
+        adapter = FakeAgentAdapter(qa_symlink_automation=True)
+        repo = make_repo(tmp_path / "sym-repo")
+        rt = make_runtime(tmp_path / "sym-ws", repo, adapter)
+        seed_task(rt, repo)
+        rt.controller.admit("task-1")
+        with pytest.raises(Exception) as excinfo:
+            rt.controller.drive("task-1")
+        assert "symlink" in str(excinfo.value)
+        assert rt.ledger.workflow("task-1").terminal_head == ""
+
+    def test_ignored_entrypoint_never_binds_to_tree(self, tmp_path) -> None:
+        from sixpack.errors import WorkflowStateInvalid
+
+        adapter = FakeAgentAdapter(qa_ignore_automation=True)
+        repo = make_repo(tmp_path / "ign-repo")
+        # The repository pre-ignores the automation path (base bytes).
+        (repo.path / ".gitignore").write_text(
+            "sixpack-artifacts/qa.verify.sh\n", encoding="utf-8"
+        )
+        subprocess.run(
+            ["git", "add", ".gitignore"], cwd=repo.path, check=True
+        )
+        subprocess.run(
+            ["git", "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-m", "ignore"],
+            cwd=repo.path, check=True,
+        )
+        repo.base_head = subprocess.run(
+            ["git", "rev-parse", "HEAD"], cwd=repo.path,
+            capture_output=True, text=True, check=True,
+        ).stdout.strip()
+        rt = make_runtime(tmp_path / "ign-ws", repo, adapter)
+        seed_task(rt, repo)
+        rt.controller.admit("task-1")
+        instance = rt.ledger.workflow("task-1")
+        instance.done_when_met = True
+        rt.ledger.save()
+        with pytest.raises(WorkflowStateInvalid) as excinfo:
+            rt.controller.drive("task-1")
+        assert "git-ignored" in str(excinfo.value)
+        assert rt.ledger.workflow("task-1").terminal_head == ""
+        assert not [r for r in rt.ledger.workflow("task-1").receipts if r["role"] == "qa"]
         report = TerminalVerifier(rt.ledger).verify("task-1")
         assert report.verdict == "FAIL"
