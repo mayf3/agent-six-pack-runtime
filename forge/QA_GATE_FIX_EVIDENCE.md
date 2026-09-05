@@ -1,17 +1,17 @@
-# QA-GATE FIX EVIDENCE — replacement exact Head (round 2)
+# QA-GATE FIX EVIDENCE — replacement exact Head (B-QA-01 round)
 
-RUNTIME_REPLACEMENT_HEAD = 6497b065decbf726b827c3ecb7c86e41ea52d84d
-RUNTIME_REPLACEMENT_TREE = 707fdb88b90a4cfdc8ba8a0176ae08ac8b0b46e9
-SUPERSEDES_HEAD = 611215381c221a208caa57d035eb1b61871b42e8
+RUNTIME_REPLACEMENT_HEAD = 4199be02c2da99e8b2f85236a5eddb370ba3dadf
+RUNTIME_REPLACEMENT_TREE = f892d1fc50de3c1215da8b2d79e2abcceb974710
+SUPERSEDES = 6497b065decbf726b827c3ecb7c86e41ea52d84d (B-QA-01 reviewed head)
 PR = mayf3/agent-six-pack-runtime#2 (head branch review/runtime-fix-final-qa-gate-0c61bfa, base review/runtime-fix-base-f342161)
-EXECUTED_AT = 2026-09-05T10:48:39+0800
+EXECUTED_AT = 2026-09-05T11:42:18+0800
 WORKTREE_STATE = clean, HEAD == replacement head at execution time
 
 ## full pytest
 ```
-........................................................................ [ 69%]
-...............................                                          [100%]
-103 passed in 54.83s
+........................................................................ [ 67%]
+...................................                                      [100%]
+107 passed in 71.73s (0:01:11)
 ```
 ## ruff
 ```
@@ -22,9 +22,11 @@ All checks passed!
 Success: no issues found in 14 source files
 ```
 
-Scope of this round: shared QA-gate rules (qa_gate.py) constraining both
-runner and independent verifier; automation bound to the certified Git
-tree (post-commit blob binding, out-of-bounds/symlink/ignored rejection,
-QA JSON cannot override). 8 new tests in tests/test_qa_final_gate.py.
-GitHub CI: no workflow configured (no CI platform added for this goal);
-local execution above is the auditable evidence.
+Scope (B-QA-01 only): shared full PASS-eligibility judgment in
+qa_gate.py used by runner AND verifier; original QA blockers preserved
+and merged; certified-Head/tree echo preserved verbatim (mismatch
+never erased by overwriting). Dual-path test table in
+tests/test_b_qa_01_dual_path.py covers: each canonical check FAIL/
+NOT_EXECUTED, valid non-empty blockers, wrong certified head/tree,
+and the all-valid positive, on both paths. Automation Git-tree
+binding (already accepted) untouched. No CI platform added.

@@ -121,12 +121,14 @@ HOST_SPEC_R4_TREE = ff4e78a0b77b5d118a02844b5cf8fb1df793a935
 HOST_SPEC_STATUS = READY_FOR_EXACT_R4_REVIEW
 
 RUNTIME_FIX_PR = mayf3/agent-six-pack-runtime#2（head branch 已更新为最新 replacement head）
-RUNTIME_REPLACEMENT_HEAD = 6497b065decbf726b827c3ecb7c86e41ea52d84d
-RUNTIME_REPLACEMENT_TREE = 707fdb88b90a4cfdc8ba8a0176ae08ac8b0b46e9
-  （取代 61121538…；本轮新增：qa_gate.py 共享规则模块——Runner 规范化与独立
-   TerminalVerifier 复检同一套闭合集/schema/绑定规则；可执行自动化绑定认证
-   Git tree（post-commit blob 绑定 + 越界/symlink/ignored 拒绝 + QA JSON 不可覆盖）；
-   8 个新测试，全量 103 passed）
+RUNTIME_REPLACEMENT_HEAD = 4199be02c2da99e8b2f85236a5eddb370ba3dadf
+RUNTIME_REPLACEMENT_TREE = f892d1fc50de3c1215da8b2d79e2abcceb974710
+  （取代 6497b065…/61121538…。累计：qa_gate.py 共享规则模块——完整 PASS 资格判定
+   由 Runner 与独立 TerminalVerifier 共用；可执行自动化绑定认证 Git tree；
+   B-QA-01 修复：QA 原始有效 blockers 与校验错误合并不清空、回显坐标保留原样
+   不被覆写（mismatch 持续拒绝 PASS）、双路径同表测试（A 原始回执直验 / B 先规范化）
+   覆盖每 canonical 检查 FAIL/NOT_EXECUTED、非空 blockers、错误认证 head/tree、
+   全合法正例。全量 107 passed）
 REQUIRED_CHECK_SET_GATE = PASS（闭合集：从 pinned QA role definition 导出三 canonical checks；missing/duplicate/substitute 一律降级 BLOCKED）
 QA_BLOCKERS_SCHEMA_GATE = PASS（list[str] 严格 schema；missing/null/non-list/non-str → BLOCKED，不静默忽略）
 EXECUTABLE_QA_AUTOMATION_GATE = PASS（qa.automation.json manifest + entrypoint 存在/非空/shebang-or-exec-bit；report-only 在 commit 前被拒；证据绑定 QA receipt）
