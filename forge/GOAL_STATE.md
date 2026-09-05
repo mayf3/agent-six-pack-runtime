@@ -376,3 +376,11 @@ NEXT = STOP（不自动扩大到所有仓库）
 3. glm-role-exec.sh 三修（直接阻塞本轮的 forge 工具）：BSD mktemp 后缀模板；"Unexpected server error" 有界重试（30s×3）；**根因定案 = OPENCODE_CONFIG 指向不存在的 bin/glm-provider.json → opencode 回落全局配置打向 api.anthropic.com**（此前所有 500 与昨晚"GLM 500"均系此误诊；GLM 端点本身健康）。bin/glm-provider.json（baseURL=127.0.0.1:18930）+ bin/glm-forwarder.py（python HTTP/1.1 转发，SSE 透传）落地后全链 200——bun 直连 bigmodel 的 TLS 路径 500 而同请求经转发成功，属环境级发现。
 4. 六工位 02:26–02:53 一次通过（specifier→coder→cleaner→architect→hardender）；QA 经 4 次有界纠正重放通过（每次独立根因+针对性 ledger done_when 指令：check 名逐字复制 → automation 平铺 → 补 manifest → entrypoint 裸文件名）；重放期间修复 HeadDrift 操作序列（qa 受管分支复位到候选 head + worktree 清理）。
 5. 03:54 TERMINAL_BROADCAST → converge → 操作者独立实测 done-when → done 标记 → verify PASS。窗口内完成，无延期、无付费回退。
+
+## 第三批授权派单清单（2026-09-06T05:52+08:00，Owner 明确授权，窗口 ACTIVE）
+- V-1 核验 dsh-agent-core#137（workflow_transition canary 授权提案适用性）｜执行者=总执行 Agent 本会话｜方式=只读（gh/git，无模型调用）｜05:52 起
+- V-2 核验 svc-workflow#19（提案 vs 现行产品边界/实现；确有缺口→本地独立分支 proposed 修订候选）｜同上
+- V-3 核验 auth-service#36（权限依据/审查历史/证据可访问性；不连生产、不动 Grant/Credential）｜同上
+- CODE-1 候选（条件性，dsh-agent-core agent-switch parameters.required 失败）｜先证明缺口+固定 Base+accepted Contract 依据→才冻结进 Six-Pack（GLM 顺序执行，并发 1）｜唯一受限本地写仓=dsh-agent-core（已启用）
+- 调度=窗口已 ACTIVE 无需定时启动；08:30 收口停止新工位，09:00 runtime 窗口闸兜底｜日志=nightly-1/drive-all.log + 本节+晨报｜停止=pkill -f glm-role-exec && sixpack host nightly-1 quiesce
+- 前置核验：Host accepted head 9dcd0c49 有界独立复查已完成并留账（见「第二轮授权执行记录」§1），本批均为本地候选，无绕过。
