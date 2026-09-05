@@ -2,10 +2,10 @@
 
 GOAL_STATUS = AWAITING_SECOND_BLOCKER_UNION_REVIEW
 PHASE_LOCK = ON
-CURRENT_PHASE = SECOND_BLOCKER_UNION_REMEDIATION
+CURRENT_PHASE = SECOND_BLOCKER_UNION_REMEDIATION（Runtime PR #2 两项剩余缺口已关闭，等 ONE 有界复审）
 INDEPENDENT_PILOT_REVIEW = REVISE
-SECOND_INDEPENDENT_REVIEW = REVISE（6 blockers：H1/H2/H3 + R1/R2/R3，已全部关闭）
-UPDATED_AT = 2026-09-05T11:40:00+08:00
+SECOND_INDEPENDENT_REVIEW = Host r4 ACCEPT；Runtime replacement Head REVISE（2 blockers，已关闭）
+UPDATED_AT = 2026-09-05T12:30:00+08:00
 READY_FOR_GOVERNANCE_FORGE_PILOT_REVIEW = YES（历史里程碑，见 DONE_WHEN 审计）
 REGISTRY_EXPANSION = FORBIDDEN
 
@@ -120,9 +120,13 @@ HOST_SPEC_R4_TREE = ff4e78a0b77b5d118a02844b5cf8fb1df793a935
   其余 r3 已通过语义未动；status 保持 proposed
 HOST_SPEC_STATUS = READY_FOR_EXACT_R4_REVIEW
 
-RUNTIME_FIX_PR = mayf3/agent-six-pack-runtime#2（head branch 已更新为 replacement head）
-RUNTIME_REPLACEMENT_HEAD = 611215381c221a208caa57d035eb1b61871b42e8
-RUNTIME_REPLACEMENT_TREE = 3ecdeb5e9dd8576f3928cf9eb94c02ccf0935631
+RUNTIME_FIX_PR = mayf3/agent-six-pack-runtime#2（head branch 已更新为最新 replacement head）
+RUNTIME_REPLACEMENT_HEAD = 6497b065decbf726b827c3ecb7c86e41ea52d84d
+RUNTIME_REPLACEMENT_TREE = 707fdb88b90a4cfdc8ba8a0176ae08ac8b0b46e9
+  （取代 61121538…；本轮新增：qa_gate.py 共享规则模块——Runner 规范化与独立
+   TerminalVerifier 复检同一套闭合集/schema/绑定规则；可执行自动化绑定认证
+   Git tree（post-commit blob 绑定 + 越界/symlink/ignored 拒绝 + QA JSON 不可覆盖）；
+   8 个新测试，全量 103 passed）
 REQUIRED_CHECK_SET_GATE = PASS（闭合集：从 pinned QA role definition 导出三 canonical checks；missing/duplicate/substitute 一律降级 BLOCKED）
 QA_BLOCKERS_SCHEMA_GATE = PASS（list[str] 严格 schema；missing/null/non-list/non-str → BLOCKED，不静默忽略）
 EXECUTABLE_QA_AUTOMATION_GATE = PASS（qa.automation.json manifest + entrypoint 存在/非空/shebang-or-exec-bit；report-only 在 commit 前被拒；证据绑定 QA receipt）
