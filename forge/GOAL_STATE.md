@@ -8,6 +8,18 @@ RESUME_EVIDENCE = REVIEW 5124083447 ACCEPT（绑 f6a3c659/da07182；PR #3 保持
 REVIEW_PR = mayf3/agent-six-pack-runtime#3（保持 Draft/review-only，未为 merged 徽章合并）；dsh-agent-core#177（align-1 lineage）保持不动
 G1_ARTIFACT_RETENTION_SPEC_GAP = **STILL_OPEN**——不阻塞 candidate 形成/fresh QA/PR/review；阻塞任何 merge tree 含待裁决 Six-Pack execution artifacts 的候选的最终 merge 决定。与本 bug/修复分离处理。
 
+### 23:05 START gate 四坐标解释 + 接管回报 ACCEPT（2026-09-06 Owner 指令；实测 19:13 +0800）
+首次接管回报 = HANDOFF_RECOVERED YES（Owner ACCEPT；不重跑恢复、不改本地 main、不重写 registry、不提前启动 align-2）。四个不同概念不得混为一个 Head：
+- TASK_BASE = **16e14233fbac1ccbdc00598097380da659e1ecd2**（不 rebase、不重钉）
+- LOCAL_MAIN = f4bc4311…（BEHIND_TASK_BASE，仅本地 branch 状态）
+- REGISTRY_HEAD = f4bc4311…（STALE_LOCAL_SNAPSHOT，不得作为远端 current-head Evidence）
+- REMOTE_MAIN = 600d4df9…（bounded-impact revalidation 用的 authority branch tip）
+23:05 任何模型调用前：fresh-read origin/main → 检查 TASK_BASE→REMOTE_MAIN。实测 @19:13：REMOTE_MAIN=600d4df9、delta=26 commits、变动面仅 docs/** + docs/specs/** + packages/broker/**；packages/agent-router 零触碰、目标测试文件逐字节一致。因 docs/specs/** 有变化，启动记录必答 **RELEVANT_PRODUCT_AUTHORITY_CHANGED = YES|NO**（针对 align-2 依赖的 TRUSTED_INGRESS / ordered-route-chain accepted authority 判定，不得仅凭 agent-router 未动自动判无关）。PASS 条件 = agent-router untouched AND target test unchanged AND accepted TRUSTED_INGRESS authority unchanged/supersession-unrelated → TASK_BASE 维持 16e14233；relevant Authority 被替代或语义变化 → **STOP / RE_PREFLIGHT**。
+recover 边界：允许调用既有 recover 做 queue/workflow 恢复，但 recover.registry_head_drift 只反映本地 base branch，**不得作为 remote-main revalidation Evidence、不得据此宣称 HEAD_REVALIDATED=YES**；remote revalidation 单独记录。registry scan/recover 观测 stale local branch = KNOWN_HOST_DEBT（本轮不扩成新 Runtime repair task，除非实际阻塞 align-2）。
+corrected replay 第一操作（进入模型工位前）：既有 correction/replay helper → **replay_to('specifier')**（或既有等价机制），完成后机械确认 stage_pointer=specifier、corrected specifier input=TASK_BASE/governed correction parent、旧 affected downstream receipts 不复用、rejected QA dirty bytes 不复用；若仍 stage_pointer=qa 或旧链被沿用 → **STOP CORRECTION_REPLAY_STATE_INVALID**；禁止直接 drive()/tick() 从旧 QA 状态继续。
+Runtime 前提不变：ACTUAL_RUNTIME_REVISION=580a69d7… + reviewed porcelain-fix blobs present + QA ownership precheck PASS；若开跑前 revision 再前进只比较 Runtime product bytes，GOAL_STATE-only 前移不重审产品 fix。
+当前状态 = **BLOCKER NONE**；START_PRECONDITION = remote-head + relevant-authority bounded-impact revalidation AND corrected replay must reset to specifier before model execution；KNOWN_HOST_DEBT = registry scan/recover currently observes stale local base branch, not authoritative remote branch tip。
+
 ### runtime-qa-porcelain-leading-space-fix 执行记录（2026-09-06，Owner 授权；证据 = forge/PORCELAIN_FIX_EVIDENCE.md）
 - 修复（局部 seam，边界全遵守）：gitx 新增 git_status_porcelain raw seam（通用 git() 不变）→ _working_tree_changes 换用 → 守卫谓词逐字提取为 RoleRunner._product_byte_changes（可测性，语义零变化未放宽）；Host/ledger/role contracts/QA ownership 零改动。
 - 回归测试 9 项：T1 首行 tracked QA-owned 精确路径（含 seam 直测 + staged 变体）、T2 QA-owned tracked 修改全接受、T3 product mutation 仍拒（单独+混合）、T4 untracked 折叠不回归、T5 多条目全完整路径、空格路径。
