@@ -2,9 +2,21 @@
 
 ## ACTIVE GOAL — 启用 Six-Pack 首次受限夜间交付（2026-09-05 启动）
 
-GOAL_STATUS = ALIGN_2_CORRECTED_REPLAY_AUTHORIZED_WINDOW_TONIGHT（Owner 2026-09-06 双重指令：correction #4 最终版 + 下一夜窗口授权；哨 automation-9b5a80be @ 23:05 一次性）
+GOAL_STATUS = ALIGN_2_BLOCKED_RUNTIME_ADAPTER_MISMATCH（2026-09-06 Owner 指令的零模型 QA ownership precheck FAIL：checks 2+3 实锤 `_working_tree_changes` 首行截断缺陷；今晚哨已在任何模型调用前删除；STOP 等待 Owner 对 runtime 缺陷修复的授权）
 REVIEW_PR = mayf3/dsh-agent-core#177（Draft/Open；lineage 保留，含 review 5123376463）
 G1_ARTIFACT_RETENTION_SPEC_GAP = **STILL_OPEN**——不阻塞 align-2 形成 review candidate / fresh QA / Draft PR / independent review；但**任何**候选（含 align-2 新候选）若最终 merge tree 仍含待裁决的 Six-Pack execution artifacts，G1 同样阻塞其最终 merge decision。不得描述为"仅阻塞旧 #177"。
+
+### QA ownership precheck 结果（2026-09-06，Owner 指令，零模型调用）
+**VERDICT = FAIL ⇒ ALIGN_2 = BLOCKED_RUNTIME_ADAPTER_MISMATCH**；证据 = sixpack-forge/nightly-1/state/qa-ownership-precheck-2026-09-06/（README 根因 + precheck-result.json + run/converge logs；探针脚本 nightly-1/bin/qa-ownership-precheck.py 可复跑）。
+- **根因（已 micro-repro 实证）**：`gitx.py:44` 的 `git()` 对整个 stdout `.strip()` 剥掉 porcelain **首行的前导空格**（` M path` → `M path`），`runner.py:732` 的 `line[3:]` 随即吃掉路径首字符 → `'sixpack-artifacts/…'` 变 `'ixpack-artifacts/…'` → allowlist 前缀匹配失败（runner.py:532-546）→ `SelfCertificationRejected` 对 QA-owned tracked-artifact 编辑**误触发**。
+- **影响面**：仅 `_working_tree_changes` 的两个消费点（QA 自认证守卫 :533、final-QA 零变更守卫 :611）且仅首条 ` M `/` D ` 类 porcelain 条目；QA 全新 untracked 文件（折叠 `?? sixpack-artifacts/`）不受影响（探针 4a PASS）。
+- **探针结果**：0 运行时字节==4199be02 **PASS**（缺陷潜伏于受审字节，非本机漂移）；1 qa_automation_paths=`["sixpack-artifacts/"]` **PASS**；2 完整路径 **FAIL**；3 allowlist 判定 **FAIL**；4a/4b 行为探针+负对照 **PASS**；5 final QA 路径序 **PASS**。
+- **结论修正**：昨夜 08:46 QA 重放被拒的直接机械原因是本缺陷（QA 当时编辑的正是 QA-owned 文件，本应 ALLOWED）——correction #3 的 reason 需据此补记；Owner 的 ownership 裁定与 corrected replay 计划**本身不变**（specifier 双重违规仍是事实），但执行被本缺陷阻塞。
+- **STOP 遵守**：未修 runtime 字节（修复须走 Owner 授权的受审流程）；未转移 QA automation；未放宽守卫；未改 ownership；未手工绕过；哨 automation-9b5a80be 已删除（零模型调用消耗于今晚窗口）。
+- **TASK_BASE 不变** = 16e14233fbac1ccbdc00598097380da659e1ecd2；启动前远端 main 前进仍按 bounded impact 规则执行（无关变化不重钉；agent-router/accepted Authority/测试依赖相关变化则 STOP→re-PREFLIGHT）。
+- **NEXT（待 Owner）**：授权 runtime 缺陷修复候选（gitx strip/porcelain 首行处理 + 回归测试；修复属 runtime 产品字节，须按 B-QA-01 同标准受审）或指定其他处置；修复受审后再排 corrected replay 窗口。
+
+### 下一夜窗口授权（Owner 2026-09-06，已入 ledger task_status + START_RECORD）— 被上述 BLOCKED 取代，未行使
 
 ### 上一轮收口确认 + correction #4 最终版（2026-09-06 Owner 指令）
 - QUIESCE 收口确认正确（09:00 窗口结束，control-plane only）。
