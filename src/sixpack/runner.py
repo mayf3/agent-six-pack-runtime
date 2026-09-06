@@ -531,16 +531,7 @@ class RoleRunner:
         if role is Role.QA:
             allowed = set(outcome.qa_automation_paths)
             changed = self._working_tree_changes(worktree.path)
-            product_changes = [
-                path
-                for path in changed
-                if path not in allowed
-                and not any(
-                    item.startswith(path.rstrip("/") + "/")  # dir entry containing owned files
-                    or path.startswith(item.rstrip("/") + "/")  # file under an owned dir
-                    for item in allowed
-                )
-            ]
+            product_changes = self._product_byte_changes(changed, allowed)
             if product_changes:
                 instance.stage_status[role.value] = "pending"
                 self.ledger.save()
@@ -723,9 +714,12 @@ class RoleRunner:
 
     def _working_tree_changes(self, worktree: Path) -> list[str]:
         """Paths changed in the working tree (staged, unstaged, untracked)."""
-        from .gitx import git
+        from .gitx import git_status_porcelain
 
-        out = git("status", "--porcelain", cwd=worktree, check=False)
+        # Raw porcelain output: the leading space of " M path" entries is part
+        # of the fixed-width XY prefix; the general git() helper strips it and
+        # corrupts the first line's path (leading-space defect).
+        out = git_status_porcelain("status", "--porcelain", cwd=worktree, check=False)
         paths: list[str] = []
         for line in out.splitlines():
             if not line.strip():
@@ -735,6 +729,26 @@ class RoleRunner:
             if raw:
                 paths.append(raw)
         return paths[:200]
+
+    @staticmethod
+    def _product_byte_changes(changed: list[str], allowed: set[str]) -> list[str]:
+        """Classify changed paths against the QA-owned allowlist (CTR-SIX-019).
+
+        A path is a product-byte mutation when it is not itself allowlisted
+        and is neither contained in nor contains an allowlisted directory
+        entry. Extracted verbatim from the former inline comprehension so the
+        classification is unit-testable without loosening the gate.
+        """
+        return [
+            path
+            for path in changed
+            if path not in allowed
+            and not any(
+                item.startswith(path.rstrip("/") + "/")  # dir entry containing owned files
+                or path.startswith(item.rstrip("/") + "/")  # file under an owned dir
+                for item in allowed
+            )
+        ]
 
     def _changed_files(self, worktree: Path, base_head: str) -> list[str]:
         """Paths changed between ``base_head`` and the worktree HEAD."""
