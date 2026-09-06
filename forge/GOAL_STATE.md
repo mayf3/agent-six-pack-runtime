@@ -2,7 +2,11 @@
 
 ## ACTIVE GOAL — 启用 Six-Pack 首次受限夜间交付（2026-09-05 启动）
 
-GOAL_STATUS = ALIGN_2_RESUME_ALLOWED_YES_ROLLOUT_COMPLETE（2026-09-06：porcelain fix 独立评审 ACCEPT + rollout 完成 + precheck PASS；今晚窗口 23:00–09:00 哨恢复，corrected replay 待执行）
+GOAL_STATUS = ALIGN_2_CORRECTED_REPLAY_COMPLETE_AWAITING_INDEPENDENT_REVIEW（2026-09-07 00:52：corrected replay 全链收敛 verify PASS；评审面已暴露 = dsh-agent-core PR #189 Draft；STOP at Owner decision）
+ALIGN_2_TERMINAL = BASE 16e14233fbac1ccbdc00598097380da659e1ecd2 / HEAD fbbe8c03d0242a2d6d82bf01aff69bf120a2ced9 / TREE 9bf397860ed6a6ac368a742c692a47a4ff873e53 / 11 receipts / RUNTIME_REVISION d7eb759afdf49c8fbdef60aca6acdbe066a4ae17（含 reviewed porcelain fix bytes，review 5124083447 ACCEPT）
+ALIGN_2_REVIEW_PR = mayf3/dsh-agent-core#189（Draft/Open；head=review/dsh-trusted-ingress-align-2@fbbe8c03 原样推送零改写；取代 PR #177 lineage）
+ALIGN_2_RESUME_ALLOWED = YES（已行使：corrected replay 于 2026-09-06 23:07–09-07 00:52 窗口内完成；五道 fresh gates 全过：verify PASS / 9-9 / 负探针 exit 1 / agent-router 全套 310 tests 0 failures / done 标记；晨报 = sixpack-forge/nightly-1/MORNING_REPORT_2026-09-07.md）
+ROLLUP_EVIDENCE_SEE_BELOW = RESUME_EVIDENCE / ROLLOUT 各行保留为历史证据
 ROLLOUT = ROLLOUT_BASE 0a6fac41faa905d7834d2c00567248e7edfc7cbb → ROLLOUT_HEAD d7eb759afdf49c8fbdef60aca6acdbe066a4ae17（tree 9afbb4907fd61441e1646d6dc91e00746cf4abdb；cherry-pick 已审 fix delta，无其他产品字节）；实际运行 revision = v0/bootstrap @ d7eb759a
 RESUME_EVIDENCE = REVIEW 5124083447 ACCEPT（绑 f6a3c659/da07182；PR #3 保持 Draft 未合并）+ REVIEWED_FIX_BYTE_EQUALITY YES（blob 级：gitx 6eb46d9b / runner d8b91cff / tests 5589ad73）+ FULL_TEST 116 passed + ruff clean + mypy strict clean + QA_OWNERSHIP_PRECHECK PASS 5/5（rollout head 实跑；state/qa-ownership-precheck-2026-09-06/precheck-result.json）
 REVIEW_PR = mayf3/agent-six-pack-runtime#3（保持 Draft/review-only，未为 merged 徽章合并）；dsh-agent-core#177（align-1 lineage）保持不动
