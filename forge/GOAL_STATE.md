@@ -12,6 +12,23 @@ RESUME_EVIDENCE = REVIEW 5124083447 ACCEPT（绑 f6a3c659/da07182；PR #3 保持
 REVIEW_PR = mayf3/agent-six-pack-runtime#3（保持 Draft/review-only，未为 merged 徽章合并）；dsh-agent-core#177（align-1 lineage）保持不动
 G1_ARTIFACT_RETENTION_SPEC_GAP = **STILL_OPEN**——不阻塞 candidate 形成/fresh QA/PR/review；阻塞任何 merge tree 含待裁决 Six-Pack execution artifacts 的候选的最终 merge 决定。与本 bug/修复分离处理。
 
+### NIGHTLY_PILOT_CLOSEOUT_AND_CONTINUOUS_QUEUE_PREP_V1（2026-09-07 晨收口，runtime 账见 git log）
+
+PHASE A = **#189 independent exact-head review = ACCEPT（0 blockers）** @fbbe8c03/tree 9bf39786。独立复核（非复制正文）：BOUNDED_IMPACT=PASS（main 91a836a3→75d25914 仅 production-runtime/product-api，agent-router 零触碰，TASK_BASE 不重钉）；产品唯一行为改动=feishu-regression.test.js（feishuSenderOpenId 仅来自认证 sender 元数据、text 诱饵 ou_decoy_id 不得入 trusted、freeze/no-parse 保持）；corrected 链逐 commit ownership 核（specifier 1b6c9fd 撤回 qa.automation.json/qa_required_checks.sh 违规件、coder 44e471c 测试修复、QA fbbe8c0 恰好三 QA-owned 文件、旧作废链未复用）；独立实跑=9/9 PASS + 负探针 exit1 + 全套 310/309/0/1 + clean script exit0（manifest set-equality）+ sixpack verify PASS（独立重执行）；review 分支 tree 与候选一致、认证后零变异。PR 正文 sixpack-artifacts/** 措辞 = PR_METADATA_INCONSISTENCY / NON_BLOCKING / CANDIDATE_BYTES_UNCHANGED（已记录，不改 certified Head）。G1 STILL_OPEN：不阻塞本 review，只阻塞最终 merge-tree disposition（Owner 裁决）。评审记录 = reports evidence/dsh-agent-core/DSH-ALIGN2_189_INDEPENDENT_REVIEW_20260907.md。
+ALIGN_2_FINAL_STATE = TECHNICALLY_ACCEPTED / WAITING_OWNER_DECISION（DO_NOT_MERGE 维持；merge 需 G1 + Owner）
+PR_177_STATE = SUPERSEDED_BY_#189 / PENDING_OWNER_CLOSE（ACCEPT 条件满足；不自动关闭）
+
+PHASE C = **NIGHTLY_SERIAL_SINGLE_TASK_PILOT = PASS**（2026-09-06 夜，automation-5dd41c1a 哨执行）：
+scheduled start=PASS / no duplicate writer=PASS / correction+replay=PASS（2 次 HeadDrift 有界纠正非盲试）/ six real roles=PASS（23:28–00:52）/ QA ownership=PASS（QA 全新建 automation、porcelain fix 生效实证、final 一次过）/ fail-closed negative probe=PASS（exit1）/ terminal verify=PASS / Draft PR #189=PASS / AUTO_READY=AUTO_MERGE=AUTO_DEPLOY=false。
+如实未证明：CONTINUOUS_MULTI_TASK_NIGHTLY = NOT_YET_PROVEN；TWO_WORKER_CONCURRENCY = NOT_PROVEN；OUTCOME_UNKNOWN_SAFE_RECOVERY = NOT_PROVEN。不扩大 claim。
+
+PHASE D = 今晚（2026-09-07 23:00）切连续消费模式：
+- 唯一入口 = automation-9952ac9c `0 23 * * *`（fresh CronList 2026-09-07 晨核实：非 */10；watchdog=守护进程内置机械循环 + command-only launchd com.mayf3.sixpack-watchdog，无 model-backed 10 分钟 session）。
+- automation-5dd41c1a 已 completed（runCount=1），不复活不复制；今晚无特殊哨。
+- 今晚模式 = 23:00 supervisor → fresh queue → 选最高优先可执行项 → 执行 → persist disposition → fresh queue → 下一项，直至无可执行/08:30 QUIESCE/09:00 CLOSED；每次模型 spawn 先过 pre-spawn-gate；MAX_CONCURRENT_MODEL_CALLS=1。
+- **CONTINUOUS_MULTI_TASK_NIGHTLY_PILOT 判据（预登记）**：≥2 个不同 Repair Queue disposition 且 ≥1 个为真实 implementation/review candidate 或 Draft PR → PASS；仅 1 个 → PARTIAL；一单后不再消费 queue → FAIL（查 dispatcher continuity，不扩 Runtime 重构）。
+- queue 现状满足晨后要求（#189 WAITING_OWNER_DECISION / #177 SUPERSEDED_PENDING_OWNER_CLOSE / CODE-1 QUEUED（slot 释放后重判）/ svc#22 STALE_AS_PREPARED / forum#17 WAITING_OWNER_DECISION / forum L0 DOC-TRUTH READY_FOR_TRIVIAL_DOCS_FIX（需 mandate）/ auth#36 BLOCKED_OWNER_HELD / HR topology WAITING_OWNER_DECISION）。不重新 Scout。
+
 ### ACTIVE GOAL — NIGHTLY_UNATTENDED_SUPERVISOR_V1（2026-09-06 深夜 Owner 设立；最小强化 + DONE_WHEN 十项零模型验证完成）
 
 GOAL_STATUS = **UNATTENDED_SUPERVISOR_READY_FOR_SERIAL_PILOT = YES；TWO_WORKER_CONCURRENCY_READY = NO**（未跑真实 product mutation；不重构 Runtime；无新 DB/服务/Dashboard）
