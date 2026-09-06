@@ -2,10 +2,24 @@
 
 ## ACTIVE GOAL — 启用 Six-Pack 首次受限夜间交付（2026-09-05 启动）
 
-GOAL_STATUS = FIRST_NIGHTLY_CANDIDATE_REVIEW_SURFACE_EXPOSED（2026-09-06：dsh-trusted-ingress-align-1 独立评审面已暴露 = dsh-agent-core PR #177 Draft；STOP——不领下一项仓库任务，处置归 Owner/独立 Reviewer）
+GOAL_STATUS = B1_REPLACEMENT_CANDIDATE_IN_PROGRESS_QA_PENDING_REPLAY（2026-09-06 白天窗口：dsh-trusted-ingress-align-2 五工位完成，QA 两步重放待今晚 23:05 哨执行；window QUIESCE 后 quiesce 收口，状态可恢复）
 REVIEW_PR = mayf3/dsh-agent-core#177（Draft/Open；base=main@797952e7bc33a134e8c29d3a66dd76b1210ba721==冻结 Base；head=review/dsh-trusted-ingress-align-1@dd100382a23509c67a35cf919e8cda07da1d43d0 原样推送零改写；tree=0f5815369e9e7705edc54bf1d8e8634c31838dbc）
-REVIEW_PREPARATION_EVIDENCE = 2026-09-06 fresh：verify PASS（failures=[]、7 receipts、首跑 QA 794e2609 如实 BLOCKED → correction 重放 → final QA d76bfad3 绑定 terminal tree）；目标测试 9/9 PASS（terminal commit 上 fresh 复跑）；origin/main == 冻结 Base（0 前移，无 bounded impact 需要）；PRODUCT_DIFF = packages/agent-router/test/feishu-regression.test.js 单文件；SIXPACK_ARTIFACT_DIFF = 8 文件（PR 内已列全并提请 Reviewer 裁决是否属本仓 artifact）
-REMOTE_WRITE_USED = 仅 review 分支推送 + Draft PR 创建（Owner 2026-09-06 授权范围；无 Ready/merge/deploy/改写）
+REVIEW_5123376463 = REVISE（B1 QA automation fail-open blocker + G1 artifact-retention SPEC_GAP）；OWNER 指令：B1 修复候选 + 三仓继续；G1 只阻塞 #177 merge 路径，不影响其他仓
+
+### B1 替换候选执行记录（2026-09-06 白天窗口 07:36–08:50）
+- **bounded impact/preflight 重做（Owner 指令，dsh main 前进后）**：origin/main = 16e14233fbac…（PR #176 fleet-shared-codex-bootstrap 合入）；797952e7..16e14233 仅触碰 packages/production-runtime 两文件，packages/agent-router 零改动，目标测试文件与冻结 base 逐字节相同 → 新 Base = 16e14233，修复本体可干净移植。
+- **新任务 dsh-trusted-ingress-align-2**（base_head=16e14233；B1 四要求逐条编码进 goal/done_when：fail-closed 脚本、真实 CRAP/DRY/结构检查 vs BASE..HEAD + governed NOT_APPLICABLE、manifest 断言、去 /tmp/node 硬编码改 SIX_PACK_NODE_PATH）。
+- **执行**：specifier 07:52 → coder 07:58 → cleaner 08:13（重放1）→ architect 08:23（重放2）→ hardender 08:28 → QA 重放3 08:41（实活完成但被守卫拒）。全部真实 GLM glm-5.3-flash 经 forwarder；窗口 ACTIVE 内派发。
+- **四次 correction（ledger corrections[] 全记录，非盲试）**：
+  1. cleaner 空候选（未写强制工位报告）→ done_when 加 STATION MANDATE → 重放成功；
+  2. architect 同模式（真跑了 verify-code-structure.mjs 但零文件）→ 加 last-action 报告指令 → 重放成功；
+  3. QA 撞自动化门（上游提交的 manifest 用单数 entrypoint，门要求复数 entrypoints）+ QA 负探针写 /tmp 被 opencode external_directory 自动拒 → 加 manifest-gate-schema + 探针 worktree 内指令；
+  4. QA 重放实活全部完成（manifest 已改对、脚本已增强、qa.report.md 已写）但 SelfCertificationRejected——根因 = 本次上游工位按 goal 预提交了 qa.automation.json/qa_required_checks.sh（成产品字节），QA 修改即自认证（守卫工作正常）。**correction #4 = 两步：hardender 归一 manifest schema → QA 重放且不碰上游字节；已入 ledger，今晚 23:05 哨 automation-064f835b 执行**。
+- **守卫实弹（本轮新增 4 类真实触发）**：空候选拒绝 ×2、自动化门拒绝（entrypoints schema）、QA 自认证拒绝——helper/门/守卫全部按设计工作，runtime 字节零修改。
+- **09:00 窗口语义实测**：08:46 起相位 = QUIESCE（新模型工位按 ACC-MRH-003 拒绝）→ host quiesce 收口，in_process 清空、状态落盘。
+- G1 SPEC_GAP：artifact retention（六份 station narrative report 是否进 consumer merge tree 无足够 Authority）——只阻塞 #177 merge 路径，不暂停其他仓。
+- 三仓只读核验（并行）：svc-workflow #19 / auth-service #36#39 仍 OPEN 未变（授权缺口未解除，NO_CHANGE）；agent-forum automation CI 失败仍在（Owner 权限决策 pending）；dsh-agent-core 无新 open issue。未启动任何新写任务（dsh 单写位被 align-2 占用；其余仓无授权缺口闭合项）。
+- NEXT = 今晚 23:05 automation-064f835b：correction #4 两步重放 → 收敛 → verify → fresh 测试（9/9 + fail-closed 负探针 + agent-router 240）→ review/dsh-trusted-ingress-align-2 分支 + Draft PR（引 #177/5123376463 lineage）→ 晨报。STOP at Owner decision。
 
 ### FOLLOW_UP_DEBT — 夜间工具问题（2026-09-06 Owner 归档指令；不阻塞 PR #177 评审；下次长期无人值守夜间运行前须形成独立 tooling candidate 并审查）
 1. registry pin 被 recover 以本地分支 head 重写（01:56 实录；影响检查后恢复）。
