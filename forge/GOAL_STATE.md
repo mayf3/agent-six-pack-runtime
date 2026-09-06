@@ -8,8 +8,23 @@ RESUME_EVIDENCE = REVIEW 5124083447 ACCEPT（绑 f6a3c659/da07182；PR #3 保持
 REVIEW_PR = mayf3/agent-six-pack-runtime#3（保持 Draft/review-only，未为 merged 徽章合并）；dsh-agent-core#177（align-1 lineage）保持不动
 G1_ARTIFACT_RETENTION_SPEC_GAP = **STILL_OPEN**——不阻塞 candidate 形成/fresh QA/PR/review；阻塞任何 merge tree 含待裁决 Six-Pack execution artifacts 的候选的最终 merge 决定。与本 bug/修复分离处理。
 
-### ACTIVE GOAL — NIGHTLY_MULTI_REPO_REPAIR_DISPATCH_V1（2026-09-06 Owner 设立；最小实现+零模型 simulation 完成）
+### ACTIVE GOAL — NIGHTLY_UNATTENDED_SUPERVISOR_V1（2026-09-06 深夜 Owner 设立；最小强化 + DONE_WHEN 十项零模型验证完成）
 
+GOAL_STATUS = **UNATTENDED_SUPERVISOR_READY_FOR_SERIAL_PILOT = YES；TWO_WORKER_CONCURRENCY_READY = NO**（未跑真实 product mutation；不重构 Runtime；无新 DB/服务/Dashboard）
+实现（全部零模型，扩展 nightly-1/bin/nightly-dispatcher.py + 改造 automation-9952ac9c 单一自动化双模式）：
+- **Supervisor lifecycle**：START 23:00（supervisor start 启动零模型心跳守护 = flock single-controller 原语 + 30s 心跳 + 采样 glm-role-exec 进程数 → MAX_OBSERVED_CONCURRENCY；父会话死亡孤儿自退出）/ QUIESCE 08:30（supervisor stop + 只许收尾）/ CLOSE 09:00 硬闸。
+- **Watchdog**：纯机械每 10 分钟（23:10–08:20 自限），四检查（window open / supervisor PID+心跳 / single-controller / ledger readable），decision = NOOP（alive / STANDBY 夜 / 有 model workers=既有授权 controller 在跑，绝不冻结哨的合法工作）/ RESTART_SAFE（absent+无 in-flight → 从 durable state 接管重启，start_retries.json 累计单一 incident 不重复通知）/ RESTART_WITH_FROZEN（in_process 无 worker = uncertain → 自动记 OUTCOME_UNKNOWN、no redispatch、continue other lanes）。
+- **事件驱动**：stage receipt → 立即下一 stage（sixpack ledger 驱动原生）；terminal → 立即重读 queue；无任务 → IDLE；禁固定时间轮询模型。
+- **Provider transient**（classify-retry 子命令，机械四证明 = 无 model/session 执行 + 无文件 mutation + 无 candidate commit + 无 durable receipt）：429/限速/会话建立前 502/503/连接失败 → SAFE_TO_RETRY（Retry-After 优先，否则 2/5/10/20/30/30 分 ±10% jitter，MAX_TRANSIENT_START_RETRIES_PER_STAGE=6 → DEFERRED_RATE_LIMIT；不计 semantic correction；等待不阻塞其他 lane）；执行已开始/证明不齐 → OUTCOME_UNKNOWN AUTO_RETRY=NO 保全 worktree/refs/status/日志/input head；测试失败/QA FAIL/REVISE → 既有 correction→replay（MAX_CORRECTION_ROUNDS_PER_NIGHT=2 → DEFERRED）。
+- **Draft PR = 自动写终点**：…→ push candidate branch → Draft PR → independent exact-head review → STOP（stop-line 子命令：ACCEPT→WAITING_OWNER_DECISION；REVISE→预算内 correction 否则留 Draft PR+blockers；AUTO_READY/MERGE/DEPLOY=false）。
+- **Fair scheduling**：budget-check 每任务墙钟 MAX_TASK_WALLTIME_PER_NIGHT=3h → DEFERRED_BUDGET 释放容量 pick next。
+- **并发治理**（concurrency 子命令）：生产 MAX_CONCURRENT_MODEL_CALLS=1；target=2 仅当 A（zero-model two-worker claim test）/B（双 disposable 仓并发 simulation）/C（一次有界真实双任务 pilot）全 PASS；rate limit → 降 1，稳定 30 分钟恢复 2；永不自动 3。当前 A/B/C 未全过 → 保持 1。
+- **Trigger 改造**：automation-9952ac9c cron `*/10 0-8,23 * * *`（validator 不收跨午夜段），prompt 模式分流 = (e) 23:00–23:09 SUPERVISOR / (c) 23:10–08:20 absent → WATCHDOG 行动 / (b) 心跳新鲜 → NOOP / (d) 08:20–08:50 QUIESCE 收尾；今晚首跑 23:00 仍走 standby 谓词（align-2 哨 pending → STANDBY）。
+- **晨报**：新增 Supervisor V1 十一字段（TASKS_COMPLETED/DRAFT_PRS_CREATED/REVIEWS_ACCEPTED/REVIEWS_REVISE/DEFERRED_RATE_LIMIT/DEFERRED_BUDGET/OUTCOME_UNKNOWN/START_RETRIES/RATE_LIMIT_EVENTS/MAX_OBSERVED_CONCURRENCY/OWNER_DECISIONS_PENDING），receipts outcome 约定名自动聚合。
+DONE_WHEN 零模型验证（state/dispatch/simulation-20260906/supervisor-tests/）：watchdog restart 三态+四态（RESTART_SAFE/RESTART_WITH_FROZEN/NOOP-alive/NOOP-workers）✓；429 Retry-After=90s 精确 ✓；429 fallback 退避阶梯 119.4/298.4/596.8/1193.7/1790.5/1790.5（±10% jitter）第 7 次 → DEFERRED_RATE_LIMIT ✓；pre-session 502+干净证明 → SAFE_TO_RETRY ✓；exec started 无 receipt → OUTCOME_UNKNOWN AUTO_RETRY=NO ✓；预算 3.08h → DEFERRED_BUDGET ✓；Draft PR stop-line（ACCEPT→WAITING_OWNER_DECISION；AUTO_*=false）✓；adaptive concurrency 2→（rate limit）→1→（+35min）→2，诚实复位后生产默认 1 & READY=NO ✓；08:30 QUIESCE 拒绝 ✓；09:00 CLOSED 拒绝 ✓。测试中修复三个真 bug（watch 跨午夜比较、Retry-After 从日志解析、并发提升门控）。
+边界重申：本 Goal 不改 Runtime 产品源；Host V1 safe-redispatch recovery 未修复前 OUTCOME_UNKNOWN 永不自动重派；pilot 十条验收 ≠ FULL_UNATTENDED_HOST_CONFORMANCE。
+
+### ACTIVE GOAL — NIGHTLY_MULTI_REPO_REPAIR_DISPATCH_V1（2026-09-06 Owner 设立；最小实现+零模型 simulation 完成）
 GOAL_STATUS = **READY_FOR_BOUNDED_NIGHTLY_PILOT**（Owner 2026-09-06 深夜收窄定案；V1 十条 DONE_WHEN 已实现并 simulation 验证；未跑真实 product mutation；不是 FULL_UNATTENDED_HOST_CONFORMANCE）
 能力 claim 矩阵（勿宣称更高）：
 - QUEUE_SELECTION = **PROVEN**（S1r/S4 simulation）
