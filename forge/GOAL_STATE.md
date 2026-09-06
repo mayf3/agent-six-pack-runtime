@@ -8,6 +8,17 @@ RESUME_EVIDENCE = REVIEW 5124083447 ACCEPT（绑 f6a3c659/da07182；PR #3 保持
 REVIEW_PR = mayf3/agent-six-pack-runtime#3（保持 Draft/review-only，未为 merged 徽章合并）；dsh-agent-core#177（align-1 lineage）保持不动
 G1_ARTIFACT_RETENTION_SPEC_GAP = **STILL_OPEN**——不阻塞 candidate 形成/fresh QA/PR/review；阻塞任何 merge tree 含待裁决 Six-Pack execution artifacts 的候选的最终 merge 决定。与本 bug/修复分离处理。
 
+### ACTIVE GOAL — NIGHTLY_MULTI_REPO_REPAIR_DISPATCH_V1（2026-09-06 Owner 设立；最小实现+零模型 simulation 完成）
+
+GOAL_STATUS = NIGHTLY_DISPATCHER_READY（V1 十条 DONE_WHEN 全达成；未跑任何真实 product mutation）
+边界：唯一任务源 = MULTI_REPO_REPAIR_QUEUE.md + durable ledger；只建 Repair Queue → deterministic selection → existing execution route；不建新平台/DB/Dashboard/scheduler service；不重扫仓库（新 Scout 属独立 Goal）；Controller 非第七个 reasoning Agent。
+窗口：直接复用 runtime 原生三相位（controller.py window_phase：open 23:00 / quiesce_minutes=30 → ACTIVE 23:00–08:30、QUIESCE 08:30–09:00、WINDOW_CLOSED 09:00–23:00）——**Runtime 零改动**。
+实现（全部复用 nightly-1）：`sixpack-forge/nightly-1/bin/nightly-dispatcher.py`（零模型纯 stdlib：`gate` 六 lane 零模型 start gate——night_window/single_controller/runtime_product_bytes（GOAL_STATE-only 前移不重审：仅比较 src/tests/pyproject 字节 diff）/ledger_integrity/write_slots/align2_state_binding；`plan` 解析 queue 归并节 → Goal 状态机 → 处置（EXECUTE_READONLY/ADMIT_WRITE_SIXPACK/NO_WRITE_NO_MANDATE/NO_WRITE_SLOT_OCCUPIED/SKIP_OWNER|BLOCKED|STALE|CLOSED|SLOT_OCCUPIED|QUEUED_FINDING|NO_ACTION）+ P0–P3 与 tiebreak 排序（候选评审 > revalidation > trivial > six-pack）；`morning-report` 11 字段骨架）。write admission 六条件（Authority/mandate/现症/slot/drift/route）缺一 NO_WRITE；mandate 必须绑定该任务（simulation 抓出并修复了跨任务 mandate 误判 bug）。
+Trigger：**automation-9952ac9c** @ 23:00 daily（recurring；今晚首跑即 STANDBY——第 0 步防重 guard：CronList 检出 enabled align-2 哨（automation-5dd41c1a）则只跑 gate+plan 存档+STANDBY 晨报后退出，不重复启动 align-2、不建第二个 dsh writer、不替换哨）。
+零模型 simulation 证据 = sixpack-forge/nightly-1/state/dispatch/simulation-20260906/（S1r 实队列 ACTIVE→全部 skip→IDLE_NON_OCCUPIED_REPOS，与 Owner CURRENT QUEUE EXAMPLES 逐项一致；S2 @10:00 WINDOW_CLOSED 拒绝；S3 @08:35 QUIESCE 拒绝；S4 合成多任务队列→EXECUTE_PLAN 连续消费 execution_order=[candidate-x-review(P1 评审), elig-fix(P2 six-pack, mandate=M-TEST-1)]，l0-doc-truth=NO_WRITE_NO_MANDATE；S5 gate 白天实况→仅 night_window lane FAIL 其余 PASS，按 lane 阻断验证；align-2 slot=occupied 实测识别）。
+恢复语义：durable 恢复走既有 sixpack host recover + ledger（V1 不重写）；gate 的 lock/pid/in_process 检测 = single-controller 条件；晨报+receipts+queue diff = 可追溯。
+STOP：本 Goal 到此为止——不为证明 V1 运行真实 mutation；今晚唯一 write 主线仍是 align-2（23:05 哨）。
+
 ### 23:05 START gate 四坐标解释 + 接管回报 ACCEPT（2026-09-06 Owner 指令；实测 19:13 +0800）
 首次接管回报 = HANDOFF_RECOVERED YES（Owner ACCEPT；不重跑恢复、不改本地 main、不重写 registry、不提前启动 align-2）。四个不同概念不得混为一个 Head：
 - TASK_BASE = **16e14233fbac1ccbdc00598097380da659e1ecd2**（不 rebase、不重钉）
