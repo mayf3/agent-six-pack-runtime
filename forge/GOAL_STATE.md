@@ -10,7 +10,20 @@ G1_ARTIFACT_RETENTION_SPEC_GAP = **STILL_OPEN**——不阻塞 candidate 形成/
 
 ### ACTIVE GOAL — NIGHTLY_MULTI_REPO_REPAIR_DISPATCH_V1（2026-09-06 Owner 设立；最小实现+零模型 simulation 完成）
 
-GOAL_STATUS = NIGHTLY_DISPATCHER_READY（V1 十条 DONE_WHEN 全达成；未跑任何真实 product mutation）
+GOAL_STATUS = **READY_FOR_BOUNDED_NIGHTLY_PILOT**（Owner 2026-09-06 深夜收窄定案；V1 十条 DONE_WHEN 已实现并 simulation 验证；未跑真实 product mutation；不是 FULL_UNATTENDED_HOST_CONFORMANCE）
+能力 claim 矩阵（勿宣称更高）：
+- QUEUE_SELECTION = **PROVEN**（S1r/S4 simulation）
+- WRITE_ADMISSION_POLICY = **PROVEN_BY_SIMULATION**（task 绑定 mandate 六条件；simulation 抓出并修复跨任务 mandate 误判 bug）
+- WINDOW_WRAPPER_GATE = **PROVEN_BY_SIMULATION**（S2 WINDOW_CLOSED / S3 QUIESCE 拒绝）
+- BASIC_LEDGER_RESUME = **AVAILABLE**（ledger/queue state reload；既有 host recover 保留未重写）
+- SAFE_OUTCOME_UNKNOWN_RECOVERY = **NOT_YET_PROVEN**（crash during stage / lease expiry uncertain worker / unreceipted descendant / ambiguous dirty mutation → TASK_STATE=OUTCOME_UNKNOWN，NO AUTOMATIC REDISPATCH、PRESERVE EVIDENCE、STOP AFFECTED TASK；dispatcher 已实现 STOP_OUTCOME_UNKNOWN_NO_REDISPATCH 冻结，Host V1 safe-redispatch recovery 修复前不自动重派）
+- RUNTIME_WIDE_WINDOW_ENFORCEMENT = **NOT_YET_PROVEN**（窗口检查在 admission path 已有，所有 continuation path 未证明 Runtime-wide 强制；本轮不修 Runtime）
+- MULTI_PROCESS_CONCURRENCY = **NOT_PROVEN**
+
+【今晚唯一入口不变量（TODAY 2026-09-06，永久记录）】AUTHORIZED_MODEL_EXECUTION_ENTRYPOINTS = ① align-2 一次性哨 automation-5dd41c1a；② nightly dispatcher（仅 standby guard 放行后）。禁止其他 automation/cron/operator 路径调 controller.tick/drive/wake_next 启动 model-backed stage。
+
+ALIGN2_SENTINEL_PENDING 谓词（收紧版，standby-check 子命令）：哨存在 AND enabled AND runCount<maxRuns AND 计划时刻与当前夜窗相交 AND ledger align-2 非终态/收敛/review-only；仅 YES → STANDBY。零模型测试 A–D + 附带 E 全过（state/dispatch/simulation-20260906/standby-tests/：A enabled+0/1+active→STANDBY；B maxRuns reached→DO_NOT_STANDBY；C disabled→DO_NOT_STANDBY；D align2=AWAITING_INDEPENDENT_REVIEW 而 stale 哨记录仍在→DO_NOT_STANDBY；E 计划时刻窗外→DO_NOT_STANDBY）。
+Pilot 验收（首个真实 night run 仅验十条：trigger fires / single dispatcher / owner+blocker skipped / legal readonly advance / legal mandated write advance / completion→queue reread / 08:30 无新 admission / 09:00 无新工作 / 晨报与 durable receipts 一致 / 无 align-2 重复）→ 全过 = NIGHTLY_SERIAL_PILOT=PASS，仍不升级 FULL_UNATTENDED_HOST_CONFORMANCE。morning-report 模板已固定输出 BASIC_RECOVERY=AVAILABLE 与 HOST_V1_SAFE_REDISPATCH_RECOVERY=NOT_PROVEN。
 边界：唯一任务源 = MULTI_REPO_REPAIR_QUEUE.md + durable ledger；只建 Repair Queue → deterministic selection → existing execution route；不建新平台/DB/Dashboard/scheduler service；不重扫仓库（新 Scout 属独立 Goal）；Controller 非第七个 reasoning Agent。
 窗口：直接复用 runtime 原生三相位（controller.py window_phase：open 23:00 / quiesce_minutes=30 → ACTIVE 23:00–08:30、QUIESCE 08:30–09:00、WINDOW_CLOSED 09:00–23:00）——**Runtime 零改动**。
 实现（全部复用 nightly-1）：`sixpack-forge/nightly-1/bin/nightly-dispatcher.py`（零模型纯 stdlib：`gate` 六 lane 零模型 start gate——night_window/single_controller/runtime_product_bytes（GOAL_STATE-only 前移不重审：仅比较 src/tests/pyproject 字节 diff）/ledger_integrity/write_slots/align2_state_binding；`plan` 解析 queue 归并节 → Goal 状态机 → 处置（EXECUTE_READONLY/ADMIT_WRITE_SIXPACK/NO_WRITE_NO_MANDATE/NO_WRITE_SLOT_OCCUPIED/SKIP_OWNER|BLOCKED|STALE|CLOSED|SLOT_OCCUPIED|QUEUED_FINDING|NO_ACTION）+ P0–P3 与 tiebreak 排序（候选评审 > revalidation > trivial > six-pack）；`morning-report` 11 字段骨架）。write admission 六条件（Authority/mandate/现症/slot/drift/route）缺一 NO_WRITE；mandate 必须绑定该任务（simulation 抓出并修复了跨任务 mandate 误判 bug）。
