@@ -2,9 +2,16 @@
 
 ## ACTIVE GOAL — 启用 Six-Pack 首次受限夜间交付（2026-09-05 启动）
 
-GOAL_STATUS = ALIGN_2_BLOCKED_RUNTIME_ADAPTER_MISMATCH（2026-09-06 Owner 指令的零模型 QA ownership precheck FAIL：checks 2+3 实锤 `_working_tree_changes` 首行截断缺陷；今晚哨已在任何模型调用前删除；STOP 等待 Owner 对 runtime 缺陷修复的授权）
-REVIEW_PR = mayf3/dsh-agent-core#177（Draft/Open；lineage 保留，含 review 5123376463）
-G1_ARTIFACT_RETENTION_SPEC_GAP = **STILL_OPEN**——不阻塞 align-2 形成 review candidate / fresh QA / Draft PR / independent review；但**任何**候选（含 align-2 新候选）若最终 merge tree 仍含待裁决的 Six-Pack execution artifacts，G1 同样阻塞其最终 merge decision。不得描述为"仅阻塞旧 #177"。
+GOAL_STATUS = RUNTIME_PORCELAIN_FIX_CANDIDATE_AWAITING_INDEPENDENT_REVIEW（Owner 授权的独立最小 Runtime blocker 修复已交付 = runtime-qa-porcelain-leading-space-fix；PR #3 Draft exact-head review 待行；ALIGN_2 保持 BLOCKED/frozen 直至 review ACCEPT + 运行 revision 含 fix bytes + precheck PASS）
+REVIEW_PR = mayf3/agent-six-pack-runtime#3（Draft/Open；base=v0/bootstrap；head=fix/qa-porcelain-leading-space@f6a3c659dde4e6fe6af31a672f3ceb8debb33dfc；tree=da07182ccc2e04e7a6b95f90d862f93db7bb4572；diff 恰为 3 个授权修复文件）
+dsh-agent-core#177（align-1 lineage，Draft/Open，含 review 5123376463）保持不动。
+G1_ARTIFACT_RETENTION_SPEC_GAP = **STILL_OPEN**——不阻塞 candidate 形成/fresh QA/PR/review；阻塞任何 merge tree 含待裁决 Six-Pack execution artifacts 的候选的最终 merge 决定。与本 Runtime bug 分离处理。
+
+### runtime-qa-porcelain-leading-space-fix 执行记录（2026-09-06，Owner 授权；证据 = forge/PORCELAIN_FIX_EVIDENCE.md）
+- 修复（局部 seam，边界全遵守）：gitx 新增 git_status_porcelain raw seam（通用 git() 不变）→ _working_tree_changes 换用 → 守卫谓词逐字提取为 RoleRunner._product_byte_changes（可测性，语义零变化未放宽）；Host/ledger/role contracts/QA ownership 零改动。
+- 回归测试 9 项：T1 首行 tracked QA-owned 精确路径（含 seam 直测 + staged 变体）、T2 QA-owned tracked 修改全接受、T3 product mutation 仍拒（单独+混合）、T4 untracked 折叠不回归、T5 多条目全完整路径、空格路径。
+- 质量门（exact head 实跑）：116 tests passed + ruff clean + mypy strict clean + 零模型 precheck 修复后五项全 PASS（修复前 FAIL 证据同存）。
+- ALIGN_2 恢复三条件（Owner 指令）：PR #3 独立 review ACCEPT + 实际运行 revision 含 reviewed fix bytes + QA ownership precheck PASS → 才重排 align-2 有界 corrected replay 窗口。当前 = NO。
 
 ### QA ownership precheck 结果（2026-09-06，Owner 指令，零模型调用）
 **VERDICT = FAIL ⇒ ALIGN_2 = BLOCKED_RUNTIME_ADAPTER_MISMATCH**；证据 = sixpack-forge/nightly-1/state/qa-ownership-precheck-2026-09-06/（README 根因 + precheck-result.json + run/converge logs；探针脚本 nightly-1/bin/qa-ownership-precheck.py 可复跑）。
