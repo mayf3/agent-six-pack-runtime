@@ -44,6 +44,19 @@ def git(*args: str, cwd: Path | None = None, check: bool = True) -> str:
     return result.stdout.strip()
 
 
+def git_status_porcelain(*args: str, cwd: Path | None = None, check: bool = True) -> str:
+    """Run a status-style git command and return stdout WITHOUT stripping.
+
+    Porcelain entries such as ``" M path"`` begin with a space that is part of
+    the fixed-width XY status prefix; stripping the overall output corrupts the
+    prefix of the first line, which made fixed-width path slicing drop the
+    first path character. Callers that slice porcelain prefixes must use this
+    raw seam instead of the general ``git()`` helper.
+    """
+    result = _run(["git", *args], cwd=cwd, check=check)
+    return result.stdout
+
+
 @dataclass(frozen=True)
 class WorktreeInfo:
     path: Path
