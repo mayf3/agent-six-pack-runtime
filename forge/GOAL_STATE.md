@@ -2,9 +2,18 @@
 
 ## ACTIVE GOAL — 启用 Six-Pack 首次受限夜间交付（2026-09-05 启动）
 
-GOAL_STATUS = B1_REPLACEMENT_CANDIDATE_IN_PROGRESS_QA_PENDING_REPLAY（2026-09-06 白天窗口：dsh-trusted-ingress-align-2 五工位完成，QA 两步重放待今晚 23:05 哨执行；window QUIESCE 后 quiesce 收口，状态可恢复）
-REVIEW_PR = mayf3/dsh-agent-core#177（Draft/Open；base=main@797952e7bc33a134e8c29d3a66dd76b1210ba721==冻结 Base；head=review/dsh-trusted-ingress-align-1@dd100382a23509c67a35cf919e8cda07da1d43d0 原样推送零改写；tree=0f5815369e9e7705edc54bf1d8e8634c31838dbc）
-REVIEW_5123376463 = REVISE（B1 QA automation fail-open blocker + G1 artifact-retention SPEC_GAP）；OWNER 指令：B1 修复候选 + 三仓继续；G1 只阻塞 #177 merge 路径，不影响其他仓
+GOAL_STATUS = ALIGN_2_STAGED_FOR_CORRECTED_REPLAY_PENDING_NEXT_WINDOW_AUTHORIZATION（Owner 2026-09-06 纠正后：correction #4 原方案作废；最早违规工位=specifier；无 standing nightly mandate → 不自动延续窗口授权）
+REVIEW_PR = mayf3/dsh-agent-core#177（Draft/Open；lineage 保留，含 review 5123376463）
+REVIEW_5123376463 = REVISE（B1 + G1）；G1 artifact-retention SPEC_GAP = **STILL_OPEN**（不阻塞新 review candidate 的形成，只阻塞 #177 merge 路径；不得写成已解决）
+
+### Owner 纠正记录（2026-09-06T09:00+08:00，correction #4 重写）
+- **所有权裁定**：QA OWNS = executable QA automation / qa.automation manifest / final QA execution / final QA receipt。`SelfCertificationRejected` 是有效守卫；根因 = **上游工位错误预创建 QA-owned automation bytes**（最早违规 = specifier commit `9f1ec2c`，与 accepted 测试修复一起引入了 qa.automation.json + qa_required_checks.sh），不是"QA 不应修改该文件"。
+- **作废方案**：hardender 修 manifest → QA 不碰该文件认证 —— 把 QA 专属责任错误转移给 hardender，禁止。
+- **正确重放计划**（下一授权窗口执行）：① replay specifier：只删除其错误创建的两个 QA-owned 文件（恢复"进入 QA 前不存在 QA automation"的正确候选；保留测试修复+报告；不得替 QA 修 schema/脚本）；② 受影响 downstream stages 按正常规则重过（AFFECTED_RANGE_TO_BE_RECOMPUTED）；③ QA 从 corrected candidate 自己创建并提交 qa.automation.json + qa_required_checks.sh + qa.report.md（set -euo pipefail、node 失败传播非零、canonical checks 机械断言、manifest 一致性机械断言、无硬编码一次性 /tmp node path 除非 governed/pinned）；④ QA commit automation 后对该 exact Head/tree fresh final QA，final 不再改 certified bytes；⑤ fresh target test / fresh fail-closed 负探针 / fresh agent-router 回归 / terminal verify / Draft PR / 独立 exact-head review（#177 lineage 保留）。
+- **状态（Owner 指定格式，已同步 ledger task_status）**：
+  ALIGN_2 = STAGED_FOR_CORRECTED_REPLAY；FIVE_UPSTREAM_STAGES = COMPLETED_BUT_AFFECTED_RANGE_TO_BE_RECOMPUTED；QA_FINAL = NOT_COMPLETED；REJECTED_QA_WORKTREE = DIAGNOSTIC_EVIDENCE_ONLY（证据 = sixpack-forge/nightly-1/state/rejected-qa-attempt-align-2/：worktree diff + untracked 报告 + manifest 修改；无 accepted receipt、无 downstream handoff、dirty bytes 不复用、replay 时 reset/remove 后 fresh 重放）；TERMINAL_HEAD = NONE；DRAFT_PR = NONE。
+- **不计完成**："QA 已把实活做完只差提交"不算完成——terminal candidate 只能由 fresh QA 执行产生。
+- **窗口/授权**：本窗口 2026-09-06 09:00 结束，QUIESCE 处置正确。automation-064f835b（23:05 哨）已删除；**无覆盖后续夜间窗口的 standing nightly Owner mandate**（两轮 23:00–09:00 均为轮次限定授权）→ 状态 = STAGED_PENDING_NEXT_WINDOW_AUTHORIZATION，不把当前窗口授权自动延续；Owner 授权下一窗口后重建哨并在 START_RECORD 引用其 exact mandate_ref。
 
 ### B1 替换候选执行记录（2026-09-06 白天窗口 07:36–08:50）
 - **bounded impact/preflight 重做（Owner 指令，dsh main 前进后）**：origin/main = 16e14233fbac…（PR #176 fleet-shared-codex-bootstrap 合入）；797952e7..16e14233 仅触碰 packages/production-runtime 两文件，packages/agent-router 零改动，目标测试文件与冻结 base 逐字节相同 → 新 Base = 16e14233，修复本体可干净移植。
