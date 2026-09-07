@@ -32,6 +32,22 @@ G1_ARTIFACT_RETENTION_SPEC_GAP = **STILL_OPEN**——不阻塞 candidate 形成/
 - **DONE_WHEN**：23:00 supervisor starts once；Repair Queue continuously consumed；every disposition causes fresh queue read；Owner/blocker items skipped；legal work reaches safe Draft-PR/review boundary where possible；08:30 no new model-backed station；09:00 zero further model execution；morning report written；queue updated → STOP。
 - **【白班预检记录 2026-09-07 07:06–07:16，本会话，零模型】**① CronList：automation-9952ac9c enabled/active、`0 23 * * *`、nextRun=今晚 23:00 CST；5dd41c1a 与 ad8fa74d completed、4cf1970a paused → 唯一入口成立，无第二 supervisor。② standby-check 干跑（快照存 /tmp/cronlist-snap-20260907.json，结果 /tmp/standby-dryrun-now.json 与 /tmp/standby-dryrun-2305.json，双时点=现在+模拟 23:05）= ALIGN2_SENTINEL_PENDING=NO / DO_NOT_STANDBY → 今晚走 SUPERVISE。③ 无残留 supervisor/worker/daemon 进程；launchd com.mayf3.sixpack-watchdog 在位退出码 0。④ **发现并修复 watchdog-wrapper.sh 跨午夜缺陷**：原脚本按 `date +%F` 定位 dispatch 目录，午夜后在新日期目录找 tonight_mode.json 不得（STANDBY 裁定落在 09-06 目录）→ 误判 supervisor absent，2026-09-07 00:05–07:02 记 22 次 incident 并每 ~10 分钟空启一次心跳守护（守护孤儿自退 ~30s；flock 按日期目录隔离，未触及正牌锁；daemon 零派发故零模型零重复调度）。修复 = 夜归属日规则：HHMM<12:00 → NIGHT_DATE=昨日，否则今日；tonight_mode/STANDBY 查找与 `supervisor start --date` 均用 NIGHT_DATE。验证：bash -n 过；live 实跑静默 exit 0、2026-09-07 目录零写入、无 daemon 残留；分支映射 0005/0716/1159→昨日、1200/2309/2359→今日全对。⑤ 缺陷证据存档 = nightly-1/state/dispatch/2026-09-07/incident-crossmidnight-watchdog-20260907/（count=22 的 start_retries.json + orphan-blip supervisor.json 样本）；**今晨晨报 START_RETRIES/RATE_LIMIT_EVENTS 口径须剔除该缺陷段**（command-only 兜底自身缺陷空转，非 supervisor 启动重试）。⑥ wrapper 位于 sixpack-forge（非 git 仓），本条即修复唯一 durable 记录。⑦ Repair Queue 现状与上列 CURRENT QUEUE GUIDANCE 逐项核对一致，未重扫仓库。
 
+### NIGHTLY_CONTINUOUS_REPAIR_QUEUE_PILOT_V1 — 首次连续消费夜班执行结果（2026-09-07 23:00 → 2026-09-08 00:3x，已收口）
+
+**CONTINUOUS_MULTI_TASK_NIGHTLY_PILOT = PASS**（4 dispositions，2 真实 Draft PR；无发明工作；Owner/blocked 全 SKIP；
+无 OUTCOME_UNKNOWN；零 rate-limit；MAX_CONCURRENCY=1；晨报 = nightly-1/MORNING_REPORT_2026-09-08.md，硬验收
+MODEL_CALLS_AFTER_08_30=0 / AFTER_09_00=0）。 receipts 全集 = state/dispatch/2026-09-07/receipts/。
+- MANDATE B（CODE-1）→ **Draft PR mayf3/dsh-agent-core#196**：fresh main 8454873 判别 ">=0" 无满足版本
+  （ENOTARGET）→ 一行 ">=0.1.0-rc" → 解析 0.1.0-rc.8 真库 → focused 5/5；candidate @ 7ebc6ac/tree a7cb769。
+- MANDATE A（forum L0）→ **Draft PR mayf3/agent-forum#19**：L0 三轴未部署核实（root workflows ABSENT /
+  子目录不触发 / bp 404）→ ci-gate-guide.md +20/−6 诚实化；candidate @ 09d900c/tree e6a2dfc。
+- TASK C（mobile triage）→ 4 PR 全 fresh disposition：#8/#10 WAITING_OWNER_DECISION（视觉属 Owner）、
+  #11 WAITING_DEVICE、#12 WAITING_SPEC_ACCEPTANCE；main=e1aa6366；零新 finding。
+- TASK D（vehicle-pet scout）→ **HEALTHY_NO_ACTION**：main=c3d1d4e7；typecheck+157/157+18/18+lint 全绿；
+  authority graph 完整无孤儿；无虚假 enforcement 声明；findings 0/3。
+- 两新仓 AUTO_*=false 遵守；零 mutation 于 mobile/vehicle-pet。
+- 待 Owner：PR #196 / #19 independent review + 处置（存留 #189 merge(G1)/#177/svc#22/forum#17/HR/L0-DEPLOY）。
+
 ### OWNER_NIGHTLY_MUTATION_MANDATES_2026_09_07（2026-09-07 晨 Owner 颁发；已写入 Repair Queue 归并节 mandate_ref；供今晚 supervisor 消费）
 
 目的：让今晚 NIGHTLY_CONTINUOUS_REPAIR_QUEUE_PILOT_V1 有真实、合法、低风险工作可消费。不创建 task sentinel、不改 23:00 schedule、不要求优先顺序（supervisor 仍按 Repair Queue 自己选择）。**mandate_ref = OWNER_NIGHTLY_MUTATION_MANDATES_2026_09_07**，本节即 mandate durable 正文；Repair Queue 归并节对应条目已挂 ref。
