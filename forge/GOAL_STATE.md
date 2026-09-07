@@ -44,6 +44,15 @@ G1_ARTIFACT_RETENTION_SPEC_GAP = **STILL_OPEN**——不阻塞 candidate 形成/
 
 **【机械层覆盖指令（给 23:00 会话；白班 plan 干跑实测 07:33）】** dispatcher plan 对这两项的机械处置是硬编码产物：CODE-1 → `SKIP_QUEUED_FINDING`（状态硬编码，mandate 检查不达）、FORUM-L0-DOC-TRUTH → `NO_WRITE_NO_MANDATE`（note 硬编码不含 mandate、ledger 无注册项）。**Owner mandate 颁发后，对且仅对这两个 TASK_ID：把 plan 的上述处置覆盖为 mandate-bound 写候选**（MANDATE A 走 READY_FOR_TRIVIAL_FIX 直改路线或 six-pack 均可，终点 Draft PR + independent review；MANDATE B 先执行只读判别阶段再按 Branch1/Branch2 分叉）。覆盖后仍须过 admission 其余全部条件：ledger write slot free（干跑实测 occupied_write_slots={} ✓）、Base/Authority drift cleared（fresh re-read origin main + bounded impact）、current need freshly demonstrated、existing legal execution route；每次 spawn 前 pre-spawn-gate 照过。其余全部队列项仍严格按 plan 处置，不因 mandate 扩围。mandate 禁改 nightly infrastructure → dispatcher 代码零改动（本覆盖走 durable 指令层）；下一位 Runtime 开发 Goal 可把 mandate_ref 感知并入 plan 解析器（仅记录，今晚不做）。
 
+### OWNER_MERGE_EXECUTED — align-2 终局闭合（2026-09-07 12:59Z Owner 决定行使）
+
+- **#192 = MERGED**（mergeCommit = `485e7fbda7c22f37c818a0af3dd1516b31b64440` = 新 main tip；mergedAt 2026-09-07T12:59:37Z；Draft→ready 为 merge 机械前置）。merge 前置六项 fresh 全过：PR OPEN / head `7714e322` / changed_files=1 / 恰 `packages/agent-router/test/feishu-regression.test.js` / **relevant drift=NONE**（main 期间又前进 597bac4→6d609c2，增量仅 product-api workflow-admission src+test，与 agent-router/TRUSTED_INGRESS/feishu 零交集）/ MERGEABLE。
+- merge 后 fresh verify：`origin/main:…/feishu-regression.test.js` blob = `fcf899290b6241adc74346773f2c4c625c095223` == #189 reviewed blob ✓；并在 merge 后新 main 上 detached worktree 实跑 target test = **9/9 PASS**（探针 worktree 已清理）。
+- **#189 = CLOSED_UNMERGED**（reason=FULL_SIX_PACK_EVIDENCE; clean integration landed via #192；head fbbe8c03 关闭时实测未变）；**#177 = CLOSED_UNMERGED**（reason=SUPERSEDED_BY #189/#192）。
+- **Repair Queue 已更新：dsh-trusted-ingress-align-2 = CLOSED / LANDED_VIA = #192 / FULL_SIX_PACK_EVIDENCE = #189 / SUPERSEDED_CANDIDATE = #177**（归并节 + 顶部状态表同步）。
+- 边界：未 deploy；未顺手处理其他 PR；未动 nightly supervisor/automation/dispatcher/watchdog/queue 执行语义/并发/夜窗。注：dispatcher plan 对 align-2 行的处置是硬编码（SKIP_SLOT_OCCUPIED）——任务已 CLOSED，skip 仍为正确结果（ledger 无 IN_PROGRESS、dsh 写槽空闲，今晚 CODE-1 mandate B 可正常 admission）；plan 硬编码的 mandate 感知改造仍留下一 Runtime 开发 Goal。
+- 遇到的瞬态：gh API 两次 `EOF`（merge 首试、#177 close 首试）重试即过；merge 首次实质失败原因 = Draft 未 ready（`gh pr ready` 后即过）。
+
 ### DSH_ALIGN2_FINAL_CLEAN_PR_V1 终局（2026-09-07 白班后续；Owner G1 终裁 + remote 写授权行使完毕）
 
 ```text
