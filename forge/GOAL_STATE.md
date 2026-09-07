@@ -34,7 +34,7 @@ G1_ARTIFACT_RETENTION_SPEC_GAP = **STILL_OPEN**——不阻塞 candidate 形成/
 
 ### NIGHTLY_CONTINUOUS_REPAIR_QUEUE_PILOT_V1 — 首次连续消费夜班执行结果（2026-09-07 23:00 → 2026-09-08 00:3x，已收口）
 
-**CONTINUOUS_MULTI_TASK_NIGHTLY_PILOT = PASS**（4 dispositions，2 真实 Draft PR；无发明工作；Owner/blocked 全 SKIP；
+**CONTINUOUS_MULTI_TASK_NIGHTLY_PILOT = PASS**（4 dispositions，2 Draft PR 且双 review ACCEPT；无发明工作；Owner/blocked 全 SKIP；
 无 OUTCOME_UNKNOWN；零 rate-limit；MAX_CONCURRENCY=1；晨报 = nightly-1/MORNING_REPORT_2026-09-08.md，硬验收
 MODEL_CALLS_AFTER_08_30=0 / AFTER_09_00=0）。 receipts 全集 = state/dispatch/2026-09-07/receipts/。
 - MANDATE B（CODE-1）→ **Draft PR mayf3/dsh-agent-core#196**：fresh main 8454873 判别 ">=0" 无满足版本
@@ -126,7 +126,15 @@ PHASE C = **NIGHTLY_SERIAL_SINGLE_TASK_PILOT = PASS**（2026-09-06 夜，automat
 scheduled start=PASS / no duplicate writer=PASS / correction+replay=PASS（2 次 HeadDrift 有界纠正非盲试）/ six real roles=PASS（23:28–00:52）/ QA ownership=PASS（QA 全新建 automation、porcelain fix 生效实证、final 一次过）/ fail-closed negative probe=PASS（exit1）/ terminal verify=PASS / Draft PR #189=PASS / AUTO_READY=AUTO_MERGE=AUTO_DEPLOY=false。
 如实未证明：CONTINUOUS_MULTI_TASK_NIGHTLY = NOT_YET_PROVEN；TWO_WORKER_CONCURRENCY = NOT_PROVEN；OUTCOME_UNKNOWN_SAFE_RECOVERY = NOT_PROVEN。不扩大 claim。
 
+**09-08 凌晨补全（02:1x–02:2x，窗口内）**：PR #196 与 #19 的 independent exact-head review 已由
+fresh GLM 会话（glm-role-exec 通道，author≠reviewer）完成——**双双 ACCEPT / 0 blockers**（reviewer 自行
+机械复现全部声明：#196 = diff 单行/BASE ETARGET 复现/解析 0.1.0-rc.8 为 range 最高可装版本/5/5/范围纪律/
+drift 无关；#19 = 单文件纯文本/三实况复核/无残留假声明；各附非阻塞 FOLLOW_UP 一条）。两候选终态 =
+**REVIEW_ACCEPT / WAITING_OWNER_DECISION**。日志 = reports evidence/{dsh-agent-core,agent-forum}/PR{196,19}_INDEPENDENT_REVIEW_20260908_glm.log。
+主链路验证完整走通：write task → candidate → tests → push → Draft PR → independent review → STOP at Owner boundary。
+
 PHASE D = 今晚（2026-09-07 23:00）切连续消费模式：
+
 - 唯一入口 = automation-9952ac9c `0 23 * * *`（fresh CronList 2026-09-07 晨核实：非 */10；watchdog=守护进程内置机械循环 + command-only launchd com.mayf3.sixpack-watchdog，无 model-backed 10 分钟 session）。
 - automation-5dd41c1a 已 completed（runCount=1），不复活不复制；今晚无特殊哨。
 - 今晚模式 = 23:00 supervisor → fresh queue → 选最高优先可执行项 → 执行 → persist disposition → fresh queue → 下一项，直至无可执行/08:30 QUIESCE/09:00 CLOSED；每次模型 spawn 先过 pre-spawn-gate；MAX_CONCURRENT_MODEL_CALLS=1。
