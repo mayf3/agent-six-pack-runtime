@@ -133,7 +133,15 @@ drift 无关；#19 = 单文件纯文本/三实况复核/无残留假声明；各
 **REVIEW_ACCEPT / WAITING_OWNER_DECISION**。日志 = reports evidence/{dsh-agent-core,agent-forum}/PR{196,19}_INDEPENDENT_REVIEW_20260908_glm.log。
 主链路验证完整走通：write task → candidate → tests → push → Draft PR → independent review → STOP at Owner boundary。
 
+**09-08 凌晨收尾二（05:3x）**：supervisor 守护 daemonize 缺陷已按 PROPOSED_FIX 方案 C 修复
+（double-fork detach + session-heartbeat 活性判定替代 ppid 孤儿检查 + start 前存活验证>42s；
+原件备份 .pre-daemonize-fix.bak），四项零模型验收全过（存活>45s / staleness 注入自退 /
+stop-file 优雅退出 / wrapper 零空转）；supervisor prompt 已同步（每步 touch session-heartbeat、
+完成时 tonight_mode 释放 STANDBY）。backup 与 proposal 保留于 incident 目录。09-08 23:00 起
+SUPERVISE 夜的守护存活与 wrapper 静默由本修复保障。
+
 PHASE D = 今晚（2026-09-07 23:00）切连续消费模式：
+
 
 - 唯一入口 = automation-9952ac9c `0 23 * * *`（fresh CronList 2026-09-07 晨核实：非 */10；watchdog=守护进程内置机械循环 + command-only launchd com.mayf3.sixpack-watchdog，无 model-backed 10 分钟 session）。
 - automation-5dd41c1a 已 completed（runCount=1），不复活不复制；今晚无特殊哨。
