@@ -44,6 +44,23 @@ G1_ARTIFACT_RETENTION_SPEC_GAP = **STILL_OPEN**——不阻塞 candidate 形成/
 
 **【机械层覆盖指令（给 23:00 会话；白班 plan 干跑实测 07:33）】** dispatcher plan 对这两项的机械处置是硬编码产物：CODE-1 → `SKIP_QUEUED_FINDING`（状态硬编码，mandate 检查不达）、FORUM-L0-DOC-TRUTH → `NO_WRITE_NO_MANDATE`（note 硬编码不含 mandate、ledger 无注册项）。**Owner mandate 颁发后，对且仅对这两个 TASK_ID：把 plan 的上述处置覆盖为 mandate-bound 写候选**（MANDATE A 走 READY_FOR_TRIVIAL_FIX 直改路线或 six-pack 均可，终点 Draft PR + independent review；MANDATE B 先执行只读判别阶段再按 Branch1/Branch2 分叉）。覆盖后仍须过 admission 其余全部条件：ledger write slot free（干跑实测 occupied_write_slots={} ✓）、Base/Authority drift cleared（fresh re-read origin main + bounded impact）、current need freshly demonstrated、existing legal execution route；每次 spawn 前 pre-spawn-gate 照过。其余全部队列项仍严格按 plan 处置，不因 mandate 扩围。mandate 禁改 nightly infrastructure → dispatcher 代码零改动（本覆盖走 durable 指令层）；下一位 Runtime 开发 Goal 可把 mandate_ref 感知并入 plan 解析器（仅记录，今晚不做）。
 
+### DAYTIME_NIGHTLY_RESULT_CLOSEOUT_V1 终局（2026-09-07 白班收口完成；证据 = reports evidence/dsh-agent-core/DSH_G1_CLEAN_INTEGRATION_20260907.md）
+
+CURRENT_MAIN = 75d25914fe2a114847c7ba0e25b463c2dda29c3d（fresh fetch；与 #189 评审时 main 一致——评审后零新提交；agent-router 自 TASK_BASE 16e14233 零触碰；TRUSTED_INGRESS authority docs 零变化 → BOUNDED_IMPACT=PASS，无需 RE_PREFLIGHT）
+REVIEWED_189_HEAD = fbbe8c03d0242a2d6d82bf01aff69bf120a2ced9 / TREE 9bf397860ed6a6ac368a742c692a47a4ff873e53（immutable 已核：GitHub PR#189 headRefOid + 本地对象一致；零修改）
+CLEAN_INTEGRATION_HEAD = 7714e322ccdc458653743d292857a4469b98ed6f（分支 integration/trusted-ingress-feishu-regression-clean，基于 75d25914，isolated worktree ~/workspace/project/dsh-integration-clean-20260907；**本地未 push**）
+CLEAN_INTEGRATION_TREE = 26f124f07299434e617d085727150686fc551aa7
+G1_REMOVED = ① EPHEMERAL：specifier/coder/cleaner/architect/hardender/qa `.report.md` ×6 + specifier.behavior-spec.md + specifier.qa-procedure.md（留 six-pack ledger/receipts/evidence store）；② 暂定 durable 但 fresh inspection 实证不合格：qa.automation.json + qa_required_checks.sh——byte-identical 移植后实测 Check1(E2E) 9/9 PASS 但 Check2 exit1（脚本 readonly BASE=16e14233 硬绑定 → BASE..HEAD 扫出 29 个 main 自身非测试产品文件 → 结构性 FAIL；本质=align-2 QA 站执行自动化，非仓库长期验收资产）→ 按 DO_NOT_GUESS 分支移出候选上报，恢复形态 = OWNER_DECISION
+G1_RETAINED = packages/agent-router/test/feishu-regression.test.js（byte-identical to fbbe8c03，blob fcf899290b62…；diff vs main = DELTA_IDENTICAL to #189 reviewed patch；无未授权文件）
+FRESH_TESTS = target test 9/9 PASS（node v25.6.1）· 负探针（/tmp 破坏副本退回 pre-fix test）exit1 = 8/9 原始 bug 签名复现 → FAIL_AS_EXPECTED · agent-router 全套 310/310 pass / 0 fail exit0 · manifest/path = N/A by absence（候选零 sixpack artifacts、diff 恰单路径、无悬空引用）· git porcelain clean
+BOUNDED_RECHECK = **ACCEPT**（fresh 独立 Reviewer 会话 6/6 项自证，含 qa-pair 判别的独立复现与 pre-fix blob≡TASK_BASE 的另证）→ **G1 = CLOSED_FOR_THIS_CANDIDATE**；**READY_FOR_OWNER_MERGE_DECISION = YES**（AUTO_READY/AUTO_MERGE/AUTO_DEPLOY=false；未 merge 未 deploy；候选 push + Draft PR 创建待 Owner 指令）
+PR_177_RECOMMENDED_DISPOSITION = SUPERSEDED / OWNER_CLOSE_ALLOWED（建议，不自动关闭）
+PR_189_ROLE = FULL_SIX_PACK_REVIEW_EVIDENCE（Draft/Open 原 head 不动，不重写）
+OTHER_OWNER_DECISIONS_READY = 见 OWNER_DECISION_PACKETS_20260907（forum #17 / HR dispatcher topology / svc #22 re-vendor）
+BLOCKERS = 无
+FOLLOW_UP_DEBT = ① 候选 push+Draft PR 待 Owner 指令 ② qa-pair 是否以 BASE 自适应修订恢复为仓库资产 = Owner 裁定 ③ 候选 merge 由 Owner 行使（G1 对本候选已闭合）④ queue plan 硬编码处置的 mandate 感知改造留下一 Runtime 开发 Goal（今晚不动 dispatcher）
+边界遵守：无新 Scout、无新 Six-Pack 产品开发、未动 nightly infra/schedule/queue 执行语义/并发设置。
+
 ### NIGHTLY_PILOT_CLOSEOUT_AND_CONTINUOUS_QUEUE_PREP_V1（2026-09-07 晨收口，runtime 账见 git log）
 
 
