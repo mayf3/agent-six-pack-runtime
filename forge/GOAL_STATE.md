@@ -48,6 +48,17 @@ MODEL_CALLS_AFTER_08_30=0 / AFTER_09_00=0）。 receipts 全集 = state/dispatch
 - 两新仓 AUTO_*=false 遵守；零 mutation 于 mobile/vehicle-pet。
 - 待 Owner：PR #196 / #19 independent review + 处置（存留 #189 merge(G1)/#177/svc#22/forum#17/HR/L0-DEPLOY）。
 
+### ACTIVE GOAL — NIGHTLY_ALL_REPOS_CONTINUOUS_GOVERNANCE_V1（2026-09-08 凌晨 Owner 设立；A–G 零模型 simulation 全过）
+
+GOAL_STATUS = **ALL_REPOS_CONTINUOUS_GOVERNANCE_READY = YES**（supervisor 升级为 queue consumer + 六仓 maintenance round-robin；未实际修改任何产品仓）
+- 纳管集（写死于 dispatcher 常量，新增只经显式 registry/queue adoption）= mayf3/{dsh-agent-core, agent-forum, svc-workflow, auth-service, agent-core-mobile, vehicle-pet}。
+- 新增 dispatcher 子命令：`roundrobin`（优先级 = executable queue items → 下一未完成仓 maintenance pass（每仓每夜一次完整 pass）→ IDLE_ALL_GOVERNED；QUIESCE/CLOSED 相位 → WINDOW_REFUSE_NEW_PASS + 未完成仓 DEFERRED_TO_NEXT_NIGHT）与 `mark-pass`（pass 完成登记：final_state/new_findings/queue_items_added）。round 状态持久 = state/dispatch/<date>/repo-round.json。
+- MAINTENANCE_PASS 十项检查清单随 action 输出；pass 内 existing work 优先（Draft PR awaiting review / revalidation / known blocker / validated findings）；finding 字段十项齐备 + 每仓每夜 MAX_NEW_VALIDATED_FINDINGS=3；pass 默认 READ_ONLY，写需六条件全满足。
+- 新 IDLE 定义 = NO_EXECUTABLE_QUEUE_ITEM AND ALL_REPOS_PASS_DONE_OR_DEFERRED_BY_TIME（queue 暂空不算完）。
+- simulation 证据 = state/dispatch/simulation-20260908-governance/（A queue空→dsh pass 起 ✓；B forum pass 发现 finding→入队→queue 先行执行→恢复被中断 pass ✓；C 已完成仓不重扫→svc next ✓；D HEALTHY_NO_ACTION 登记 ✓；E 全 done+queue 空→IDLE_ALL_GOVERNED ✓；F 08:35→4 仓 DEFERRED ✓；G 09:30→refuse+零 spawn 不变量 ✓）。
+- 23:00 prompt 已升级（roundrobin 主循环 + maintenance 清单 + finding 字段 + 新 IDLE + 晨报新字段 GOVERNED_REPOS/REPOS_VISITED/REPOS_HEALTHY/REPOS_WITH_NEW_FINDINGS/REPOS_DEFERRED_BY_0830/NEW_QUEUE_ITEMS/WRITE_TASKS_COMPLETED/DRAFT_PRS_CREATED/REVIEWS_COMPLETED/OWNER_DECISIONS_PENDING）。
+- 首次实跑 = 2026-09-08 23:00。
+
 ### OWNER_NIGHTLY_MUTATION_MANDATES_2026_09_07（2026-09-07 晨 Owner 颁发；已写入 Repair Queue 归并节 mandate_ref；供今晚 supervisor 消费）
 
 目的：让今晚 NIGHTLY_CONTINUOUS_REPAIR_QUEUE_PILOT_V1 有真实、合法、低风险工作可消费。不创建 task sentinel、不改 23:00 schedule、不要求优先顺序（supervisor 仍按 Repair Queue 自己选择）。**mandate_ref = OWNER_NIGHTLY_MUTATION_MANDATES_2026_09_07**，本节即 mandate durable 正文；Repair Queue 归并节对应条目已挂 ref。
