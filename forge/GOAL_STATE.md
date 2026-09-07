@@ -44,6 +44,26 @@ G1_ARTIFACT_RETENTION_SPEC_GAP = **STILL_OPEN**——不阻塞 candidate 形成/
 
 **【机械层覆盖指令（给 23:00 会话；白班 plan 干跑实测 07:33）】** dispatcher plan 对这两项的机械处置是硬编码产物：CODE-1 → `SKIP_QUEUED_FINDING`（状态硬编码，mandate 检查不达）、FORUM-L0-DOC-TRUTH → `NO_WRITE_NO_MANDATE`（note 硬编码不含 mandate、ledger 无注册项）。**Owner mandate 颁发后，对且仅对这两个 TASK_ID：把 plan 的上述处置覆盖为 mandate-bound 写候选**（MANDATE A 走 READY_FOR_TRIVIAL_FIX 直改路线或 six-pack 均可，终点 Draft PR + independent review；MANDATE B 先执行只读判别阶段再按 Branch1/Branch2 分叉）。覆盖后仍须过 admission 其余全部条件：ledger write slot free（干跑实测 occupied_write_slots={} ✓）、Base/Authority drift cleared（fresh re-read origin main + bounded impact）、current need freshly demonstrated、existing legal execution route；每次 spawn 前 pre-spawn-gate 照过。其余全部队列项仍严格按 plan 处置，不因 mandate 扩围。mandate 禁改 nightly infrastructure → dispatcher 代码零改动（本覆盖走 durable 指令层）；下一位 Runtime 开发 Goal 可把 mandate_ref 感知并入 plan 解析器（仅记录，今晚不做）。
 
+### DSH_ALIGN2_FINAL_CLEAN_PR_V1 终局（2026-09-07 白班后续；Owner G1 终裁 + remote 写授权行使完毕）
+
+```text
+CURRENT_MAIN               = 597bac4a8438cad0d3166c808b07c7bf9c815658（fresh fetch == Owner 证据值；5 commits > 75d25914 全为 docs native-arm64 面）
+BOUNDED_IMPACT             = PASS（packages/agent-router 零触碰；test 文件 ≡ TASK_BASE pre-fix blob；新增 spec DSH_NATIVE_ARM64_RUNTIME_V1 与 TRUSTED_INGRESS 无关 → NO_REPLAY / NO_REBASE_REQUIRED_FOR_AUTHORITY）
+REMOTE_CLEAN_HEAD          = 7714e322ccdc458653743d292857a4469b98ed6f（origin/integration/trusted-ingress-feishu-regression-clean 实测）
+REMOTE_CLEAN_TREE          = 26f124f07299434e617d085727150686fc551aa7
+DRAFT_PR                   = mayf3/dsh-agent-core#192（base main；isDraft=true；OPEN；MERGEABLE；正文含 PRODUCT_CHANGE/FULL_SIX_PACK_EVIDENCE(#189@fbbe8c03)/CLEAN_INTEGRATION_SOURCE(7714e322)/G1_DISPOSITION/SEMANTIC_DELTA=NONE + fresh evidence + DO_NOT_MERGE）
+CHANGED_FILES              = 1（gh pr diff --name-only 实测）
+SIXPACK_ARTIFACTS_PRESENT  = NO（PR diff 零 sixpack 路径；three-dot diff 恰单路径；exclude-test diff = 空 IMPL_DELTA_NONE_CONFIRMED）
+REMOTE_EXACT_HEAD_BINDING  = 6/6 PASS（headRefOid==7714e322 / changed_files==1 / 恰 test 路径 / artifacts 0 / 实现零 delta / remote test blob fcf89929==#189 reviewed blob → clean patch ≡ reviewed patch）
+READY_FOR_OWNER_MERGE_DECISION = YES（ALIGN2_FINAL_CLEAN_PR；未 merge / 未 mark-Ready / 未 deploy）
+BLOCKERS                   = 无
+```
+
+- Owner G1 终裁已应用：FINAL_PRODUCT_ASSET = test 文件一件；qa-pair（qa.automation.json + qa_required_checks.sh）终裁 EPHEMERAL、不做 BASE 自适应改写、通用 QA automation = SEPARATE_GOAL_REQUIRED（与白班 fresh inspection 实证一致，candidate 形态零变更）。
+- 旧 PR：#189 = KEEP OPEN/DRAFT（FULL_SIX_PACK_EVIDENCE，immutable head 不重写）；#177 = SUPERSEDED / OWNER_CLOSE_ALLOWED（不自动关；等 clean PR #192 终裁后一并清）。
+- 边界：未动 automation-9952ac9c / nightly dispatcher / watchdog / queue 执行语义 / 并发 / 夜窗；今晚 continuous pilot 与本收尾完全分离。
+- 证据：reports evidence/dsh-agent-core/DSH_G1_CLEAN_INTEGRATION_20260907.md（FINAL 节）+ queue 归并节 FINAL_RULING_APPLIED。
+
 ### DAYTIME_NIGHTLY_RESULT_CLOSEOUT_V1 终局（2026-09-07 白班收口完成；证据 = reports evidence/dsh-agent-core/DSH_G1_CLEAN_INTEGRATION_20260907.md）
 
 CURRENT_MAIN = 75d25914fe2a114847c7ba0e25b463c2dda29c3d（fresh fetch；与 #189 评审时 main 一致——评审后零新提交；agent-router 自 TASK_BASE 16e14233 零触碰；TRUSTED_INGRESS authority docs 零变化 → BOUNDED_IMPACT=PASS，无需 RE_PREFLIGHT）
