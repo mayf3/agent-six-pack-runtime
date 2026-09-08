@@ -704,3 +704,7 @@ NEXT = STOP（不自动扩大到所有仓库）
 - **派生票 2 张**（§2 派生规则首次生效）：T16（test-only child-boot e2e，standing-mandate 准入 ✓，CHANGED_FILES=2）→ DEFERRED：本地 @deepseek-ai/* 供给缺失（T11 实锤=CODE-1 族活证据），J 验收无法诚实满足；T17（composition extraction 三步提案稿）→ 已交付，随 T4/T13 并入 **WAITING_OWNER_ARCHITECTURE_DECISION ×3**（Owner queue §7 语义）。
 - **晨报 §9 字段全部机械产出**（morning_admission_fields，ticket 面口径）：TOTAL=17 / EXECUTABLE_AT_START=1 / INVESTIGATIONS=12（叙事口径；机械计数=1 批 receipt）/ BOUNDED_FIXES=1 attempted→0 landed（OBSOLETE）/ PR=0 / CLOSED=13 / OWNER_BLOCKED=3 / **STARVATION=0**。晨报=NIGHTLY_RUN_2026-09-09.md；receipts=investigations-20260909.json + bounded-fix-T1-obsolete.json。
 - 全程零产品仓写入、零 provider 调用、零窗口违反。下一个 23:00 bootstrap 的可执行面 = T16（有依赖环境执行）+ T14 类后续调查（若 Owner 再注入）；Owner 侧待裁决 +3 架构项。
+
+### WAKE 06:00（by HOURLY_WAKE，2026-09-09 06:13–06:2x）
+
+W3 唯一可执行项 T16 做 admit-time 复核 → **H 条件（fix shape 机械有界）范围裁决缺失**：deps-resolved smoke=与 broker.test.js 重复 / 真 e2e=新造 harness（票禁）/ 特权 gate 已存在 → 按 STANDING_MAINTENANCE_MANDATE_V1 规则回落 **WAITING_OWNER_MANDATE**（三选一裁决包落票：A 认可现有 gate 已够即关闭 / B 授权 slim resident 改造 / C 维持缺位）。不猜测不赶工，零写入。队列回 **IDLE_ALL_GOVERNED**；OWNER_REQUIRED=4；STARVATION=NO。账 @ 本 push。
