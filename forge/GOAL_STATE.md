@@ -67,6 +67,15 @@ GOAL_STATUS = ALL_REPOS_CONTINUOUS_GOVERNANCE_READY = **NO（2026-09-08 07:5x �
 - 残余风险（记录在案，不修代码，发生时如实晨报）：主会话若单阶段 >45min 未 touch 心跳，W2 可能误判失联→接管重叠——由 flock + durable receipts + OUTCOME_UNKNOWN 冻结兜底；WAKE 粒度 1h，最坏连续性损失窗 = 1h。
 - 今晚（09-08 23:00）bootstrap 不受影响（nextRun 实测仍 23:00:00 +0800）；首次 WAKE = 今晚 00:00。同日会话内机械核查：CronList enabled、standby 干跑=DO_NOT_STANDBY（/tmp/standby-dryrun-20260908.json）、零残留进程、launchd watchdog 在位。
 
+### 09-08 夜首跑结果（BOOTSTRAP run#3 @ 23:00:11；23:06–23:19 收口；IDLE_ALL_GOVERNED）
+
+- **NIGHTLY_ALL_REPOS_CONTINUOUS_GOVERNANCE_V1 首次实跑 = PASS（round-robin 模式）**：gate 6/6 lane PASS（HEAD=4aae2cb）→ 六仓 MAINTENANCE_PASS 全 DONE @ 23:18 → IDLE_ALL_GOVERNED（新 IDLE 定义下正确终态，远早于 08:30 闸）。全 READ_ONLY：WRITE_TASKS=0 / DRAFT_PRS=0 / 新 finding=0 / GLM provider 调用=0（唯一瞬时=mobile pass 一次 gh TLS timeout，重试即过）。晨报 = nightly-1/state/dispatch/2026-09-08/NIGHTLY_RUN_2026-09-08.md；receipts = 同目录 receipts/pass-*.json ×6。
+- **dsh T1（BROKER-BOOT-BINDING-01, P1）夜间 pass 判别测试机械复现**：fresh worktree @2bd3d62f `node --test packages/broker/test/index-bindings.test.js` = **2/2 FAIL**（fleet-killer 用例 "local binding required by apply()"）→ 队列 T1 = **READY_FOR_BOUNDED_FIX**（仍无 mandate → NO_WRITE）。关键定性：2bd3d62f 即 **PR #213 merge**（fleet 门三件套：index-bindings test / BROKER-BOOT REHEARSAL admission / scheduler-cp-fleet-gate.mjs），其提交信息明示生产字节修复归 **AGENT_PROCESS_EXITED_RECOVERY_V1**、#213 刻意不碰 broker index.js → 判读=生产或已热修而 **main 字节仍带缺陷**，收敛待 Owner/owning Goal 澄清。
+- **forum #17 = Owner MERGED**（09-08T00:53:58Z，f93d34de=main tip）→ 队列 PR_17 消解；**#19（L0 truth）revalidated**：head 09d900c 未变 + 对新 main MERGEABLE/CLEAN → 仍 WAITING_OWNER_DECISION。
+- 各仓 main 前进全部定性为 Owner/actor 授权工作流：svc identity-reconciliation（#30-32→5e37d9a）/ auth life-workbench+FMG retarget（#63→a15ce50a）/ mobile Presence 线（#15/#17→8e8d2e60）/ vehicle-pet 灵动 COMPLETE（→b64e2d0d）/ dsh #213+#211。零冲突、零新 blocker。
+- OWNER_DECISIONS_PENDING 增补：**dsh T1 修复授权**（最小修=一行 local import）+ T2-T15 调查授权（queue @ L58-156）；既有 #196 / #19 / L0-DEPLOYMENT / svc#22 / auth#36 / HR A|B 不变。
+- WAKE 链交接：tonight_mode released（SUPERVISE 原值存档）→ 00:00-08:00 WAKE 将零模型 NOOP（W1/W3）；Owner 夜间注入新活则 W4 接管。
+
 ### OWNER_NIGHTLY_MUTATION_MANDATES_2026_09_07（2026-09-07 晨 Owner 颁发；已写入 Repair Queue 归并节 mandate_ref；供今晚 supervisor 消费）
 
 目的：让今晚 NIGHTLY_CONTINUOUS_REPAIR_QUEUE_PILOT_V1 有真实、合法、低风险工作可消费。不创建 task sentinel、不改 23:00 schedule、不要求优先顺序（supervisor 仍按 Repair Queue 自己选择）。**mandate_ref = OWNER_NIGHTLY_MUTATION_MANDATES_2026_09_07**，本节即 mandate durable 正文；Repair Queue 归并节对应条目已挂 ref。
