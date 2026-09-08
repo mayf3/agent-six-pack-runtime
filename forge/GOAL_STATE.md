@@ -708,3 +708,12 @@ NEXT = STOP（不自动扩大到所有仓库）
 ### WAKE 06:00（by HOURLY_WAKE，2026-09-09 06:13–06:2x）
 
 W3 唯一可执行项 T16 做 admit-time 复核 → **H 条件（fix shape 机械有界）范围裁决缺失**：deps-resolved smoke=与 broker.test.js 重复 / 真 e2e=新造 harness（票禁）/ 特权 gate 已存在 → 按 STANDING_MAINTENANCE_MANDATE_V1 规则回落 **WAITING_OWNER_MANDATE**（三选一裁决包落票：A 认可现有 gate 已够即关闭 / B 授权 slim resident 改造 / C 维持缺位）。不猜测不赶工，零写入。队列回 **IDLE_ALL_GOVERNED**；OWNER_REQUIRED=4；STARVATION=NO。账 @ 本 push。
+
+### GOAL NIGHTLY_BACKLOG_BUILDER_V1（Owner 2026-09-09 07:0x 颁发；同窗口 GOVERNANCE/READ_ONLY 履行，runtime 账 @ 本 push）
+
+- **BACKLOG_BUILDER_READY = YES**：dispatcher 新增 BACKLOG_V1 四件套——`backlog-frontier.json`（每仓 REPO/LAST_SCANNED_MAIN/LENSES_COMPLETED/LENS_CURSOR/AREAS_SCANNED/OPEN_FINDINGS/DERIVED_TICKETS/LAST_RESULT，12 lens 轮换环）、每夜 budget 文件（lens 2/repo、票 5/repo、24 global、4 child/finding）、`backlog-next`（零模型深水区决策）、`ticket-validate`（10 必填字段+vague 封禁，队列语法 TASK_ID 表头兼容）；roundrobin IDLE 分支改为真·IDLE 门（executable=0 且 refinement 空且 lens 穷尽/预算尽 → 才 IDLE，否则 BACKLOG_DEEPENING）。
+- **零模型测试**：backlog-v1 A–J = 14/14 PASS（A 队列空但有 refinement 不 IDLE / B 派生子票可执行 / C Owner 项不阻塞准备性只读 / D 同 repo+lens 不重扫 / E main 漂移重开 frontier / F lens 帽强制 / G vague 票拒+完整票过 / H blocked-env 派生 closure / I 双穷尽→TRUE_IDLE / J 边界不变）；admission-v2 套件 18/18 保持（H 断言按新语义更新）。修复一个测试隔离缺陷（frontier_pre 曾写穿真实文件——backlog_deepening 改纯函数）。
+- **种子票 10 张**（首跑 seeding，全部 10 项 quality 字段机械校验 PASS）：dsh=T3-A..E（Owner 指定派生：T18 行为冻结/T19 注入探针/T20 import 清单/T21 preset 基线/T22 impact map）+ T23 env-closure（T16 链强制派生，单列 BLOCKED_ENVIRONMENT 类，不占票额）+ 跨仓 4（T28 forum L0 三轴新鲜度 / T29 svc CTR-CIR-003 spec-impl 核对 / T30 auth 索引一致性 / T31 mobile presence drift）；vehicle-pet HEALTHY 零造票；T24（demo-server consumer map）因 repo 票额顺延下窗。
+- ** frontier 初始化**：6 仓记录落 `state/backlog-frontier.json`（dsh module-boundaries lens 已完成计 1 次、五仓定格今晨 pass main 值）。
+- **种子后循环态**：EXECUTABLE=10（全部 READ_ONLY）、roundrobin=EXECUTE_QUEUE_ITEM（消费优先于 deepening ✓）、OWNER_REQ=4、STARVATION=NO；FRONTIER_REMAINING=72 lens-机会（12×6，帽内逐夜推进）。晨报新增 BACKLOG_V1 九字段（BACKLOG_START=17/GENERATED=9/END=27/DEEPENED=2/PREPARED=3/REMAINING=72/TRUE_IDLE=FALSE）。
+- 零产品仓改动、零 provider 调用。真·IDLE 定义已代码化并测试锁定：**EXECUTABLE_QUEUE=0 ∧ refinement 空 ∧ lens 穷尽/预算尽**。
