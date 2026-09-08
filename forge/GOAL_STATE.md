@@ -59,6 +59,14 @@ GOAL_STATUS = ALL_REPOS_CONTINUOUS_GOVERNANCE_READY = **NO（2026-09-08 07:5x �
 - 23:00 prompt 已升级（roundrobin 主循环 + maintenance 清单 + finding 字段 + 新 IDLE + 晨报新字段 GOVERNED_REPOS/REPOS_VISITED/REPOS_HEALTHY/REPOS_WITH_NEW_FINDINGS/REPOS_DEFERRED_BY_0830/NEW_QUEUE_ITEMS/WRITE_TASKS_COMPLETED/DRAFT_PRS_CREATED/REVIEWS_COMPLETED/OWNER_DECISIONS_PENDING）。
 - 首次实跑 = 2026-09-08 23:00。
 
+### OWNER 指令（2026-09-08 22:5x）：supervisor 链升级双角色（23:00 BOOTSTRAP + 每小时 WAKE 续拉）——SESSION_BOUND 缺口的 Owner 选定修法
+
+- Owner 原话要点：「我不希望你配置 watchdog，但可以用 zcode 里的定时机制每小时执行一次继续拉取任务。」即上一节 liveness proof 列出的修复方向中，**Owner 直接选定 bounded periodic model wake 路线**（durable daemon 升级不做，等未来另授权）。
+- 落地 = automation-9952ac9c cron `0 23 * * *` → **`0 0-8,23 * * *`**（单自动化双角色；本会话内 CronCreate 被拒故升级既有条目。23:00 = 原 BOOTSTRAP 全流程不变；00:00–08:00 每小时整点 = WAKE 续拉）。**WAKE 不是 watchdog**：无 liveness 监控/重启/冻结职责，只做续消费拉取。launchd com.mayf3.sixpack-watchdog 维持原样未动（零模型 command-only；如需下线待 Owner 明示）。
+- WAKE 决策链（机械优先，能零模型退出就零模型退出）：NIGHT_DATE 跨午夜归属（HHMM<12:00→昨日）→ W1 tonight_mode==STANDBY→STANDBY_NOOP（哨夜不抢）→ W2 session-heartbeat<2700s→SESSION_ALIVE_NOOP（禁双 controller）→ W3 roundrobin 零模型评估=IDLE_ALL_GOVERNED/WINDOW_REFUSE_NEW_PASS→NOOP → W4 接管：supervisor start（flock 防双开）→ 与 23:00 会话同一主循环（pre-spawn-gate/budget-check/classify-retry/OUTCOME_UNKNOWN 冻结/mark-pass 全套不变）→ W5 收口 morning-report+GOAL_STATE 账目 push → W6 遇疑冻结不重派。
+- 残余风险（记录在案，不修代码，发生时如实晨报）：主会话若单阶段 >45min 未 touch 心跳，W2 可能误判失联→接管重叠——由 flock + durable receipts + OUTCOME_UNKNOWN 冻结兜底；WAKE 粒度 1h，最坏连续性损失窗 = 1h。
+- 今晚（09-08 23:00）bootstrap 不受影响（nextRun 实测仍 23:00:00 +0800）；首次 WAKE = 今晚 00:00。同日会话内机械核查：CronList enabled、standby 干跑=DO_NOT_STANDBY（/tmp/standby-dryrun-20260908.json）、零残留进程、launchd watchdog 在位。
+
 ### OWNER_NIGHTLY_MUTATION_MANDATES_2026_09_07（2026-09-07 晨 Owner 颁发；已写入 Repair Queue 归并节 mandate_ref；供今晚 supervisor 消费）
 
 目的：让今晚 NIGHTLY_CONTINUOUS_REPAIR_QUEUE_PILOT_V1 有真实、合法、低风险工作可消费。不创建 task sentinel、不改 23:00 schedule、不要求优先顺序（supervisor 仍按 Repair Queue 自己选择）。**mandate_ref = OWNER_NIGHTLY_MUTATION_MANDATES_2026_09_07**，本节即 mandate durable 正文；Repair Queue 归并节对应条目已挂 ref。
