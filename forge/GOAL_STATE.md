@@ -732,3 +732,10 @@ W3=WAKE 发现 10 张种子票可执行（BACKLOG_BUILDER_V1 seed）→ W4 接�
 ### 09-09 夜 BOOTSTRAP（run#13 @ 23:00:18；23:01–00:1x 首段执行）
 
 gate 6/6 PASS（daemon 73432）→ 队列卫生（T23/T20/T28/T30/T19 补 DONE 尾）→ 主循环消费五张种子票全 DONE：T18 composition 行为契约冻结（六条+测试锚点）/ T21 preset 基线 v1（31 manifests/50 ops 全列）/ T22 impact map（三步×不变量×风险级）/ T29 CTR-CIR-001..010 可追溯性普查（有锚 5/零锚 5——002/005/008/009/010 入语义复核名单）/ T31 mobile drift 表（+23:5x addendum：PR#18 Presence 实现落地，③行过时已记）。→ 六仓 maintenance pass（同日全漂移：dsh #231 跨仓凭证缝/forum #21 修 P2011 真实故障/svc #34 keyset/auth #65 轮换缝/mobile #18 Presence 实现/vp #34 overlay-v6）→ **BACKLOG_DEEPENING 首次真实运行**：forum runtime/startup/shutdown lens（boot 包络探针：无 PG 可启动+/health 真检查 SELECT 1→503——候选发现在探针下溶解，OPERABILITY 观察记录不立票）。forum lens 2/2 完。余：svc/auth/mobile/vp 第二 lens（各 1/2 帽）+ dsh dependency lens 重开候选（#231 漂移）→ 由 00:00+ 整点 WAKE 按 W4 逐步接管执行。零产品仓写入、零 provider 调用。
+
+### 09-09/10 夜终局（TRUE_IDLE；standing-mandate 全链首通至 Owner 边界）
+
+- **T33（VP-CORDIS-PEER-ERESOLVE-01，vehicle-pet 首个 validated finding）全链闭环**：真发现（repo 标准 npm install ERESOLVE 实证；无 .npmrc/无 CI 排除混淆）→ 质量门 10 字段 PASS → standing-mandate 准入 → 修复 af8131c（cordis 4.0.1→4.0.2 + 新增 lockfile，恰 2 文件）→ 三重验收（install rc=0 / vitest 26 files·158 tests 全绿——vehicle-pet 首次治理背书测试执行 / typecheck rc=0）→ **Draft PR mayf3/vehicle-pet#35** → fresh GLM exact-head review **ACCEPT 0 blockers** → WAITING_OWNER_DECISION。
+- **TRUE_IDLE_REACHED = TRUE**（六仓 lens 帽 2/2 全尽 + queue executable=0 + refinement 空；budget true-idle 已标记；09-10 tonight_mode=STANDBY released 守 W1 NOOP 至今晚 23:00 新预算）。daemon 已停。
+- **OWNER_DECISIONS_PREPARED = 5**：T16 范围三选一 / T4 manifests 归属 / T13 demo-server 身份 / T17 composition 提案三步 / T33 PR#35 merge。另有 dsh T23 修正（repo-supported install 不提供 peer，结构性缺口）待 Owner 认可"受支持 bootstrap"口径。
+- 账 @ 本 push；receipts = dispatch/{2026-09-09,2026-09-10}/；晨报 = NIGHTLY_RUN_2026-09-10.md。
