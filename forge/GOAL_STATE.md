@@ -772,3 +772,10 @@ W3 首评 EXECUTE_QUEUE_ITEM（T33 head 缺 WAITING_OWNER_DECISION 尾态 + 评�
 - **ROUND_2 正式收官**（R2 ROUND_YIELD=YES，frontier 52）→ **同 session 开 R3**（零模型测试 B 场景实况）→ R3 跑 3 lens（dsh×2 + forum×1）。
 - **合法终态 = DISCOVERY_YIELD_EXHAUSTED**：连续 6 个 fresh 无 yield（auth→mobile×2→dsh×2→forum-coupling），streak 6≥6 机械触发；TRUE_IDLE 合法定义满足（queue 0 ∧ refinement 0 ∧ YIELD_EXHAUSTED）。**这不是 premature stop**——对照 Owner 判例：本夜 1 探针→PASS→"交给 WAKE"才是违规；8 探针含 2 实发现后 streak 耗尽是规则本身。
 - **终态**：EXECUTABLE=0 / OWNER_REQ=5（不变）/ FRONTIER_REMAINING=51 / TRUE_IDLE=TRUE / FRESH_PROBES=8 / YIELDS=2 / round-probes.jsonl 全留痕。WAKE 链后续按 B/C NOOP；今晚 23:00 新预算照常。
+
+### WAKE 06:00（by HOURLY_WAKE，2026-09-10 06:0x–06:5x）— forum/svc lens 双真发现 + T35 REVISE 自纠全链
+
+- **T34（NEW，agent-forum）**：governance v1.0.2 adoption 指针漂移——CORE_INVARIANTS_V1 L103 `LOCAL_GOVERNANCE_ADOPTION` 仍锚 superseded V1 + ADOPTION_V2 L76 现在时句过时（V1 frontmatter superseded_by=V2 实证）→ WAITING_OWNER_DECISION（修复=accepted 权威文档事务，需 mandate）。
+- **T35（NEW，svc-workflow）**：README 索引 2/12 缺口（新 accepted KEYSET 无行）→ standing-mandate 执行：10 行机械生成（frontmatter status 严格、缺列留白不臆造）→ candidate/specs-readme-index-v1 → **Draft PR #38** → 独立评审 **r1 REVISE**（抓到本链 base 前移漂移：COORDINATOR 行指向分支树外 spec——评审员反向抓了治理链自己的 bug，YIELD 类 FALSE_ASSUMPTION_CORRECTED）→ rebase dd235dcf 机械重生成（948d714 force-push）→ **r2 ACCEPT 0 blockers** → WAITING_OWNER_DECISION。
+- frontier：forum accepted-authority lens DONE（2/2）、svc docs-vs-runtime DONE（2/2）、mobile runtime lens env-bound 记录（Xcode 工具链边界）。yield:yes ×3（T34/T35/T35-REVISE）。
+- **治理架构的意义时刻**：independent exact-head review 在治理链自己的产出上抓到 base-drift——system eating its own dog food 并真实运转。账 @ 本 push。
