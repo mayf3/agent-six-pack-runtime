@@ -721,3 +721,10 @@ W3 唯一可执行项 T16 做 admit-time 复核 → **H 条件（fix shape 机�
 ### WAKE 08:00（by HOURLY_WAKE，2026-09-09 08:01–08:1x）— BACKLOG_V1 种子票首轮消费
 
 W3=WAKE 发现 10 张种子票可执行（BACKLOG_BUILDER_V1 seed）→ W4 接管，08:30 闸前有界完成 **4 张**：T23 依赖供给闭包（registry 有 0.1.x-rc 满足 peer≥0.1.0-rc；缺口=worktree 未 install；配方=repo 标准 npm install）、T20 import 清单（mechanism 8/business 10 → 并入 T17）、T28 forum L0 三轴全维持（#19 事实新鲜）、T30 auth 根 README 抽查一致（全量对表留票）。余 6 张（T18/T19/T21/T22/T29/T31）留今晚 bootstrap。队列态：EXECUTABLE=6、OWNER_REQ=4、STARVATION=NO。零写入零 provider 调用。账 @ 本 push。
+
+### GOAL NIGHTLY_REAL_DISCOVERY_PASS_V1（Owner 2026-09-09 08:1x 颁发；READ_ONLY/DISCOVERY 履行，runtime 账 @ 本 push）
+
+- **六仓真探针全数执行**（9 substantive probes，零产品仓写入）：dsh 四连探针（repo-supported install 实测→**结构性依赖闭包缺口 DEFINITIVE，修正晨间 T23 配方**；broker 全套真跑 293/294+file-level leak→frontier REPRODUCTION 候选；T11 隔离执行级 HOLDS；T19 注入零编辑 WORKS）+ forum 三轴&引用完整性（一次假阳性被全仓 find 自纠，未入票）+ svc CTR-CIR-003 锚点 + auth BUNDLE pin 源码核对 + mobile enforcement 真相 + vehicle-pet OVERLAY-019 在档。
+- **核心发现（对既有票的实质性深化，非新票）**：① T3 缺口**收窄**——config.manifests 注入零 generic 编辑可接入新能力（机械实证），耦合面仅剩 DEFAULT_MANIFESTS 默认集 → T17 提案规模缩小；② T23 修正——repo 标准 install **不提供** peer（root 无 workspaces/devDeps），结构性缺口实证，修正配方=外部 farm 或显式 peer 安装（"受支持"口径归 Owner）；③ broker.test.js 存在 post-test async leak（293 pass 中 1 file-level fail），symlink-farm 变量未排除 → frontier REPRODUCTION 候选不立票；④ 新票 0 张、假阳性 1 枚被质量纪律拦截（T32 撤销）。
+- **LAST_NIGHT（receipt 基）**：REPOS_VISITED=6 / SUBSTANTIVE_PROBES=1（dsh index-bindings 判别）/ NEW_FINDINGS=0 → CAUSE=**MIXED**（dsh 部分实质 + 其余五仓 test_health="有界未实跑"=PASS_TOO_SHALLOW + 法律工作面本就=已知四任务=MOST_WORK_ALREADY_KNOWN）。
+- **DISCOVERY_YIELD_EXHAUSTED=YES**（连续 substantive actions 无 NEW validated finding ≥4：T11/T19/T23 deepenings 与四仓 HEALTHY probes）。账 @ 本 push；receipt=discovery-pass-20260909.json。
