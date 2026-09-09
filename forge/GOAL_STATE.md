@@ -791,3 +791,10 @@ W3 首评 EXECUTE_QUEUE_ITEM：T35 head 尾态遗漏（同 T33 00:00 同款错�
 - **测试**：wakedrive A–N = 12/12（G read-back/H 非法转换拒/I+K T33 replay caught/L T35 replay helper+read-back/M 08:35 QUIESCE/N 09:30 CLOSED）；回归 multiround 15/15 + admission-v2 18/18 + backlog-v1 14/14。真队列 lint = PASS。
 - 修复三处实现缺陷：生成层 `\n` 断裂、TICKET_STATE_VOCAB list-set 类型错、lint 内联清单未接 BODY_DONE_MARKERS 常量。
 - **CURRENT NIGHT**：<08:30 ACTIVE + FRONTIER_REMAINING=51 + streak<6 → **RESUME CURRENT ROUND**（round 2/3 续），由本 session drive_until_terminal 至合法 terminal（预期 08:30 QUIESCE）。
+
+### DRIVE 持续段（2026-09-10 05:1x–07:2x，round 2 完成→round 3 首轮过；durable cursor 交接 WAKE 链）
+
+- **round 2 完成（yield=YES）**：forum accepted-authority（T34 新发现）/ svc docs-vs-runtime（T35 新发现→修复→PR#38）/ auth runtime+tests（JWT_SECRET fail-fast + bcrypt 伪影诊断闭环）/ dsh runtime（gateway-mode 探针 PASS）+ dependency（root install 实测）/ vp dependency（T33 即修复）+ tests（158 全绿）+ accepted-authority（OVERLAY-019 一致性）。R2 存档于 rounds.json（yield=YES，9 事件）。
+- **round 3 首轮过**：svc module-boundaries（依赖方向 HEALTHY：application→infra 零反向 + cargo offline 33s）/ auth accepted-authority（#65 封印断言在档 @7c8cd4b）。auth tests lens 经 bcrypt 伪影诊断后 **fail 0**（非产品缺陷，我方安装旗标问题——如实记录）。
+- **FRONTIER_REMAINING = 50**（cursors：dsh 4/forum 5/svc 4/auth 4/mobile 2/vp 3）；ROUND 3 IN PROGRESS——durable cursor 交 WAKE 链续跑（07:00 已过、08:00 WAKE 接力），08:30 QUIESCE / 09:00 硬闸照常；DEFERRED 余量非 TRUE_IDLE。
+- 全部状态 durable：frontier/backlog-budget/rounds.json/queue/GOAL_STATE/receipts。零产品仓写入（vp/forum/svc 修复均走已存 PR 面）。provider 调用 = 2（T35 两轮评审）。
