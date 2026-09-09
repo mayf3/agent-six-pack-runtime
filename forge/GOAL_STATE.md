@@ -743,3 +743,11 @@ gate 6/6 PASS（daemon 73432）→ 队列卫生（T23/T20/T28/T30/T19 补 DONE �
 ### WAKE 00:00（by HOURLY_WAKE，2026-09-10 00:01–00:1x）
 
 W3 首评 EXECUTE_QUEUE_ITEM（T33 head 缺 WAITING_OWNER_DECISION 尾态 + 评估器词表缺该词）→ 修正：T33 头态补 `→ WAITING_OWNER_DECISION`、TICKET_STATE_VOCAB 增该词并映射 OWNER_BLOCKED（测试套件 18/18+14/14 复绿，H 断言日期刷新）→ W3 = **IDLE_ALL_GOVERNED**（EXECUTABLE=0、OWNER_REQ=5、TRUE_IDLE 维持）。账 @ 本 push。
+
+### GOAL NIGHTLY_MULTI_ROUND_GOVERNANCE_V1（Owner 2026-09-10 04:5x 颁发；GOVERNANCE 履行完毕，runtime 账 @ 本 push；"现在就可以继续跑的"=已恢复运行）
+
+- **TRUE_IDLE_PREMATURE_BUG = FIXED**：预算语义 NIGHT→**ROUND**（2 lens/repo/round）；`backlog_deepening` 恒返 dict（finding-refinement/repo-lens/ROUND_EXHAUSTED/FRONTIER_EXHAUSTED/YIELD_EXHAUSTED/NIGHT_HARD_CAP 六态）；ROUND_EXHAUSTED → `start_next_round`（rounds.json 记录 ROUND_ID/STARTED/COMPLETED/REPO_LENSES_USED/ROUND_YIELD/FRONTIER_REMAINING + budget 轮重置）自动开下一轮；TRUE_IDLE 仅 = queue 0 ∧ refinement 0 ∧（FRONTIER_EXHAUSTED ∨ YIELD_EXHAUSTED）；NIGHT_HARD_CAP（6 轮/夜）→ NIGHT_HARD_DISCOVERY_CAP_REACHED + DEFERRED，**永不 TRUE_IDLE**；yield 语义 = 9 类产出重置 streak，连续 6 no-yield 才 YIELD_EXHAUSTED；W3/WAKE 对 ROUND_EXHAUSTED 不再 NOOP（RESUME_NEXT_ROUND 语义由自动开轮天然满足）。
+- **测试**：multi-round 套件 **15/15**（A–K + REPLAY）；admission-v2 18/18、backlog-v1 14/14 回归绿（I 断言/H 日期按新语义更新）；E 测试改幂等。修复两个测试隔离缺陷（backlog-budget override 参数、E 日期文件累积）。
+- **REPLAY_2026-09-09_2337 = START_NEXT_DISCOVERY_ROUND**（同状态旧代码出 TRUE_IDLE → 已修）。
+- **当夜已恢复运行（round 2）**：frontier/budget 迁移（R1 存档 yield=YES：T33 PR#35 + 五项 refinement；round 2 开启）→ dsh runtime lens gateway-mode 探针 PASS（33 http+5 local、零 child 注册）→ 依赖闭包 lens（root install rc=0 @5a53952）→ forum/svc/auth 依赖 lens（npm ci/cargo offline/npm ci 各 rc=0）→ vp tests lens（T33 即 158 全绿）→ FRONTIER_REMAINING=58，下一 lens = forum accepted-authority-vs-implementation（WAKE 链接力）。
+- 零产品仓写入（vp 修复走 T33 已有 PR#35 面）。
