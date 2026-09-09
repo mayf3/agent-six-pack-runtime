@@ -717,3 +717,7 @@ W3 唯一可执行项 T16 做 admit-time 复核 → **H 条件（fix shape 机�
 - ** frontier 初始化**：6 仓记录落 `state/backlog-frontier.json`（dsh module-boundaries lens 已完成计 1 次、五仓定格今晨 pass main 值）。
 - **种子后循环态**：EXECUTABLE=10（全部 READ_ONLY）、roundrobin=EXECUTE_QUEUE_ITEM（消费优先于 deepening ✓）、OWNER_REQ=4、STARVATION=NO；FRONTIER_REMAINING=72 lens-机会（12×6，帽内逐夜推进）。晨报新增 BACKLOG_V1 九字段（BACKLOG_START=17/GENERATED=9/END=27/DEEPENED=2/PREPARED=3/REMAINING=72/TRUE_IDLE=FALSE）。
 - 零产品仓改动、零 provider 调用。真·IDLE 定义已代码化并测试锁定：**EXECUTABLE_QUEUE=0 ∧ refinement 空 ∧ lens 穷尽/预算尽**。
+
+### WAKE 08:00（by HOURLY_WAKE，2026-09-09 08:01–08:1x）— BACKLOG_V1 种子票首轮消费
+
+W3=WAKE 发现 10 张种子票可执行（BACKLOG_BUILDER_V1 seed）→ W4 接管，08:30 闸前有界完成 **4 张**：T23 依赖供给闭包（registry 有 0.1.x-rc 满足 peer≥0.1.0-rc；缺口=worktree 未 install；配方=repo 标准 npm install）、T20 import 清单（mechanism 8/business 10 → 并入 T17）、T28 forum L0 三轴全维持（#19 事实新鲜）、T30 auth 根 README 抽查一致（全量对表留票）。余 6 张（T18/T19/T21/T22/T29/T31）留今晚 bootstrap。队列态：EXECUTABLE=6、OWNER_REQ=4、STARVATION=NO。零写入零 provider 调用。账 @ 本 push。
