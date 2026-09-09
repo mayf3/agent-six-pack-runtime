@@ -764,3 +764,11 @@ W3 首评 EXECUTE_QUEUE_ITEM（T33 head 缺 WAITING_OWNER_DECISION 尾态 + 评�
 
 - **FIX（零模型，本 push 同 commit 面 = nightly-1 dispatcher + simulation）**：dispatcher 新增 `drive-decision`（driving-session 纯决策：MUST_CONTINUE_DRIVING 推导 + 七合法终态）、`wake-decide`（A/B/C 零模型，heartbeat 判 live owner）、`probe-record`（fresh/reused 记账 + streak/6 阈值联动）。零模型测试 **12/12 PASS**（simulation-20260910-continuous-drive/run_tests.py：A–H + REPLAY + X1 队列优先 + X2 TRUE_IDLE noop）。REPLAY（真实 frontier/budget @ 2026-09-10 05:1x premature-stop 现场）= **CONTINUE_NEXT_LENS**（forum accepted-authority-vs-implementation, R2），非 STOP_WAIT_FOR_WAKE。
 - **PREMATURE_STOP 承认**：05:1x 会话在 ROUND_2 首批探针 PASS、FRONTIER_REMAINING=58 时自愿停并把下一 lens 写成"WAKE 链接力"——该语义错误由本 GOAL 修复；本记录由接管的 live session 写入。
+
+### CONTINUOUS_DRIVE 首夜实跑（本 session 接管 05:22–07:4x，runtime 账 @ 本 push）
+
+- **接管即续驾**：05:22 接管（无 live owner、夜未竟）→ 从 durable cursor 直接 CONTINUE_NEXT_LENS，未等任何整点。
+- **8 个 FRESH_SUBSTANTIVE_PROBES**（probe-record 机械记账，reused=0）：forum accepted-authority-vs-implementation（**YIELD=YES：REVIEWER-GATE-AUTHORITY-GAP**——reviewer-gate/outcomes/resolve 家族无在档权威，§3.2 排除语义相邻，governance 仓零接受记录，724e15b 整体带入；P3）/ svc tests 真跑（**YIELD=YES：TEST-CONTAINER-MIGRATION-DRIFT**——容器库 _sqlx_migrations@25 vs main@88ff814 migrations@22，01_migration_tests 18/18 VersionMissing(23)，隔离策略不一致；P2，含 main 漂移刷新 f525d55→88ff814）/ auth tests 双架构真跑（x64 48/48 PASS、arm64 import-crash=P3 可移植性观察；main 漂移刷新→b536c195）/ mobile startup（analyze 零 issue）/ mobile dependency（enforce-lockfile rc=0）/ dsh docs-vs-truth（PR#235 未部署=槽纪律一致）/ dsh identity-authz（协调面 server-side 强制一致）/ forum coupling（hub 布局无实质代价）。
+- **ROUND_2 正式收官**（R2 ROUND_YIELD=YES，frontier 52）→ **同 session 开 R3**（零模型测试 B 场景实况）→ R3 跑 3 lens（dsh×2 + forum×1）。
+- **合法终态 = DISCOVERY_YIELD_EXHAUSTED**：连续 6 个 fresh 无 yield（auth→mobile×2→dsh×2→forum-coupling），streak 6≥6 机械触发；TRUE_IDLE 合法定义满足（queue 0 ∧ refinement 0 ∧ YIELD_EXHAUSTED）。**这不是 premature stop**——对照 Owner 判例：本夜 1 探针→PASS→"交给 WAKE"才是违规；8 探针含 2 实发现后 streak 耗尽是规则本身。
+- **终态**：EXECUTABLE=0 / OWNER_REQ=5（不变）/ FRONTIER_REMAINING=51 / TRUE_IDLE=TRUE / FRESH_PROBES=8 / YIELDS=2 / round-probes.jsonl 全留痕。WAKE 链后续按 B/C NOOP；今晚 23:00 新预算照常。
