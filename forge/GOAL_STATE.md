@@ -783,3 +783,11 @@ W3 首评 EXECUTE_QUEUE_ITEM（T33 head 缺 WAITING_OWNER_DECISION 尾态 + 评�
 ### WAKE 07:00（by HOURLY_WAKE，2026-09-10 07:01–07:1x）— round 3 启动 + 部分入账 + DEFERRED
 
 W3 首评 EXECUTE_QUEUE_ITEM：T35 head 尾态遗漏（同 T33 00:00 同款错误模式——结论写正文、箭头尾未打）→ 修正 → multi-round loop 启动 round 3。dsh/vp 的 tests lens 以今夜真跑证据入账（dsh 293/294+leak、vp 158 全绿）；forum/svc/auth 的 tests lens 未经本环境实质探针 → **DEFERRED_TO_NEXT_NIGHT（§10 正常态，非 TRUE_IDLE）**。晨态：EXECUTABLE=0、OWNER_REQ=7、roundrobin 停于 BACKLOG_DEEPENING（frontier 余量在册）。账 @ 本 push。
+
+### GOAL NIGHTLY_WAKE_CONTINUOUS_DRIVE_AND_TICKET_STATE_HARDENING_V1（Owner 2026-09-10 07:1x 颁发；GOVERNANCE_ONLY 履行，runtime 账 @ 本 push）
+
+- **P1 FIXED（WAKE 连续驱动）**：dispatcher 新增 `drive-until-terminal` 规划器（ LEGAL_TERMINALS 七种 / NON_TERMINAL 六种显式清单；LENS_DEFERRED_ENVIRONMENT 跳过并选下一合法 repo/lens——局部环境阻塞不再升格为 session STOP）；automation-9952ac9c prompt 固化 DRIVE_UNTIL_TERMINAL 语义（BOOTSTRAP 与 WAKE 同一循环；WAKE=recovery entrypoint 非 tick；非 terminal 清单禁止自愿退出）。
+- **P2 FIXED（canonical 状态转换）**：新增 `set-ticket-state`（fresh-read→定位→合法性校验（terminal 态禁回 executable）→原子单尾写入→read-back→结构化 receipt，TASK_DISPOSITION_COMMITTED 门）+ `ticket-state-lint`（body-done vs executable 冲突 / terminal 后非 terminal 尾 / terminal 票排入 executable / waiting-owner 误判 executable 四类检测，BODY_DONE_MARKERS 常量化）。**禁止手写箭头尾态**已入 automation 契约。
+- **测试**：wakedrive A–N = 12/12（G read-back/H 非法转换拒/I+K T33 replay caught/L T35 replay helper+read-back/M 08:35 QUIESCE/N 09:30 CLOSED）；回归 multiround 15/15 + admission-v2 18/18 + backlog-v1 14/14。真队列 lint = PASS。
+- 修复三处实现缺陷：生成层 `\n` 断裂、TICKET_STATE_VOCAB list-set 类型错、lint 内联清单未接 BODY_DONE_MARKERS 常量。
+- **CURRENT NIGHT**：<08:30 ACTIVE + FRONTIER_REMAINING=51 + streak<6 → **RESUME CURRENT ROUND**（round 2/3 续），由本 session drive_until_terminal 至合法 terminal（预期 08:30 QUIESCE）。
