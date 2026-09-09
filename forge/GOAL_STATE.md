@@ -751,3 +751,16 @@ W3 首评 EXECUTE_QUEUE_ITEM（T33 head 缺 WAITING_OWNER_DECISION 尾态 + 评�
 - **REPLAY_2026-09-09_2337 = START_NEXT_DISCOVERY_ROUND**（同状态旧代码出 TRUE_IDLE → 已修）。
 - **当夜已恢复运行（round 2）**：frontier/budget 迁移（R1 存档 yield=YES：T33 PR#35 + 五项 refinement；round 2 开启）→ dsh runtime lens gateway-mode 探针 PASS（33 http+5 local、零 child 注册）→ 依赖闭包 lens（root install rc=0 @5a53952）→ forum/svc/auth 依赖 lens（npm ci/cargo offline/npm ci 各 rc=0）→ vp tests lens（T33 即 158 全绿）→ FRONTIER_REMAINING=58，下一 lens = forum accepted-authority-vs-implementation（WAKE 链接力）。
 - 零产品仓写入（vp 修复走 T33 已有 PR#35 面）。
+
+### GOAL NIGHTLY_ACTIVE_SESSION_CONTINUOUS_DRIVE_V1（Owner 2026-09-10 05:2x 颁发；同窗口履行，runtime 账 @ 本 push）
+
+**MANDATE（对今后一切 23:00 bootstrap 会话与 hourly WAKE 会话生效）**：WAKE 是 crash/session-loss RECOVERY 机制，不是正常工作的 cadence——live driving session 正常运行时 WAKE 永远不该成为下一步调度器。
+
+- **CORE RULE**：`PHASE=ACTIVE ∧ CURRENT_DRIVING_SESSION=HEALTHY ∧ TIME<08:30 ∧ FRONTIER_REMAINING>0 ∧ DISCOVERY_YIELD_EXHAUSTED=NO ∧ NIGHT_HARD_CAP_REACHED=NO` ⇒ `MUST_CONTINUE_DRIVING=YES`，不得主动 STOP。不得以"下一次 WAKE 很快 / 本轮已做一个 repo / 已生成 receipt / infra Goal 完成"为由退出。
+- **NORMAL LOOP**（同 session 内）：executable queue item → execute/persist/continue；refinement → 同；本轮下一 lens → fresh substantive probe → persist yield/no-yield → continue；round 完成且 frontier 剩且 yield 未竭且未触夜帽 → **同 session** 开下一轮 → continue；仅在合法终态 break。
+- **LEGAL TERMINALS**（仅此七种）：TRUE_IDLE / DISCOVERY_YIELD_EXHAUSTED / FRONTIER_EXHAUSTED / NIGHT_HARD_DISCOVERY_CAP_REACHED / 08:30_QUIESCE / provider hard failure 需 durable handoff / OUTCOME_UNKNOWN 安全释放。
+- **WAKE ROLE（RECOVERY_ONLY）**：A. 无 live driving owner ∧ 夜未竟 → 从 durable cursor RESUME；B. live driving owner 存在 → NOOP；C. TRUE_IDLE → NOOP。判定面 = `wake-decide`（heartbeat 新鲜度 ≤15min = live owner）。
+- **FRESH WORK REQUIREMENT**：`probe-record --fresh/--reused` 机械记账；REUSED_PRIOR_EVIDENCE 不计入 THIS_ROUND_SUBSTANTIVE_PROBES / THIS_ROUND_DISCOVERY_YIELD；fresh 无 yield 连续 6 次 → DISCOVERY_YIELD_EXHAUSTED（唯一诚实收束之一；1 probe→PASS→"交给 WAKE" 永不合法）。
+
+- **FIX（零模型，本 push 同 commit 面 = nightly-1 dispatcher + simulation）**：dispatcher 新增 `drive-decision`（driving-session 纯决策：MUST_CONTINUE_DRIVING 推导 + 七合法终态）、`wake-decide`（A/B/C 零模型，heartbeat 判 live owner）、`probe-record`（fresh/reused 记账 + streak/6 阈值联动）。零模型测试 **12/12 PASS**（simulation-20260910-continuous-drive/run_tests.py：A–H + REPLAY + X1 队列优先 + X2 TRUE_IDLE noop）。REPLAY（真实 frontier/budget @ 2026-09-10 05:1x premature-stop 现场）= **CONTINUE_NEXT_LENS**（forum accepted-authority-vs-implementation, R2），非 STOP_WAIT_FOR_WAKE。
+- **PREMATURE_STOP 承认**：05:1x 会话在 ROUND_2 首批探针 PASS、FRONTIER_REMAINING=58 时自愿停并把下一 lens 写成"WAKE 链接力"——该语义错误由本 GOAL 修复；本记录由接管的 live session 写入。
