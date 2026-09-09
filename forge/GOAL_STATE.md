@@ -739,3 +739,7 @@ gate 6/6 PASS（daemon 73432）→ 队列卫生（T23/T20/T28/T30/T19 补 DONE �
 - **TRUE_IDLE_REACHED = TRUE**（六仓 lens 帽 2/2 全尽 + queue executable=0 + refinement 空；budget true-idle 已标记；09-10 tonight_mode=STANDBY released 守 W1 NOOP 至今晚 23:00 新预算）。daemon 已停。
 - **OWNER_DECISIONS_PREPARED = 5**：T16 范围三选一 / T4 manifests 归属 / T13 demo-server 身份 / T17 composition 提案三步 / T33 PR#35 merge。另有 dsh T23 修正（repo-supported install 不提供 peer，结构性缺口）待 Owner 认可"受支持 bootstrap"口径。
 - 账 @ 本 push；receipts = dispatch/{2026-09-09,2026-09-10}/；晨报 = NIGHTLY_RUN_2026-09-10.md。
+
+### WAKE 00:00（by HOURLY_WAKE，2026-09-10 00:01–00:1x）
+
+W3 首评 EXECUTE_QUEUE_ITEM（T33 head 缺 WAITING_OWNER_DECISION 尾态 + 评估器词表缺该词）→ 修正：T33 头态补 `→ WAITING_OWNER_DECISION`、TICKET_STATE_VOCAB 增该词并映射 OWNER_BLOCKED（测试套件 18/18+14/14 复绿，H 断言日期刷新）→ W3 = **IDLE_ALL_GOVERNED**（EXECUTABLE=0、OWNER_REQ=5、TRUE_IDLE 维持）。账 @ 本 push。
