@@ -779,3 +779,7 @@ W3 首评 EXECUTE_QUEUE_ITEM（T33 head 缺 WAITING_OWNER_DECISION 尾态 + 评�
 - **T35（NEW，svc-workflow）**：README 索引 2/12 缺口（新 accepted KEYSET 无行）→ standing-mandate 执行：10 行机械生成（frontmatter status 严格、缺列留白不臆造）→ candidate/specs-readme-index-v1 → **Draft PR #38** → 独立评审 **r1 REVISE**（抓到本链 base 前移漂移：COORDINATOR 行指向分支树外 spec——评审员反向抓了治理链自己的 bug，YIELD 类 FALSE_ASSUMPTION_CORRECTED）→ rebase dd235dcf 机械重生成（948d714 force-push）→ **r2 ACCEPT 0 blockers** → WAITING_OWNER_DECISION。
 - frontier：forum accepted-authority lens DONE（2/2）、svc docs-vs-runtime DONE（2/2）、mobile runtime lens env-bound 记录（Xcode 工具链边界）。yield:yes ×3（T34/T35/T35-REVISE）。
 - **治理架构的意义时刻**：independent exact-head review 在治理链自己的产出上抓到 base-drift——system eating its own dog food 并真实运转。账 @ 本 push。
+
+### WAKE 07:00（by HOURLY_WAKE，2026-09-10 07:01–07:1x）— round 3 启动 + 部分入账 + DEFERRED
+
+W3 首评 EXECUTE_QUEUE_ITEM：T35 head 尾态遗漏（同 T33 00:00 同款错误模式——结论写正文、箭头尾未打）→ 修正 → multi-round loop 启动 round 3。dsh/vp 的 tests lens 以今夜真跑证据入账（dsh 293/294+leak、vp 158 全绿）；forum/svc/auth 的 tests lens 未经本环境实质探针 → **DEFERRED_TO_NEXT_NIGHT（§10 正常态，非 TRUE_IDLE）**。晨态：EXECUTABLE=0、OWNER_REQ=7、roundrobin 停于 BACKLOG_DEEPENING（frontier 余量在册）。账 @ 本 push。
