@@ -804,3 +804,7 @@ W3 首评 EXECUTE_QUEUE_ITEM：T35 head 尾态遗漏（同 T33 00:00 同款错�
 - R1→R2→R3 多轮实跑完成（yield 全 YES）；三新发现（T33/T34/T35）两 PR（#35 ACCEPT / #38 r1 REVISE→r2 ACCEPT）全部至 Owner 边界；auth/svc 边界 lens HEALTHY 收尾。
 - WAKE 链七次全记录（00:00-08:00）；drive_until_terminal 架构（MULTI_ROUND + WAKE_DRIVE 双 GOAL）首夜实战验证：ROUND_EXHAUSTED→START_NEXT_ROUND 自动接续、DEFERRED_ENV 不阻塞、canonical 尾态两次由 WAKE 自纠。
 - 今晚 23:00 fresh rounds 继续（frontier 49 + round 3 剩余 + T24 下窗首派生）。账 @ 本 push。
+
+### 08:05-08:20 窗尾补充（drive 继续至 quiesce 前）
+
+build/packaging lens 三仓探针：vp vite build rc=0（396KB）✓ / auth tsc rc=0 ✓ 入档（cursor 前进）；forum build lens DEFERRED_ENV（scratch tsc 不可解析，需 repo bootstrap——如实记录不虚计）。FRONTIER_REMAINING 更新；余量今晚 23:00 fresh rounds 继续。
