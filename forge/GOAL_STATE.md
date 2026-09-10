@@ -812,3 +812,11 @@ build/packaging lens 三仓探针：vp vite build rc=0（396KB）✓ / auth tsc 
 ### 09-10 夜 BOOTSTRAP（run @ 23:00；23:03–23:4x 首段）
 
 gate 6/6 PASS（daemon 9095）→ 六仓 maintenance pass 全 DONE（六仓全漂移定性：dsh #234/#245 broker+1621 行且 **broker 套件真跑 329/329 全绿**、forum 无漂移、svc=T35 rebase 目标、auth #69 端口绑定、mobile #23 Presence V2 acceptance、vp #36 overlay-v7 spec）→ BACKLOG_DEEPENING round 1：dsh docs-vs-runtime（#234/#245 声明 8/8 EXISTS+trusted-zone 锚点）+ identity lens（轮换缝不变量保持、无 secret-in-argv、privileged channel 经 provisioning 包）双 lens 完成，dsh cursor=6、round-1 帽 2/2 满。lint PASS。下一 lens=forum module-boundaries——由 WAKE 链接力（00:00+ W4 takeover，durable cursor 在册）。零产品仓写入、零 provider 调用。账 @ 本 push。
+
+### SCOUT_SEED V1 集成 + 双判别（2026-09-11 05:5x–06:2x，by continuing drive）
+
+- 外部 scout 交付 12 候选（2 P1/10 P2，E2 未验证）→ 本地去重（零等价）→ **T36–T47 登记**（quality gate 12/12，预算 12/24 global）。
+- **T47 判别+修复+评审全链**：exact-head 对账成立（60c4e03 权威事务佐证漏同步）→ standing-mandate 修复 8ff5f5d（V6 status→superseded+reciprocal backlink、README V6→V7×2，恰 2 文件）→ **Draft PR mayf3/vehicle-pet#37** → fresh GLM review **ACCEPT**（6 步机械核验）→ WAITING_OWNER_DECISION。set-ticket-state 全程 canonical。
+- **T44 判别复现**：A→B→A 第三次 ingest **receipts=2**（l1→l3）违反 CTR-PET-029 → VALIDATED_FINDING → WAITING_OWNER_MANDATE（engine 行为变更非 standing 类）。过程坑：subjectId 小写 pattern（首跑全 invalid 系夹具大写）。
+- 余 10 张（T36–T43/T45/T46）已入 executable 队列，由 WAKE 链/bootstrap 逐张判别（多数需一次性 DB/Flutter 特征测试——环境配方在 lessons）。
+- Owner 决策面 +2（T44 修复授权、T47 PR#37 merge）→ 累计 9 项。账 @ 本 push。
