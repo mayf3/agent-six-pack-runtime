@@ -820,3 +820,9 @@ gate 6/6 PASS（daemon 9095）→ 六仓 maintenance pass 全 DONE（六仓全�
 - **T44 判别复现**：A→B→A 第三次 ingest **receipts=2**（l1→l3）违反 CTR-PET-029 → VALIDATED_FINDING → WAITING_OWNER_MANDATE（engine 行为变更非 standing 类）。过程坑：subjectId 小写 pattern（首跑全 invalid 系夹具大写）。
 - 余 10 张（T36–T43/T45/T46）已入 executable 队列，由 WAKE 链/bootstrap 逐张判别（多数需一次性 DB/Flutter 特征测试——环境配方在 lessons）。
 - Owner 决策面 +2（T44 修复授权、T47 PR#37 merge）→ 累计 9 项。账 @ 本 push。
+
+### SCOUT_SEED 判别续段（06:2x–06:5x）：mobile 双票复现
+
+- **T41 VALIDATED**：Flutter 探针（FakePausableClient gate getAgent）——释放 A 后 **activeAgentId=agt-2 而 activeAgent.id=agt-1**（gen guard 保护 sessions/messages，唯 `_activeAgent` 在检查前写入不回滚）→ WAITING_OWNER_MANDATE（修法=赋值移 guard 后）。
+- **T38 VALIDATED（比票面重）**：FakeAuthServer.refreshDelay 挂起探针——logout 后迟到 refresh **重写 4 凭据键且 isLoggedIn=true/phase=loggedOut 状态分裂**（下次 restore 静默恢复登录；根因=_doRefresh 无 logout epoch）→ WAITING_OWNER_MANDATE。
+- 判别累计：scout 12 张中 **4 张已判别**（T47 修复+PR#37+ACCEPT / T44、T38、T41 三张 VALIDATED 待 mandate）。余 8 张（T36/T37/T39/T40/T42/T43/T45/T46）留 WAKE 链与后续夜（多需一次性 DB fixture）。lint PASS；set-ticket-state 全程 canonical。账 @ 本 push。
