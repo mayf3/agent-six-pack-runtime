@@ -798,3 +798,9 @@ W3 首评 EXECUTE_QUEUE_ITEM：T35 head 尾态遗漏（同 T33 00:00 同款错�
 - **round 3 首轮过**：svc module-boundaries（依赖方向 HEALTHY：application→infra 零反向 + cargo offline 33s）/ auth accepted-authority（#65 封印断言在档 @7c8cd4b）。auth tests lens 经 bcrypt 伪影诊断后 **fail 0**（非产品缺陷，我方安装旗标问题——如实记录）。
 - **FRONTIER_REMAINING = 50**（cursors：dsh 4/forum 5/svc 4/auth 4/mobile 2/vp 3）；ROUND 3 IN PROGRESS——durable cursor 交 WAKE 链续跑（07:00 已过、08:00 WAKE 接力），08:30 QUIESCE / 09:00 硬闸照常；DEFERRED 余量非 TRUE_IDLE。
 - 全部状态 durable：frontier/backlog-budget/rounds.json/queue/GOAL_STATE/receipts。零产品仓写入（vp/forum/svc 修复均走已存 PR 面）。provider 调用 = 2（T35 两轮评审）。
+
+### 09-09/10 夜终局（08:15 关窗；DEFERRED_TO_NEXT_NIGHT，非 TRUE_IDLE——frontier 49 在册）
+
+- R1→R2→R3 多轮实跑完成（yield 全 YES）；三新发现（T33/T34/T35）两 PR（#35 ACCEPT / #38 r1 REVISE→r2 ACCEPT）全部至 Owner 边界；auth/svc 边界 lens HEALTHY 收尾。
+- WAKE 链七次全记录（00:00-08:00）；drive_until_terminal 架构（MULTI_ROUND + WAKE_DRIVE 双 GOAL）首夜实战验证：ROUND_EXHAUSTED→START_NEXT_ROUND 自动接续、DEFERRED_ENV 不阻塞、canonical 尾态两次由 WAKE 自纠。
+- 今晚 23:00 fresh rounds 继续（frontier 49 + round 3 剩余 + T24 下窗首派生）。账 @ 本 push。
