@@ -826,3 +826,9 @@ gate 6/6 PASS（daemon 9095）→ 六仓 maintenance pass 全 DONE（六仓全�
 - **T41 VALIDATED**：Flutter 探针（FakePausableClient gate getAgent）——释放 A 后 **activeAgentId=agt-2 而 activeAgent.id=agt-1**（gen guard 保护 sessions/messages，唯 `_activeAgent` 在检查前写入不回滚）→ WAITING_OWNER_MANDATE（修法=赋值移 guard 后）。
 - **T38 VALIDATED（比票面重）**：FakeAuthServer.refreshDelay 挂起探针——logout 后迟到 refresh **重写 4 凭据键且 isLoggedIn=true/phase=loggedOut 状态分裂**（下次 restore 静默恢复登录；根因=_doRefresh 无 logout epoch）→ WAITING_OWNER_MANDATE。
 - 判别累计：scout 12 张中 **4 张已判别**（T47 修复+PR#37+ACCEPT / T44、T38、T41 三张 VALIDATED 待 mandate）。余 8 张（T36/T37/T39/T40/T42/T43/T45/T46）留 WAKE 链与后续夜（多需一次性 DB fixture）。lint PASS；set-ticket-state 全程 canonical。账 @ 本 push。
+
+### 夜终局（07:4x；ROUND 3 IN PROGRESS → durable handoff WAKE 链；08:30 QUIESCE/09:00 硬闸照常）
+
+- T42 探针段：静态三锚点实证（stop 仅清 interval/in-flight 不等/disposeAll 不等 poll）+ 隔离 probe 两轮止于 admission item-schema（harness 存档）→ **不立票、保持 READY_FOR_REPRODUCTION**（无生产后果实证，不越 NO_SPECULATIVE 线）。
+- 夜终态：FRONTIER_REMAINING≈47-50、ROUND 3 IN PROGRESS（durable cursor：dsh cursor 8/tests+build 已完成、forum recovery+build 完、svc recovery 完、auth recovery 完、mobile runtime+tests+accepted-authority 完、vp identity+boundaries 完）→ **DEFERRED 余量交 WAKE 链与今晚 23:00 fresh rounds**；非 TRUE_IDLE。
+- 本夜治理产出累计：SCOUT_SEED 12 张登记+4 判别（T47 修复全链 PR#37 ACCEPT、T44/T38/T41 VALIDATED 待 mandate）、T23 修正、broker 329/329 复验、lint PASS 常态化。
