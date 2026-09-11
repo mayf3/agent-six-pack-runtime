@@ -832,3 +832,9 @@ gate 6/6 PASS（daemon 9095）→ 六仓 maintenance pass 全 DONE（六仓全�
 - T42 探针段：静态三锚点实证（stop 仅清 interval/in-flight 不等/disposeAll 不等 poll）+ 隔离 probe 两轮止于 admission item-schema（harness 存档）→ **不立票、保持 READY_FOR_REPRODUCTION**（无生产后果实证，不越 NO_SPECULATIVE 线）。
 - 夜终态：FRONTIER_REMAINING≈47-50、ROUND 3 IN PROGRESS（durable cursor：dsh cursor 8/tests+build 已完成、forum recovery+build 完、svc recovery 完、auth recovery 完、mobile runtime+tests+accepted-authority 完、vp identity+boundaries 完）→ **DEFERRED 余量交 WAKE 链与今晚 23:00 fresh rounds**；非 TRUE_IDLE。
 - 本夜治理产出累计：SCOUT_SEED 12 张登记+4 判别（T47 修复全链 PR#37 ACCEPT、T44/T38/T41 VALIDATED 待 mandate）、T23 修正、broker 329/329 复验、lint PASS 常态化。
+
+### WAKE 08:00 + 夜终局（2026-09-11 08:05 关窗）
+
+- W3 识别 8 张 EXECUTE_READONLY 判别全部需隔离 DB/runtime，窗口余 23 分钟无法安全完成任一 → **提前 quiesce（§10）**：8 张 DEFER 保持 executable，今晚 23:00 fresh 轮预算优先消化（配方在册）。
+- ticket-state-lint PASS；tonight_mode 释放（DEFERRED 非 TRUE_IDLE——frontier 47 + 8 判别在册）；双 daemon stopped。
+- **本夜（09-09 23:00→09-10 08:05）治理全景**：MULTI_ROUND R1-R4 实跑 + WAKE 七次接力；SCOUT_SEED 12 张集成+4 判别（T47 全链 PR#37 ACCEPT、T44/T41/T38 VALIDATED 待 mandate、T39 E3 复现、T42 部分探针存档）；T23 修正；broker 329/329 复验；两次尾态遗漏由 WAKE 机械自纠；driver/lint/transition 三件套上线。零产品仓越权写入；provider 调用 3 次全窗口内。
