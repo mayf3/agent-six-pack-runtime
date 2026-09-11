@@ -838,3 +838,10 @@ gate 6/6 PASS（daemon 9095）→ 六仓 maintenance pass 全 DONE（六仓全�
 - W3 识别 8 张 EXECUTE_READONLY 判别全部需隔离 DB/runtime，窗口余 23 分钟无法安全完成任一 → **提前 quiesce（§10）**：8 张 DEFER 保持 executable，今晚 23:00 fresh 轮预算优先消化（配方在册）。
 - ticket-state-lint PASS；tonight_mode 释放（DEFERRED 非 TRUE_IDLE——frontier 47 + 8 判别在册）；双 daemon stopped。
 - **本夜（09-09 23:00→09-10 08:05）治理全景**：MULTI_ROUND R1-R4 实跑 + WAKE 七次接力；SCOUT_SEED 12 张集成+4 判别（T47 全链 PR#37 ACCEPT、T44/T41/T38 VALIDATED 待 mandate、T39 E3 复现、T42 部分探针存档）；T23 修正；broker 329/329 复验；两次尾态遗漏由 WAKE 机械自纠；driver/lint/transition 三件套上线。零产品仓越权写入；provider 调用 3 次全窗口内。
+
+### 09-11 夜 BOOTSTRAP 首段（23:00 fire；23:03–23:5x）
+
+- gate 6/6 PASS（daemon 新代）→ 主循环 EXECUTE_QUEUE_ITEM：7 张 scout 判别票在列。
+- **T36（P1）E3 复现完成**：一次性 PG16（55436，migrations 顺序断裂改 db push+手工 seam+握手）+ service 直调探针——同 operationId ×2：second.replayed=true 且 second.newSecret 与 live hash **不匹配**（verifyClientSecret false；first=true）→ FAIL_CONDITION 完整复现 → WAITING_OWNER_MANDATE（与 T43 共根因）。探针文件已删、容器已清。
+- T37 下一位（barrier 判别需一次性 PG 双 barrier 构造，30-45 min）→ durable 交接下 session。
+- lint PASS；budget/yield 已记。零产品仓写入。
