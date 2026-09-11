@@ -845,3 +845,15 @@ gate 6/6 PASS（daemon 9095）→ 六仓 maintenance pass 全 DONE（六仓全�
 - **T36（P1）E3 复现完成**：一次性 PG16（55436，migrations 顺序断裂改 db push+手工 seam+握手）+ service 直调探针——同 operationId ×2：second.replayed=true 且 second.newSecret 与 live hash **不匹配**（verifyClientSecret false；first=true）→ FAIL_CONDITION 完整复现 → WAITING_OWNER_MANDATE（与 T43 共根因）。探针文件已删、容器已清。
 - T37 下一位（barrier 判别需一次性 PG 双 barrier 构造，30-45 min）→ durable 交接下 session。
 - lint PASS；budget/yield 已记。零产品仓写入。
+
+### CONTINUE_REQUIRED 连续驱动段（23:14–00:2x；Owner 注入 NIGHTLY_NONTERMINAL_EXIT_GATE_V1 后）
+
+- 23:09 前段 STOP 被 Owner 判不成立 → `session-exit-gate`（机械等价 drive-decision）= CONTINUE_NEXT_LENS 确认 → **同 session 内 fresh queue → T37 起连续执行**。
+- **T37（P1）双 barrier 判别成立**：一次性 PG16@55437（17 迁移全量含 revision-guard trigger；首次部署因 forum_app 角色缺失失败→migrate resolve 后全过）+ repo 真实 seam 探针——Barrier1 resolve 前置读四 guard 全过（status=open）→ 中间合法 soft_delete 提交（open→deleted）→ Barrier2 resolve 事务**零错误提交**：删除终态被复活为 resolved、审计伪造 fromStatus=open、outcome 落已删线程；SERIALIZABLE 不设防根因=replay 无 rw-antidependency+guard 在事务外+重试不重读 → WAITING_OWNER_MANDATE。
+- **T40（P2）全栈判别成立**：真实 threadsRouter+authRequired+JWKS 测试服 @55438——非法 role 与 unknown agentId 两个 400 各留一条 open 幽灵线程（0→1→2）、participants 恒 0、`rejected before any row is written` 注释证伪 → WAITING_OWNER_MANDATE。
+- **T43（P2）跨目标 replay 判别成立**：T36 fixture 配方 @55439（db push+seam 握手）——client B 复用 A 的 operationId：零冲突静默 replayed=true、envelope=B 而 receipt=A、B live hash 未动却得未落库 fresh secret、audit 记 B success=true；SQL 根因坐实（L108-117 仅按 operation_id、先于目标 SELECT）→ WAITING_OWNER_MANDATE（与 T36 共根因）。
+- **T46（P2）判别成立**：进程内 HTTP fixture + 真实 JwksVerifier——8MiB body CL/chunked 两变体全量消费（server 写满 8,388,608 B、零中止）后 1MiB cap 才拒=读取无界；旧缓存保留正面（unknown_kid 非 jwks_unavailable）→ WAITING_OWNER_MANDATE。
+- **T45（P2）判别成立**：计数 global_allocator——签名失败路径 31.0 B/call 线性泄漏（两窗口 155,064/155,000），对照静态串路径 5000 次零累积 → WAITING_OWNER_MANDATE。
+- **T42（P2）双场景判别成立**：真实 engine+ledger+fetchDuePage barrier——①stop() 后 3 admission+3 deliverRun 全在 STOP 之后（ledger 3×run_delivered）；②disposed Router 迟到 delivery 抛错落 needs_review 终态（关停排空被记成业务失败）→ WAITING_OWNER_MANDATE。
+- **SCOUT_SEED 12/12 全消费完毕**（T36–T47 终态全 WAITING_OWNER 面）。fresh queue=0 → 六仓 MAINTENANCE_PASS 全 DONE（dsh main→35a5b6a 四新 PR base-clean、svc main→cc006d9 PR#38 仍 CLEAN、vp main→ad87e6b **PR#37 变 CONFLICTING（head 冻结，T47 票面已登记 Owner 裁决注记）**、forum/auth/mobile 零前进）→ Round 1 深化预算六仓全满（fresh 10/reused 4/新票 0，NO_SPECULATIVE 守住）→ no-yield streak≥6 → **DISCOVERY_YIELD_EXHAUSTED → IDLE_ALL_GOVERNED / TRUE_IDLE（drive-decision legal_terminal 实证）**。
+- 收口：MORNING_REPORT_2026-09-11.md；lint PASS 42/0；探针与容器全清（t37-lifecycle-pg/t40-partial-pg/t43-replay-pg）；/tmp 工作树 git clean；零产品仓写入；模型调用全在窗口内。
