@@ -914,3 +914,11 @@ gate 6/6 PASS（daemon 9095）→ 六仓 maintenance pass 全 DONE（六仓全�
 ### GOAL OWNER_BOUNDED_REPAIR_ADMISSION_20260913（Owner 注入；OWNER_TRIAGE_ONLY 履行完毕 @ 本 push）
 
 - 九张 WAITING_OWNER findings 完成 repair admission（不实现不 merge，AUTO_MERGE=false）：**AUTO_REPAIR_TO_DRAFT_PR=6**（T59 delete-boundary=脚本自身 disposable-only 契约、T57 read-state=watch.ts 自身 max() 契约+ReadState 守卫先例、T63 voice=startSession 补齐文件内既有 generation fence、T65 SDK=对齐 accepted openapi/WEC 合同、T58 JWKS=兑现 auth-jwt.ts 自身文档的 401/503 分类、T38=accepted MOBILE_PUBLIC_AUTH_CLIENT_V1 CTR-REFRESH-001 L398 逐字钉死 fail-cleared）——全部满足八条件（defect 已机械证明+权威已钉死期望行为+无新产品语义/安全策略+不碰 Grant/Secret+不 deploy+bounded≤2 文件+regression 可机械冻结=各自 E3 探针固化）。**NEEDS_OWNER_SEMANTIC_DECISION=2**（T56：main 无 written visibility spec，aggregate 成员资格无明文→从严 Owner 裁决、单行 predicate 对齐已备妥可即时转 AUTO_REPAIR；T60：CTR-USG-009 vs CTR-USG-011 两 accepted 契约张力）+ 既有 T36+T43/T42/T48/T52 维持 Owner 面。**NO_ACTION=2**（T64/T66=DISPROVED 已终态）。admission 块落档 queue（OWNER_REPAIR_ADMISSION）；lint PASS 61/0。零实现零 merge。
+
+### GOAL PARKED_CANDIDATE_AUTO_ADMISSION_V1 落地（09-13 07:2x–07:3x；runtime policy，零产品仓改动）
+
+- **缺口闭合**：executable=0 ∧ refinement=0 ∧ parked>0 时旧逻辑 TRUE_IDLE——违反 Owner"候选边际收益耗尽才停"意图。实装 dispatcher `parked-admission` 子命令 + roundrobin IDLE 分支集成：ACTIVE ∧ <08:30 ∧ parked admissible>0 ∧ yield 未耗尽 → AUTO_ADMIT_NEXT_CANDIDATE_BATCH（≤3/批），TRUE_IDLE 语义升级为需 PARKED_ADMISSIBLE=0。
+- 排序 = backlog 序位（triage 优先级余量）稳定序 + 行内 owner-bound/blocked-env override（不可准入且不阻塞他票）；dedupe=别名已在既有票体出现则跳过（AF-SCOUT-03 已并入 T57 自动排除）；只消费既有 parked backlog，禁止制造新候选。
+- **Zero-model regressions A–G 全过**：A(parked>0→AUTO_ADMIT) B(batch 后 parked 剩→next batch) C(全 owner-bound→可 IDLE) D(全 blocked-env→可 defer/IDLE) E(yield 耗尽→不 admit) F(08:30→NO_ADMISSION) G(TRUE_IDLE 后注入→ACTIVE 下 recompute reopen)。
+- **首批真实消费**：T67/T68/T69 登记（parked 12→9）。**T67 (DSH-SHUTDOWN-RESULT-TRUTH) 判别 VALIDATED → WAITING_OWNER_MANDATE**：entry.js shutdown 结果三连（writeEvidence 'stopped'/'stopped cleanly'/exit 0）发出后，in-flight poll 释放仍完成 1 admission+1 deliverRun 且 ledger run_delivered 落在结果之后——shutdown 结果面不真（T42=drain 缺失、T67=结果真相缺失，同域不同面）。
+- 08:30 QUIESCE 纪律：07:30 后不开新判别 stage；T68/T69 + 第二批（WF-GS-03/05/07）由 23:00 BOOTSTRAP 消费（executable 队列优先）。lint PASS 64/0。账 @ 本 push。
