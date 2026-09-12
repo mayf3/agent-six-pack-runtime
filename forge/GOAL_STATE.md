@@ -928,3 +928,12 @@ gate 6/6 PASS（daemon 9095）→ 六仓 maintenance pass 全 DONE（六仓全�
 - 缺陷：parked admission 票体缺 ADMISSION_V2 七 guarantees=NO 声明行 → plan() READONLY_AUTO 分支 flags_ok=False → SKIP_OWNER → plan IDLE 而 roundrobin 误走 admit 批（executable 优先序被绕过）。修复：模板补声明行 + T68/T69 现票回填 → plan verdict=EXECUTE_PLAN [T68,T69]、roundrobin=EXECUTE_QUEUE_ITEM ✓。
 - T68/T69 bounded 限制如实记录：canonical 名的 SCOUT 原始 finding 全文在 Owner 注入面（dispatch durable 态无档），执行 session 需原文补全判别设计——票保持 READY_FOR_REPRODUCTION 在队（EXECUTE_QUEUE_ITEM 首位），由 23:00 BOOTSTRAP 或 Owner 提供原文后消费。
 - 收口态：executable=2（T68/T69）+ parked=9（三批余量）+ frontier exhausted + lint PASS 64/0；08:30 后零新 stage；模型调用全窗口内。账 @ 本 push。
+
+### GOAL NIGHTLY_PRE_QUIESCE_CONTINUATION_AND_CANDIDATE_PAYLOAD_V1（09-13 07:4x–08:0x）
+
+- **T68/T69 payload durable 检索**：queue=别名 / triage receipt=别名数组 / scout-seed-20260912=另一批 / GOAL_STATE 无——原始 finding 全文不在任何 durable source → SELF_CONTAINED_ENOUGH_TO_EXECUTE=NO、PAYLOAD_RECOVERY_SOURCE=NONE → 两票注记 `ADMISSION_STATE = BLOCKED_BY_MISSING_CANDIDATE_PAYLOAD`（恢复只允许已有字节，禁止凭名重猜；Owner/SCOUT payload 落档后解锁）。
+- **plan SKIP_BLOCKED 落地**：admission-records 循环按票体扫 BLOCKED 标记 → T68/T69 跳过 → plan verdict=IDLE（no legal task）。修复路径：parse_queue 循环（item 无 T 号）→ admission 循环（rec['ticket'] 直接可用）。
+- **ADMITTED_TICKET_MUST_BE_SELF_CONTAINED invariant 落地**：`parked_admissible_candidates()` 统一 payload 过滤（backlog 行带（…）原文摘要 ≥20 字符或 .json 指针才可 admit）——裸别名=NEEDS_CANDIDATE_PAYLOAD，不可 admit 也不计入 parked 阻塞；admission dry-run 实测 NONE/admissible=0；roundrobin 落 IDLE_ALL_GOVERNED（executable=0+refinement=0+parked admissible=0+frontier exhausted）。
+- **Pre-quiesce regressions**：①ACTIVE+executable=2+no owner → wake-decide WAKE_RESUME（unfinished_night=true）②08:31+executable → WINDOW_REFUSE_NEW_PASS（QUIESCE）③executable>0 → roundrobin 必须 EXECUTE_QUEUE_ITEM 不得 admit 批（bug 态与修复态双实测在案：T68/T69 executable 时误走 AUTO_ADMIT → admission-records blocked 检查后 plan=EXECUTE_PLAN 恢复；本夜 T68/T69 转 blocked 后 executable=0 故 IDLE 为合法态）。
+- **T67 grouping**：ROOT_CAUSE_GROUP = DSH_SHUTDOWN_CONTRACT（T42=drain/fence semantics、T67=result truth），两 regression surface 独立保留。
+- 终态：lint PASS 64/0；T68/T69=BLOCKED（等 payload）、executable=0、parked admissible=0（9 张裸别名 NEEDS_CANDIDATE_PAYLOAD）、frontier exhausted → IDLE_ALL_GOVERNED/TRUE_IDLE。账 @ 本 push。
