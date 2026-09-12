@@ -922,3 +922,9 @@ gate 6/6 PASS（daemon 9095）→ 六仓 maintenance pass 全 DONE（六仓全�
 - **Zero-model regressions A–G 全过**：A(parked>0→AUTO_ADMIT) B(batch 后 parked 剩→next batch) C(全 owner-bound→可 IDLE) D(全 blocked-env→可 defer/IDLE) E(yield 耗尽→不 admit) F(08:30→NO_ADMISSION) G(TRUE_IDLE 后注入→ACTIVE 下 recompute reopen)。
 - **首批真实消费**：T67/T68/T69 登记（parked 12→9）。**T67 (DSH-SHUTDOWN-RESULT-TRUTH) 判别 VALIDATED → WAITING_OWNER_MANDATE**：entry.js shutdown 结果三连（writeEvidence 'stopped'/'stopped cleanly'/exit 0）发出后，in-flight poll 释放仍完成 1 admission+1 deliverRun 且 ledger run_delivered 落在结果之后——shutdown 结果面不真（T42=drain 缺失、T67=结果真相缺失，同域不同面）。
 - 08:30 QUIESCE 纪律：07:30 后不开新判别 stage；T68/T69 + 第二批（WF-GS-03/05/07）由 23:00 BOOTSTRAP 消费（executable 队列优先）。lint PASS 64/0。账 @ 本 push。
+
+### GOAL 续：plan-admission 缺陷修复 + 08:30 纪律（07:3x）
+
+- 缺陷：parked admission 票体缺 ADMISSION_V2 七 guarantees=NO 声明行 → plan() READONLY_AUTO 分支 flags_ok=False → SKIP_OWNER → plan IDLE 而 roundrobin 误走 admit 批（executable 优先序被绕过）。修复：模板补声明行 + T68/T69 现票回填 → plan verdict=EXECUTE_PLAN [T68,T69]、roundrobin=EXECUTE_QUEUE_ITEM ✓。
+- T68/T69 bounded 限制如实记录：canonical 名的 SCOUT 原始 finding 全文在 Owner 注入面（dispatch durable 态无档），执行 session 需原文补全判别设计——票保持 READY_FOR_REPRODUCTION 在队（EXECUTE_QUEUE_ITEM 首位），由 23:00 BOOTSTRAP 或 Owner 提供原文后消费。
+- 收口态：executable=2（T68/T69）+ parked=9（三批余量）+ frontier exhausted + lint PASS 64/0；08:30 后零新 stage；模型调用全窗口内。账 @ 本 push。
