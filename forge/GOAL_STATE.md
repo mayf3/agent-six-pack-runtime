@@ -886,3 +886,12 @@ gate 6/6 PASS（daemon 9095）→ 六仓 maintenance pass 全 DONE（六仓全�
 - **双 session 并行事件如实上报**：另一 driver 00:2x–01:1x 并行产出（T56/T57/T59/T60 判别 + R2 五票 T62-T66 登记 + t38ext）后终止；两 session 对 A4→T59/A5→T60 同名映射零冲突；本 session 02:00 WAKE 确认对方终止后接管。
 - **T61（A6）本 session 判别 VALIDATED**：release gate 负例矩阵 @1c5053d——token 凭据/声明文件收集集缺口//home 路径三类 false-pass 实证（shipped-text 门 predicate 缺口），NOTICE 由 contracts 层抓住、未审文件被闭集+白名单抓住 → WAITING_OWNER_MANDATE。
 - **本夜终态**：T56-T66 十一张全终态（9 WAITING_OWNER_MANDATE + 2 DONE/DISPROVED）→ executable=0 ∧ refinement=0 ∧ frontier exhausted → **IDLE_ALL_GOVERNED / TRUE_IDLE**；lint PASS 61/0；零产品仓写入；账 @ 本 push。
+
+### Owner 纠偏响应（2026-09-13 06:44-06:5x；GOAL_SCOPED_TERMINAL 判定撤销→exit-gate regression 修复 + 机械 TRUE_IDLE 确认）
+
+- **Owner 裁定**：PRIORITY_TEN_CONSUMED=SUBGOAL_COMPLETE，非合法 terminal；executable queue>0 时 exit-gate 必须 CONTINUE_REQUIRED。
+- **机械证据**（修复前现场）：`drive-decision --executable-queue 5` 返回 DISCOVERY_YIELD_EXHAUSTED（no_yield_streak=7 陈旧预算 + 判定顺序缺陷：discovery-legality gates 先于 executable/refinement 检查）——正是 Owner 预言的 regression 形态。
+- **修复（零模型，tooling-only）**：①`continuous_drive_decision` 重排序——executable/refinement 工作在场时无条件 EXECUTE_QUEUE_ITEM/RUN_REFINEMENT（subgoal-completion labels are not exit authorizations），discovery terminal 仅在 queue 0 ∧ refinement 0 可达；②stale 预算经 `probe-record --fresh --yield yes` 机械重置（今晚 10 票驱动=真实 yield 事件，streak 0/exhausted False）；③新增 zero-model regression `state/dispatch/simulation-20260913-exitgate/run_tests.py` **9/9 PASS**（R1 queue>0+subgoal complete⇒CONTINUE_REQUIRED、R2 refinement 优先、R3/R3b discovery terminal 仅 queue=0 可达且原语义不变、R4 禁词 terminal 全输入空间不可达+源零字面量、R5 硬窗 terminal 不变）。
+- **双 session 对账（如实上报）**：WAKE 链 twin session 已于 02:05-02:1x 消费 T61 全负例矩阵（3/6 类 false-pass：token 形态密语放行、THIRD_PARTY_NOTICES.md/cordis.patch.yml 扫描豁免、/home 路径不扫→VALIDATED→WAITING_OWNER_MANDATE，evidence=state/dispatch/2026-09-12/t61-release-negative-matrix.md）并提交 c34cd95（T56-T66 全 terminal、T47 RESOLVED_UPSTREAM、T33 CLOSED per Owner triage）。本 session 无重复消费。
+- **残余三项按 Owner 规则判定为非 executable**：T52=WAITING_OWNER_MANDATE（owner-bound，跳过不重复调查）、T35=WAITING_OWNER_DECISION（owner boundary；且本 Goal 禁产品写入，索引重生需独立 write-goal）、S1=CODE_1 条目 WAITING_OWNER_DECISION（无 fresh 复现前不立新 claim）。parked 14 维持 parked。
+- **机械终态（本次真实合法）**：plan=IDLE(no legal task) / roundrobin=IDLE_ALL_GOVERNED（executable=0 ∧ refinement empty ∧ frontier exhausted）/ drive-decision=FRONTIER_EXHAUSTED（queue=0）/ lint **PASS 61/0** → **TRUE_IDLE 恢复**。账 @ 本 push（dispatcher 修复文件级 durable 于 sixpack-forge/nightly-1/bin/，非 git 仓）。
