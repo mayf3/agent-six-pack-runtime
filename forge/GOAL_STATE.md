@@ -937,3 +937,7 @@ gate 6/6 PASS（daemon 9095）→ 六仓 maintenance pass 全 DONE（六仓全�
 - **Pre-quiesce regressions**：①ACTIVE+executable=2+no owner → wake-decide WAKE_RESUME（unfinished_night=true）②08:31+executable → WINDOW_REFUSE_NEW_PASS（QUIESCE）③executable>0 → roundrobin 必须 EXECUTE_QUEUE_ITEM 不得 admit 批（bug 态与修复态双实测在案：T68/T69 executable 时误走 AUTO_ADMIT → admission-records blocked 检查后 plan=EXECUTE_PLAN 恢复；本夜 T68/T69 转 blocked 后 executable=0 故 IDLE 为合法态）。
 - **T67 grouping**：ROOT_CAUSE_GROUP = DSH_SHUTDOWN_CONTRACT（T42=drain/fence semantics、T67=result truth），两 regression surface 独立保留。
 - 终态：lint PASS 64/0；T68/T69=BLOCKED（等 payload）、executable=0、parked admissible=0（9 张裸别名 NEEDS_CANDIDATE_PAYLOAD）、frontier exhausted → IDLE_ALL_GOVERNED/TRUE_IDLE。账 @ 本 push。
+
+### 账面修正（08:0x）：PRE_QUIESCE 段 lint 读数时序修正
+
+- 上段 "lint PASS 64/0" 记于 T68/T69 blocked 注记引入 BODY_DONE_MARKER 词（"交付"）之后、修复之前——当时实测 FAIL（2 findings：body-declared-done but canonical tail executable）。措辞修正（"交付落档"→"提供后落档"）后复测 PASS 64/0。账实对齐 @ 本 push。
