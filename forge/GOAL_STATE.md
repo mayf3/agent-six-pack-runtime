@@ -964,3 +964,15 @@ gate 6/6 PASS（daemon 9095）→ 六仓 maintenance pass 全 DONE（六仓全�
   **T38** mobile#28（rebase 后 f9cd446，评审 v1 REVISE 分支叠加→rebase 重审 ACCEPT）：_doRefresh persist-failure fail-closed（_clearLocal('SESSION_INVALID')；坏存储嵌套内存强制）；回归 GREEN + CTR-REFRESH-001 31/31 + fault-injection 13/13。
 - **并行协同如实记录**：另一 live session 同期按 §8 准入 parked 候选（T67 DSH-SHUTDOWN-RESULT-TRUTH 已复现→WAITING_OWNER_MANDATE；T68-T72 READY_FOR_REPRODUCTION 在册）；其亦转录本 session admission 输出入 queue（非票头、不入 parser）。parked 余量继续由该合同逐张准入。
 - **门**：六票 canonical 迁移全经 set-ticket-state（read-back 一致）；lint PASS（67 票/0 findings）；AUTO_MERGE=false 维持；零产品越权（六 PR 即授权面）。账 @ 本 push。
+
+### GOAL OWNER_MERGE_READINESS_20260913_V1（Owner 注入；OWNER_INTEGRATION_GATE 履行完毕 @ 本 push）
+
+- **六张已评审 Draft PR 按指定顺序逐张 merge（merge commit，保评审 head），零 rebase、零 re-review**——§每张 merge 前机械回读全过：PR OPEN、candidate head 与评审 head 逐字一致（恰 1 commit/2 文件在授权范围内）、main 与评审 base 零漂移、GitHub MERGEABLE/CLEAN、无意外新 commit：
+  1. **vp#50（T59）**：base 1c5053d 零漂移 → mergeCommit **c62e693**（parents 1c5053d+630ddd7）→ main=c62e693；assertDisposableTmpHome+t59 回归已在 main 验证在场。
+  2. **svc#43（T65）**：base cc006d9 零漂移 → mergeCommit **bd47668**（parents cc006d9+d2317f8）→ main=bd47668；execution_class/eligibility/current_assignee_canonical_agent_id+t65 回归在场（openapi follow-up 维持 Owner 侧）。
+  3. **forum#22（T57）**：base 87e4677 零漂移 → mergeCommit **8a2fc04**（parents 87e4677+6924899）；watch.ts 双写点单调 update+t57 回归在场。
+  4. **forum main refresh → #24（T58）fresh-read**：head 3ea75d0 未变、与 #22 改动文件**零交集**、git merge-tree 干净（tree 8083845）、GitHub 重算 MERGEABLE/CLEAN、candidate bytes 未变 → 按 GOAL 走 integration-verification-only，**无需 rebase/重评审** → mergeCommit **1191ea0**（parents 8a2fc04+3ea75d0）；withJwksAvailabilityProbe+t58 回归在场。**superseded v1 forum#23 = OPEN 未触碰（DO NOT MERGE 兑现）**。
+  5. **mobile#27（T63）**：base dbf39fe 零漂移 → mergeCommit **bcc5127**（parents dbf39fe+2f6277e）；generation fence+t63 回归在场。
+  6. **mobile main refresh → #28（T38）fresh-read**：head f9cd446 未变、与 #27 零交集、merge-tree 干净（tree 5cf2fe1）、MERGEABLE/CLEAN → integration-verification-only → mergeCommit **1ce2d52**（parents bcc5127+f9cd446）；refresh save fail-closed 链+t38 回归在场。
+- **每次 merge 后**：fresh read origin/main 确认 merge commit 与实现落档（GitHub contents API grep 关键符号）、记录 merged main SHA、canonical 迁移 **WAITING_OWNER_DECISION → MERGED** 全经 set-ticket-state（read_back_ok=true 六/六）。
+- **读数**：MERGED_COUNT=6 / BLOCKED_COUNT=0 / REBASE_REQUIRED=0 / RE_REVIEW_REQUIRED=0 / AUTO_MERGED=0 / DEPLOYED=0；六仓 main 前进至 c62e693 / bd47668 / 1191ea0 / 1ce2d52；receipts=state/dispatch/2026-09-13/receipts/merge-*.json 六张；lint PASS **67 票/0 findings**。账 @ 本 push。
