@@ -1039,3 +1039,8 @@ gate 6/6 PASS（daemon 9095）→ 六仓 maintenance pass 全 DONE（六仓全�
 
 - roundrobin 曾给 AUTO_ADMIT(VP-SCOUT-003)——dedupe 注记插入时 anchor `if` 静默跳过（T60 头行文本与预期 anchor 不符）→ 直接在 T60 头行尾追加 dedupe 注记 → parked admissible=[] → **IDLE_ALL_GOVERNED / TRUE_IDLE / frontier exhausted 复归**。lint PASS 72/0。
 - 剩余不可 admissible 面：T68（AF-SCOUT-04 payload blocked，Owner/SCOUT 落档解锁）、VP-SCOUT-004/005（T61 票体 dedupe 注记生效）、WF-GS-02（T69 canonicalized）。夜班 drive 继续 standby 模式至 08:30。
+
+### 口径仲裁（04:5x）：wake-decide 粗口径 vs drive 链权威口径
+
+- wake-decide 报 unfinished_night=true（粗 executable 计数把 T68 的 READY_FOR_REPRODUCTION 状态词计入）与 drive-decision（admission 分类：T68=SKIP_BLOCKED→executable=0）分歧。
+- **权威 = drive-decision/roundrobin**（admission 分类含 SKIP_BLOCKED）：executable=0 ∧ refinement=0 ∧ parked=0 ∧ frontier exhausted → FRONTIER_EXHAUSTED legal_terminal、must_continue=false。T68 解锁唯一路径 = Owner/SCOUT durable payload 落档（ADMITTED_TICKET_MUST_BE_SELF_CONTAINED invariant 维持）。
