@@ -952,3 +952,15 @@ gate 6/6 PASS（daemon 9095）→ 六仓 maintenance pass 全 DONE（六仓全�
 - **policy 微修**：blocked 行过滤（行含 KEEP BLOCKED/BLOCKED_BY_MISSING_CANDIDATE_PAYLOAD 不 admissible）；T60 dedupe anchor 静默未插的坑改直接头行追加。
 - **读数**：parked admissible=6→第二批 admission 执行（T70=WF-GS-03/T71=WF-GS-05/T72=WF-GS-07）→ parked_remaining=3（WF-GS-08/MOB-GOV-006/007）；executable=[T69,T70,T71,T72]（plan=EXECUTE_QUEUE_ITEM 恢复）；lint PASS **67/0**。
 - 08:30 纪律：判别不开新 stage，executable 四张由 23:00 BOOTSTRAP 优先消费。零产品仓改动。账 @ 本 push。
+
+### GOAL OWNER_AUTHORIZED_BOUNDED_REPAIRS_20260913_V1（Owner 注入；REPAIR_EXECUTION 履行完毕 @ 本 push）
+
+- **六张授权 repair 全部走完** fresh current main → regression first（RED 实证）→ minimal bounded fix（各恰 ≤2 文件）→ focused+relevant tests 绿 → Draft PR → fresh GLM 独立 exact-head 评审 ACCEPT 0 blockers → **WAITING_OWNER_DECISION（merge 归 Owner；AUTO_MERGE=false）**：
+  **T59** vp#50（630ddd7）：assertDisposableTmpHome（resolve+deepest-existing-ancestor realpath 须在真 tmp root 内+根级拒+symlink 组件全拒+macOS /private/tmp 容忍）；回归 6/6（RED→GREEN）+ 245/245。
+  **T65** svc#43（d2317f8）：SDK domainInstanceSummary 补 execution_class enum+eligibility discriminated union+current_assignee_canonical_agent_id（nullable），strict 保留；回归 4/4 内嵌真 200 捕获体；openapi 缺两字段记 Owner follow-up。
+  **T57** forum#22（6924899）：watch.ts 两写点 extended-where 单调 update（lastReadAt IS NULL OR < next；P2025=已被推进则跳过）；确定性双 barrier RED→GREEN（final==latest）+ forum 379/379。
+  **T58** forum#24（3ea75d0，v2 clean base——v1 分支叠加被评审抓出重建）：withJwksAvailabilityProbe（resolver 失败→直连探测，network/5xx/429→AUTH_JWKS_UNAVAILABLE；健康→原错误重抛）+ classify 透传；回归 3/3 + forum 382/382。
+  **T63** mobile#27（2f6277e）：startSession generation fence（permission/configure await 后重检）；回归 4/4（RED→GREEN）+ presence 23/23。
+  **T38** mobile#28（rebase 后 f9cd446，评审 v1 REVISE 分支叠加→rebase 重审 ACCEPT）：_doRefresh persist-failure fail-closed（_clearLocal('SESSION_INVALID')；坏存储嵌套内存强制）；回归 GREEN + CTR-REFRESH-001 31/31 + fault-injection 13/13。
+- **并行协同如实记录**：另一 live session 同期按 §8 准入 parked 候选（T67 DSH-SHUTDOWN-RESULT-TRUTH 已复现→WAITING_OWNER_MANDATE；T68-T72 READY_FOR_REPRODUCTION 在册）；其亦转录本 session admission 输出入 queue（非票头、不入 parser）。parked 余量继续由该合同逐张准入。
+- **门**：六票 canonical 迁移全经 set-ticket-state（read-back 一致）；lint PASS（67 票/0 findings）；AUTO_MERGE=false 维持；零产品越权（六 PR 即授权面）。账 @ 本 push。
