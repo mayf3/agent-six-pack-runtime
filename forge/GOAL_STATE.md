@@ -941,3 +941,14 @@ gate 6/6 PASS（daemon 9095）→ 六仓 maintenance pass 全 DONE（六仓全�
 ### 账面修正（08:0x）：PRE_QUIESCE 段 lint 读数时序修正
 
 - 上段 "lint PASS 64/0" 记于 T68/T69 blocked 注记引入 BODY_DONE_MARKER 词（"交付"）之后、修复之前——当时实测 FAIL（2 findings：body-declared-done but canonical tail executable）。措辞修正（"交付落档"→"提供后落档"）后复测 PASS 64/0。账实对齐 @ 本 push。
+
+### GOAL BACKFILL_PARKED_CANDIDATE_DURABLE_PAYLOAD_V1（09-13 08:1x–08:2x；queue maintenance，零产品仓改动）
+
+- **OWNER_HISTORICAL_TRIAGE_PACKET_20260913 落档 backfill**：exact-match alias 逐张对账——
+  - **T69（WF-GS-02）exact match → payload 全字段 backfill**（SOURCE/OBSERVATION/MECHANICAL_EVIDENCE/CHEAPEST_DISCRIMINATING_ACTION/DISCRIMINATING_QUESTION/PASS/FAIL/MUTATION_REQUIRED=NO_PRODUCTION/OWNER=NO/DUPLICATE_CHECK）+ **BLOCKED_BY_MISSING_CANDIDATE_PAYLOAD 清除** → 恢复 executable；
+  - **T68（AF-SCOUT-04）packet 无此 alias → KEEP BLOCKED**（不得猜）；
+  - DSH-SHUTDOWN-RESULT-TRUTH = T67 在案（不 recreate/backfill duplicate）+ DSH_SHUTDOWN_CONTRACT 分组维持；
+  - **backlog 块重写为逐行 payload 格式**：WF-GS-03/05/07/08 + MOB-GOV-006/007 六张行内 payload 摘要 backfill（admissible）；VP-SCOUT-003 = **DEDUP/DISPROVED against T60**（older-writer 腿=T60 丢失更新腿已 DISPROVED：sync 原子 RMW+max）；VP-SCOUT-004/005 = **DEDUPED against T61**（004 两负例门面已证；005 四负例=T61 矩阵全集，residual=无）——三张经 T60/T61 票体 canonical 引用由 parser 自动排除。
+- **policy 微修**：blocked 行过滤（行含 KEEP BLOCKED/BLOCKED_BY_MISSING_CANDIDATE_PAYLOAD 不 admissible）；T60 dedupe anchor 静默未插的坑改直接头行追加。
+- **读数**：parked admissible=6→第二批 admission 执行（T70=WF-GS-03/T71=WF-GS-05/T72=WF-GS-07）→ parked_remaining=3（WF-GS-08/MOB-GOV-006/007）；executable=[T69,T70,T71,T72]（plan=EXECUTE_QUEUE_ITEM 恢复）；lint PASS **67/0**。
+- 08:30 纪律：判别不开新 stage，executable 四张由 23:00 BOOTSTRAP 优先消费。零产品仓改动。账 @ 本 push。
