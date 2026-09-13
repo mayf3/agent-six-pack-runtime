@@ -1006,3 +1006,15 @@ gate 6/6 PASS（daemon 9095）→ 六仓 maintenance pass 全 DONE（六仓全�
 - **T36+T43 修复执行全管线（AUTH_ROTATION_REPLAY_CONSISTENCY mandate）→ Draft PR mayf3/auth-service#70 → WAITING_OWNER_DECISION（停 merge/评审门）**：
   regression first（RED 3/3）→ seam migration replay-branch 硬化（target binding IDEMPOTENCY_CONFLICT + live-state STALE_IDEMPOTENCY_RECEIPT）+ service replay 剥离凭据材料（newSecret=undefined）→ 独立 exact-head 评审 round1 REJECT（抓 R3 literal-clientId 假绿——按 MINIMAL_CLOSURE 修复）→ round2 **REVIEW_ACCEPT** @45069ff（评审零数据克隆自证 3/3）→ lint PASS 69/0。
 - 账 @ 本 push。
+
+### 09-13 夜续段（00:00–01:5x；WAKE_RESUME 接管；REPAIR 管线连发）
+
+- 00:00 WAKE_RESUME（unfinished_night）→ EXECUTE_QUEUE_ITEM 依 Owner 九票 RELEASE 面执行修复管线：
+  - **T69/T70/T72 判别 VALIDATED**（commit 超 deadline/32 并发 32 fetch 零共享/单连接池自饿 3.001s）+ **T71 → READY_FOR_BOUNDED_FIX**（stale metadata）——详见上段。
+  - **T36+T43 → auth-service#70 Draft → WAITING_OWNER_DECISION**：seam replay 硬化（IDEMPOTENCY_CONFLICT/STALE_IDEMPOTENCY_RECEIPT + replay 剥凭据材料）；独立评审 round1 REJECT（R3 literal-clientId 假绿）→ 修 → round2 ACCEPT @45069ff。
+  - **T52 → auth#71 + forum#25 双 Draft → WAITING_OWNER_DECISION**：FORUM_DIRECT_AGENT_V1 fixture 双仓同字节（md5 同）+ auth mint（RS256/keyring/kid/svc-forum/300s/无 refresh）+ forum live-mint 与禁例负例 4/4 过真实验证链；独立安全评审两轮双 ACCEPT（A mint/B verify）。
+  - **T56 残腿 → forum#26 Draft → WAITING_OWNER_DECISION**：getTagStats 补 hidden 过滤（可见性旁路 tag 腿闭合；notifications materialized-face 残留留票面）。
+  - **T42+T67 → dsh#282 Draft → WAITING_OWNER_DECISION**：engine.stop() 有界 drain（stopped 检查+inflight 追踪）+ compose await 排序 + 结果真相序回归；独立评审 round1 REJECT（20ms sleep flake）→ 事件门闩修 → 5x 连绿 → round2 ACCEPT。
+  - **T60 → vehicle-pet#51 Draft → WAITING_OWNER_DECISION**：byDay 每次 merge 后重剪（prune 权威）+ cutoff 本地日换算修 + lastSeen 日节奏保持 + economy 冻结；回归 3/3 + 全量 160/160 + 评审自证 432/432 ACCEPT。
+- 本夜 REPAIR 管线累计 **7 个 Draft PR**（#70/#71/#25/#26/#282/#51 覆盖 T36/T43/T52 双仓/T56 残腿/T42/T67/T60），全部停 merge/评审门；lint PASS 69/0；每张均 regression-first + 独立 exact-head 评审。剩余 queue：T62（runtime fixture 留下窗）/T48（Owner 集成裁决面）/T68（AF-SCOUT-04 payload blocked）。
+- 账 @ 本 push。
