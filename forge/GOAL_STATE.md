@@ -994,3 +994,15 @@ gate 6/6 PASS（daemon 9095）→ 六仓 maintenance pass 全 DONE（六仓全�
 - **机械使能（governance tool，零模型）**：set-ticket-state 终态重入守卫新增 OWNER_DECISION_COMMIT 例外——票体带持久 Owner 决定块=守卫所需的 new evidence，否则照拒（负例复验：剥标记后仍 FAIL illegal transition）；receipt 增 owner_decision_reopen 字段。
 - **释放入场验证**：plan@23:05=EXECUTE_PLAN，九张释放票全 EXECUTE_READONLY（execution_order=13 项含 T69–T72）；STILL_WAITING_OWNER（七组/九票）=**0**；lint PASS **69 票/0 findings**（T48"交付"/"本票"两处标记词清洗、T48 B5 分组名 CLOSURE 子串改写、T67 补 READ_ONLY_GUARANTEES 七 NO 行）；双套件 exitgate **9/9** + wake-reconcile **4/4**。
 - receipt=state/dispatch/2026-09-13/receipts/owner-decisions-release-20260913.json。PRODUCT_MUTATIONS=0（本 Goal 纯决策落账）。账 @ 本 push。
+
+### 09-13 夜 BOOTSTRAP + REPAIR EXECUTION（23:0x–23:5x；NIGHT_RUN_ID=2026-09-13-nightly-dispatch-v1）
+
+- gate 全 PASS → queue head 四张（backfill 留下的 executable）逐张消费：
+  - **T69（WF-GS-02 HIGH）→ VALIDATED → WAITING_OWNER_MANDATE**：一次性 PG fault injection（deferred constraint trigger + pg_sleep(8)）——statement_timeout=1000 下 COMMIT 耗时 8012ms 成功提交且 audit 落行（对照组普通语句 1.077s 即 abort）——commit 阶段不受 admission-through-commit deadline 约束，机械坐实。
+  - **T70（WF-GS-03）→ VALIDATED → WAITING_OWNER_MANDATE**：32 并发同 unknown kid → 32 次 JWKS 远端 fetch（零共享负结果；错误面正确）——refresh_lock 只串行不缓存 miss。
+  - **T71（WF-GS-05）→ 纯 stale metadata → READY_FOR_BOUNDED_FIX**：SCHEMA_VERSION="0022" 为手工常量（恰为旧迁移号），同二进制 readyz 严格对账 migration 26（lockstep 断言只护 migration 常量）——/version 落后四迁移。
+  - **T72（WF-GS-07）→ VALIDATED → WAITING_OWNER_MANDATE**：源码链（AdmissionGate 持 PgPool→Step 13b 事务内 canonicalize→resolve_current_principal(pool) 借第二连接）+ sqlx 执行级探针（max_connections=1 事务持连后第二 acquire 自等 3.001s pool timeout，无共享）——单连接部署自饿坐实。
+- 六仓 pass 全 DONE（Owner 昼间 main 大步前进：dsh→4c514bb、forum→1191ea0 含 #24 merged、svc→eb7d484、mobile→ecd95c6、vp→c62e693 含 **#50=T59 修复 merged**；四 Draft PR #19/#35/#37/#38 仍 OPEN）。
+- **T36+T43 修复执行全管线（AUTH_ROTATION_REPLAY_CONSISTENCY mandate）→ Draft PR mayf3/auth-service#70 → WAITING_OWNER_DECISION（停 merge/评审门）**：
+  regression first（RED 3/3）→ seam migration replay-branch 硬化（target binding IDEMPOTENCY_CONFLICT + live-state STALE_IDEMPOTENCY_RECEIPT）+ service replay 剥离凭据材料（newSecret=undefined）→ 独立 exact-head 评审 round1 REJECT（抓 R3 literal-clientId 假绿——按 MINIMAL_CLOSURE 修复）→ round2 **REVIEW_ACCEPT** @45069ff（评审零数据克隆自证 3/3）→ lint PASS 69/0。
+- 账 @ 本 push。
