@@ -1018,3 +1018,10 @@ gate 6/6 PASS（daemon 9095）→ 六仓 maintenance pass 全 DONE（六仓全�
   - **T60 → vehicle-pet#51 Draft → WAITING_OWNER_DECISION**：byDay 每次 merge 后重剪（prune 权威）+ cutoff 本地日换算修 + lastSeen 日节奏保持 + economy 冻结；回归 3/3 + 全量 160/160 + 评审自证 432/432 ACCEPT。
 - 本夜 REPAIR 管线累计 **7 个 Draft PR**（#70/#71/#25/#26/#282/#51 覆盖 T36/T43/T52 双仓/T56 残腿/T42/T67/T60），全部停 merge/评审门；lint PASS 69/0；每张均 regression-first + 独立 exact-head 评审。剩余 queue：T62（runtime fixture 留下窗）/T48（Owner 集成裁决面）/T68（AF-SCOUT-04 payload blocked）。
 - 账 @ 本 push。
+
+### 09-14 夜续段（03:00–04:5x；T48/T62/T75 收口 + svc#49 PR）
+
+- **T48 → WAITING_OWNER_DECISION**：INTEGRATION_MANDATE revalidate @main 4c514bb——#195 head 0480340 未变、MERGEABLE/CLEAN（behind 250 零冲突）→ 按 Owner 决策分支继续以 #195 为 integration candidate、无需 refresh；backend merge（Owner gate）→ deployment proof → Mobile consumer enablement 顺序冻结维持。
+- **T62 → svc-workflow#48 Draft → WAITING_OWNER_DECISION**：runtime discrimination 完成（复用 test 31 StubDirectory+seed 模式）——successor line P→Q 下 admission 目录观测**只**见 Q（stale P 绝不以自身 id 准入）而 persisted work visit assignee = pre-canonical P、receipt principal = caller（VALIDATED_TARGET(Q)≠PERSISTED_TARGET(P) 运行时坐实）；修复 = list_assigned_to_me 读侧 successor enrichment（cursor 谓词+domain-role guard+validate 三处；stale source 保持既有 CIR 读可见=test 34 契约；dormant 不变）——持久化面维持不 rewrite。独立评审 ACCEPT（STEP1-5 含 live DB 重跑）。svc62 全新 clone（旧 svc-lens .git 丢失第三例）。
+- **T75 → svc-workflow#49 Draft → WAITING_OWNER_DECISION**：rerun-if 四声明落 build.rs fn main；独立评审三轮（r1 REJECT 抓 refs 行缺失+body overclaim；r2 REJECT 抓 amended 未推+空残渣+旧标题；均按 MINIMAL_CLOSURE 修）→ r3 ACCEPT（PR head 46973d6 四声明对齐）。评审实证推翻初版 dot-path 局限叙事（.git/index 重写即触发 rerun、新 SHA 嵌入 grep=1）。
+- queue 剩 T68（AF-SCOUT-04 payload blocked）。lint PASS 72/0（T73-T75 入册）。账 @ 本 push。
