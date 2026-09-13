@@ -1044,3 +1044,12 @@ gate 6/6 PASS（daemon 9095）→ 六仓 maintenance pass 全 DONE（六仓全�
 
 - wake-decide 报 unfinished_night=true（粗 executable 计数把 T68 的 READY_FOR_REPRODUCTION 状态词计入）与 drive-decision（admission 分类：T68=SKIP_BLOCKED→executable=0）分歧。
 - **权威 = drive-decision/roundrobin**（admission 分类含 SKIP_BLOCKED）：executable=0 ∧ refinement=0 ∧ parked=0 ∧ frontier exhausted → FRONTIER_EXHAUSTED legal_terminal、must_continue=false。T68 解锁唯一路径 = Owner/SCOUT durable payload 落档（ADMITTED_TICKET_MUST_BE_SELF_CONTAINED invariant 维持）。
+
+### GOAL OWNER_AUTHORIZED_REPAIR_EXECUTION_CLASS_V1（09-14 07:0x–07:2x；governance runtime policy + EXECUTE_BOUNDED_WRITE 执行）
+
+- **Runtime evaluator 语义修正**（bin/nightly-dispatcher.py）：`owner_repair_mandate()` 识别票体持久 OWNER_DECISION_COMMIT 四类授权（REPAIR/SECURITY_REPAIR/ARCHITECTURE_REPAIR/CROSS_REPO_SECURITY_IMPLEMENTATION_AUTHORIZED，最长匹配）→ state=READY_FOR_BOUNDED_FIX 时 disposition=**EXECUTE_BOUNDED_WRITE**（write-capable，one-write-per-repo 上游约束、停 merge/评审门）。无 Owner_DECISION_COMMIT 普通票 standing-fix 分类不变（不得扩大自动写权限）。
+- **Regressions A–F 全 PASS**（zero-model 合成票）：A 无 mandate behavior repair→WAITING_OWNER；B/C/D 三类 mandate→EXECUTE_BOUNDED_WRITE；E READY_FOR_REPRODUCTION→READONLY；F integration 授权≠盲写。脚本落 bin/regressions-owner-repair-class.py。
+- **EXECUTE_BOUNDED_WRITE 实执行 = T56 主面**（唯一未完 repair 面）：notifications materialized-face 修复——findNotificationsForPrincipal 按 thread 可见性过滤（notIn hidden/deleted/archived），治理权（forum.moderate/admin）经 includeHiddenThreadFacts 保留全量；raw-seed 回归三断言绿；agent-forum#27 Draft；独立安全评审 ACCEPT（follow-up：unreadWhere 同谓词/谓词直接测试/archived 严格度确认）。
+- **23:05 模拟（§9）**：九票全 SKIP_OWNER（WAITING_OWNER_DECISION merge 门终态——非 EXECUTE_READONLY）；WRITE-capable 分类由 A–F 证明。九票现状 = Owner 快照之后本夜 REPAIR 管线已交付（六 workstream 七 PR 停 merge 门），无 READY_FOR_REPRODUCTION 可迁移对象（机械事实）。
+- **T48**：revalidation 已完成（#195 CLEAN candidate standing）→ WAITING_OWNER_DECISION 维持 integration 语义，非普通 repair write。
+- lint PASS 72/0。零产品仓越权写入（T56 主面修复经授权 PR 面）。账 @ 本 push。
