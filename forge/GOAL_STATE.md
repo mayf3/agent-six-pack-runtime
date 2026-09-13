@@ -1034,3 +1034,8 @@ gate 6/6 PASS（daemon 9095）→ 六仓 maintenance pass 全 DONE（六仓全�
 - **T76 → WAITING_OWNER_DECISION**：Flutter 全链探针（ThrowingTts）——speak() 抛错被 catch(_) 吞、session 直落 LISTENING 且 errorMessage=null（播放失败伪装成功完成；源注释 "fail loud below" 与行为相反）。UX 修复面归 Owner。
 - **T77 → WAITING_OWNER_MANDATE（静态 VALIDATED）**：#24 head 8f5ff08 presence_3d.dart L176-186——getTitle await 前有 I2 gen boundary、后无 recheck；迟到 3D_FAIL 经 setState 写已切换 persona 的视图。修复一行（await 后 gen recheck）落点在未合入 #24 分支（head 不可动——T55 审计绑定），集成时落地。
 - queue：executable=0；T68 payload blocked（Owner 面）；parked=0。lint PASS 72/0。账 @ 本 push。
+
+### 补遗（04:4x）：VP-SCOUT-003 dedupe 静默失败修正 → terminal 复归
+
+- roundrobin 曾给 AUTO_ADMIT(VP-SCOUT-003)——dedupe 注记插入时 anchor `if` 静默跳过（T60 头行文本与预期 anchor 不符）→ 直接在 T60 头行尾追加 dedupe 注记 → parked admissible=[] → **IDLE_ALL_GOVERNED / TRUE_IDLE / frontier exhausted 复归**。lint PASS 72/0。
+- 剩余不可 admissible 面：T68（AF-SCOUT-04 payload blocked，Owner/SCOUT 落档解锁）、VP-SCOUT-004/005（T61 票体 dedupe 注记生效）、WF-GS-02（T69 canonicalized）。夜班 drive 继续 standby 模式至 08:30。
