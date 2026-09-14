@@ -1103,3 +1103,9 @@ gate 6/6 PASS（daemon 9095）→ 六仓 maintenance pass 全 DONE（六仓全�
 
 - Owner 昼间 REPAIR 大收编确认：**auth#70（T36+T43）与 #71（T52）均 MERGED**（03:36Z）、**vp#51（T60）MERGED**（main→72553d5）、forum#27（T56 主面）MERGED（main→7d54e58）、dsh main→68008e8（#291 scheduler-watchdog recovery）。svc#50/#51/#52 三 PR 仍 OPEN 待 Owner。
 - 六仓 pass 全 DONE 零新矛盾。lint PASS 72/0。
+
+### 根因修正（00:1x）：set-ticket-state 头行重写冲掉头尾注记——dedupe 注记恢复机制
+
+- 发现：VP-SCOUT-003 重回 admissible——T60-REPAIR 的 set-ticket-state 重写了 T60 头行，**把头行尾的 DEDUPE 注记冲掉**（dedupe 检查依赖 before_backlog 含候选名）。之前 09-14 晨的同类修正也是同因（T60-REPAIR 重写头行）。
+- 修正：dedupe 注记重新落在 T60 **当前**头行尾（VP-SCOUT-003 against 本票 DISPROVED）→ parked admissible=[] → IDLE_ALL_GOVERNED / FRONTIER_EXHAUSTED terminal 复归。lint PASS 72/0。
+- **结构性缓解（后续票）**：dedupe/backlog 标注的权威面 = CANDIDATE_BACKLOG 块行内标注（不受 set-ticket-state 头行重写影响）——已在 backlog 行内标注 DEDUP 的三张（VP-003/004/005）优先依赖该行；before_backlog 头行引用作为第二道。
