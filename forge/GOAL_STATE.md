@@ -1084,3 +1084,12 @@ gate 6/6 PASS（daemon 9095）→ 六仓 maintenance pass 全 DONE（六仓全�
 - **零动作兑现**：不 apply、不 restart、不改配置；仅只读探针（ps/lsof/launchctl/plutil/curl GET、production checkout 内 `git fetch origin main` 仅 refs 更新、worktree 未触）；auth config 内容零读取零记录。PRE_DEPLOY_TESTS 未重跑（§3 未达；既有 536610b 门证据在档备用）。
 - **解锁路径（Owner 决）**：A=先行受控 production runtime rollout GOAL 把 checkout 推进至近 b6b1d50 baseline（自带 integration gates），之后本 GOAL §2–§8 在小 delta 上照跑；B=显式授权 history-only sidecar 拓扑并补部署形态评审。T48 四态不变（DEPLOYED=NO/CONSUMER=NO），维持 WAITING_OWNER_DECISION deployment-proof 门；票体 DEPLOY_ATTEMPT 块落档。
 - receipt=state/dispatch/2026-09-14/receipts/t48-deploy-blocked.json；lint PASS **72/0**；PRODUCTION_DB/GRANT/CREDENTIAL/MOBILE_WRITES 全 0。账 @ 本 push。
+
+### 09-14 夜 BOOTSTRAP + REPAIR 执行（23:0x–23:3x；NIGHT_RUN_ID=2026-09-14-nightly-dispatch-v1）
+
+- gate 全 PASS。Owner 昼间动作：svc#49（T75 rerun-if）已被 Owner **MERGED**（main eb7d484→6c05e0f）+ T70/T71/T72 三票迁 READY_FOR_BOUNDED_FIX（write-capable REPAIR 面）。
+- **T69 = MERGED 确认**（#49 mergeAt 03:44Z，canonical MERGED）。
+- **T70 → svc#50 Draft → WAITING_OWNER_DECISION**：JWKS verifier 加 kid-miss 负结果记忆（30s TTL，tokio Mutex 于 refresh_lock 同一 choke point）——32 并发同 unknown kid 从 32 fetch 降到恰好 1 fetch（回归 t70_negative_cache 断言 ≤1）；known-kid/dormant/错误分类不变；评审 r1 ACCEPT（follow-up：kid_misses 容量上限/过期清理）。
+- **T71 → svc#51 Draft → WAITING_OWNER_DECISION**：SCHEMA_VERSION "0022"→"0026" + smoke 断言同步；test 17 451/451（DB envs）。follow-up：常量从 EXPECTED_MIGRATION_VERSION 派生。
+- **T72 → svc#52 Draft → WAITING_OWNER_DECISION**：canonicalize_principals_on_tx + admit_on_tx（lineage 经**已持事务** executor 解析，消除第二 pool borrow 自饿）——create+transition Step 13b 均切 tx 面；持久化仍不 rewrite；31(7/7)+21(20/20)+35(10/10)。独立评审 r1 ACCEPT（follow-up：revise/combined/repair/override/legacy-import 五处同形待后续票）。
+- queue：T68 BLOCKED 维持；其余九票 WAITING_OWNER_DECISION/merge 门。lint PASS 72/0。账 @ 本 push。
