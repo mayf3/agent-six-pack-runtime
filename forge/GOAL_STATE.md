@@ -1117,3 +1117,18 @@ gate 6/6 PASS（daemon 9095）→ 六仓 maintenance pass 全 DONE（六仓全�
 - **P0-B ingest**：T78–T90 十三张机械 ingest（CANDIDATE_UNVALIDATED + 七 guarantees 声明，PAYLOAD_SOURCE=intake 文件 self-contained）；**ingest 阻塞三连环全排**：①R3 块误插 Dispatch rules 后（块首 ## 标题终止归并节扫描）→ 降级内联并移入归并节；②parser 只认 `## Scout 归并节` 扫描窗（## 子标题会截断）→ 内联化；③CANDIDATE_UNVALIDATED 不在 READONLY_AUTO_STATES → 加入集合（七 guarantees 声明票 → EXECUTE_READONLY characterization）。**lint 85/0 ✓ CANONICAL_TICKET_COUNT≥85 ✓ T78-T90 parser-visible ✓**。
 - **T52/T60 supplement 同步**（STATE_UNCHANGED）：T52 加 SUBITEM_A（AuditEventType TS2322）/SUBITEM_B（scope vs scopes audit-loss）；T60 加 VP-SCOUT-007（retention 测试保障三缺陷）/VP-SCOUT-006（source vs committed lib 发散）——均标注不重开主修复、进后续 refinement。
 - queue：EXECUTE_QUEUE_ITEM 剩 svc#50/#51/#52 + 新 intake 票 characterization 面；svc#49 已 MERGED（main 6c05e0f）；T68 BLOCKED 维持。lint PASS **85/0**。
+
+### GOAL NIGHTLY_CONTINUE_T78_T90_CHARACTERIZATION_20260915_V1（07:0x–07:5x；13 票 characterization）
+
+- **T78 DISPROVED**：Forum tests 中零模块顶层数据库连接/hard-coded DATABASE_URL——real-db-smoke 显式 opt-in（FORUM_REAL_DB_SMOKE=1），其余全内存 mock。Scout 声称的"default-collected test can override DATABASE_URL"在当前 base 7d54e58 不成立。
+- **T79 WAITING_OWNER_DECISION**：Reaction DELETE removeReaction 按 messageId+principalId+emoji 查找（不含 threadId）——跨 parent messageId 可删自身 reaction，requireVisibleParentThread 仅验证 URL threadId。
+- **T80 WAITING_OWNER_DECISION**：JWKS availability-probe 资源边界 STATIC CONFIRMED——per-request 独立 fetch 无 deadline/in-flight dedup/body cancel。
+- **T81 WAITING_OWNER_DECISION**：already_applied bypasses disabled-target STATIC CONFIRMED——transition Step 6 仅验证 caller enabled，不重验 assignment target。
+- **T82 WAITING_OWNER_DECISION**：Domain Owner audit truth STATIC CONFIRMED——audit 构造引用 GLOBAL_WORKFLOW_COORDINATOR 而 Domain Owner 的实际 allow predicate 是 domain-scoped。
+- **T83 DONE (DISPROVED)**：idempotent.ts createOrGetPrincipal 运行时表征——create/replay/payload-mismatch/race 全分支行为正确，无 binding invariant 违规。
+- **T84/T85/T86 → WAITING_OWNER_DECISION（三张合并收据）**：legacy auth surface 确认——T84 disabled User 通过 authRequired/refresh 收新凭据（无 status 检查）；T85 bare-verify 第三层 fallback 无 issuer/audience；T86 refresh revocation process-local 非原子、缺 jti 绕过轮换。共享 legacy fixture 环境。
+- **T87 → VALIDATED → WAITING_OWNER_DECISION**：NULL preimage fingerprint 执行级 fault injection——NULL preimage 绕过 SQL 三值逻辑检查（`<> NULL` → NULL → IF 不走），secret_hash 被更新；正控（wrong/correct preimage）行为正确。修复 = IS DISTINCT FROM 或显式 NULL 检查。
+- **T88 → WAITING_OWNER_DECISION**：V0 keyring partial config bypasses startup fail-fast STATIC CONFIRMED——binary presence check 不足以捕获 malformed 配置。
+- **T89 → WAITING_OWNER_MANDATE**：SecureStore clear failure preserves in-memory session STATIC CONFIRMED——pointer delete 后 residual cleanup 失败中止 clear path，in-memory 保留旧 session。T38 兄弟面（save-failure 已修，clear-failure 新边界）。
+- **T90 → WAITING_OWNER_DECISION**：HTTP/ASR timeout excludes body-join STATIC CONFIRMED——timeout 覆盖 ends before response-body join()；headers 到达但 body 不完成时连接悬挂超时。
+- queue 状态：executable=0，refinement=0，parked=0，frontier=0。**IDLE_ALL_GOVERNED / FRONTIER_EXHAUSTED 确认**。lint PASS 85/0。账 @ 本 push。
