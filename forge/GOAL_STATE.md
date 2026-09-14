@@ -1093,3 +1093,8 @@ gate 6/6 PASS（daemon 9095）→ 六仓 maintenance pass 全 DONE（六仓全�
 - **T71 → svc#51 Draft → WAITING_OWNER_DECISION**：SCHEMA_VERSION "0022"→"0026" + smoke 断言同步；test 17 451/451（DB envs）。follow-up：常量从 EXPECTED_MIGRATION_VERSION 派生。
 - **T72 → svc#52 Draft → WAITING_OWNER_DECISION**：canonicalize_principals_on_tx + admit_on_tx（lineage 经**已持事务** executor 解析，消除第二 pool borrow 自饿）——create+transition Step 13b 均切 tx 面；持久化仍不 rewrite；31(7/7)+21(20/20)+35(10/10)。独立评审 r1 ACCEPT（follow-up：revise/combined/repair/override/legacy-import 五处同形待后续票）。
 - queue：T68 BLOCKED 维持；其余九票 WAITING_OWNER_DECISION/merge 门。lint PASS 72/0。账 @ 本 push。
+
+### 09-14 夜跨午夜 WAKE（09-15 00:0x；NOOP 判定 + terminal 确认）
+
+- wake-decide 粗口径 WAKE_RESUME（T76 等 READY_FOR_REPRODUCTION 状态词残留误计）vs drive 链权威口径（09-14 夜 REPAIR 面全部 WAITING_OWNER_DECISION/merge 门终态、T68 BLOCKED 维持、parked admissible=0）→ roundrobin 真实读数确认无可执行项。
+- terminal = FRONTIER_EXHAUSTED（前夜合法收口持续有效）。本夜（09-14 23:00 起）新增产出：T70 负缓存修复（svc#50 Draft）+ T71 SCHEMA_VERSION 0026（svc#51 Draft）+ T72 tx-scoped lineage（svc#52 Draft）——三 PR 全停 merge/评审门，lint PASS 72/0。
