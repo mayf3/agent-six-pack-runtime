@@ -1109,3 +1109,11 @@ gate 6/6 PASS（daemon 9095）→ 六仓 maintenance pass 全 DONE（六仓全�
 - 发现：VP-SCOUT-003 重回 admissible——T60-REPAIR 的 set-ticket-state 重写了 T60 头行，**把头行尾的 DEDUPE 注记冲掉**（dedupe 检查依赖 before_backlog 含候选名）。之前 09-14 晨的同类修正也是同因（T60-REPAIR 重写头行）。
 - 修正：dedupe 注记重新落在 T60 **当前**头行尾（VP-SCOUT-003 against 本票 DISPROVED）→ parked admissible=[] → IDLE_ALL_GOVERNED / FRONTIER_EXHAUSTED terminal 复归。lint PASS 72/0。
 - **结构性缓解（后续票）**：dedupe/backlog 标注的权威面 = CANDIDATE_BACKLOG 块行内标注（不受 set-ticket-state 头行重写影响）——已在 backlog 行内标注 DEDUP 的三张（VP-003/004/005）优先依赖该行；before_backlog 头行引用作为第二道。
+
+### GOAL NIGHTLY_QUEUE_REPAIR_AND_RESUME_20260915_V1（05:2x–05:5x；P0 bookkeeping + T69 repair resume）
+
+- **P0-A 勘误采纳**：T69 误标 MERGED 系错误 PR/ticket 关联（#49 属 T75/WF-GS-08）。机械确认（PR49_TICKET=T75、T69_IMPLEMENTATION_PR=NONE）后经 canonical set-ticket-state 修正：T69 → **READY_FOR_BOUNDED_FIX**，plan 读数 = **ADMIT_WRITE_OWNER_MANDATE** ✓（错误执行语义已修复——Owner 授权 repair ≠ READONLY reproduction）。Owner 裁决块（REPAIR_AUTHORIZED + 冻结语义）保留。
+- **T69 write repair 执行**：svc#54 Draft（fix/t69-commit-deadline）——commit 阶段预算约束实现（create+transition 双路：tokio timeout of remaining_budget_ms 包裹 tx.commit()；超限 → CommitOutcomeUnknown 503 commit_outcome_unknown，失败关闭、无成功声明、无盲重试；dormant 路径跳过守卫保持原生行为）。独立 exact-head 评审 r1 ACCEPT（非阻塞：transition/create 错误码命名族分歧、8 处其他 check_commit_budget 调用点 COMMIT 面未覆盖→follow-up）。
+- **P0-B ingest**：T78–T90 十三张机械 ingest（CANDIDATE_UNVALIDATED + 七 guarantees 声明，PAYLOAD_SOURCE=intake 文件 self-contained）；**ingest 阻塞三连环全排**：①R3 块误插 Dispatch rules 后（块首 ## 标题终止归并节扫描）→ 降级内联并移入归并节；②parser 只认 `## Scout 归并节` 扫描窗（## 子标题会截断）→ 内联化；③CANDIDATE_UNVALIDATED 不在 READONLY_AUTO_STATES → 加入集合（七 guarantees 声明票 → EXECUTE_READONLY characterization）。**lint 85/0 ✓ CANONICAL_TICKET_COUNT≥85 ✓ T78-T90 parser-visible ✓**。
+- **T52/T60 supplement 同步**（STATE_UNCHANGED）：T52 加 SUBITEM_A（AuditEventType TS2322）/SUBITEM_B（scope vs scopes audit-loss）；T60 加 VP-SCOUT-007（retention 测试保障三缺陷）/VP-SCOUT-006（source vs committed lib 发散）——均标注不重开主修复、进后续 refinement。
+- queue：EXECUTE_QUEUE_ITEM 剩 svc#50/#51/#52 + 新 intake 票 characterization 面；svc#49 已 MERGED（main 6c05e0f）；T68 BLOCKED 维持。lint PASS **85/0**。
