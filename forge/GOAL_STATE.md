@@ -1098,3 +1098,8 @@ gate 6/6 PASS（daemon 9095）→ 六仓 maintenance pass 全 DONE（六仓全�
 
 - wake-decide 粗口径 WAKE_RESUME（T76 等 READY_FOR_REPRODUCTION 状态词残留误计）vs drive 链权威口径（09-14 夜 REPAIR 面全部 WAITING_OWNER_DECISION/merge 门终态、T68 BLOCKED 维持、parked admissible=0）→ roundrobin 真实读数确认无可执行项。
 - terminal = FRONTIER_EXHAUSTED（前夜合法收口持续有效）。本夜（09-14 23:00 起）新增产出：T70 负缓存修复（svc#50 Draft）+ T71 SCHEMA_VERSION 0026（svc#51 Draft）+ T72 tx-scoped lineage（svc#52 Draft）——三 PR 全停 merge/评审门，lint PASS 72/0。
+
+### 09-14 夜 BOOTSTRAP 六仓 pass（00:0x–00:1x；NIGHT_RUN_ID=2026-09-14-nightly-dispatch-v1）
+
+- Owner 昼间 REPAIR 大收编确认：**auth#70（T36+T43）与 #71（T52）均 MERGED**（03:36Z）、**vp#51（T60）MERGED**（main→72553d5）、forum#27（T56 主面）MERGED（main→7d54e58）、dsh main→68008e8（#291 scheduler-watchdog recovery）。svc#50/#51/#52 三 PR 仍 OPEN 待 Owner。
+- 六仓 pass 全 DONE 零新矛盾。lint PASS 72/0。
