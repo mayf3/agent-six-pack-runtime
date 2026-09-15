@@ -1147,3 +1147,13 @@ gate 6/6 PASS（daemon 9095）→ 六仓 maintenance pass 全 DONE（六仓全�
 - **Owner 昼间大收编 REPAIR PR 状态**：auth#70(T36+T43)/**MERGED**、auth#71(T52)/**MERGED**、forum#27(T56 主面)/**MERGED**、vp#51(T60)/**MERGED**、svc#49(T75)/**MERGED**——五个修复 PR 已落地 main。svc#50(T70)/#51(T71)/#52(T72)/#54(T69) + forum#26(T56 残腿) OPEN 待 Owner。
 - T78-T90 十三张全 characterization 完成（2 DISPROVED + 11 WAITING_OWNER）。
 - queue：executable=0；T68 BLOCKED 维持；lint PASS 85/0。
+
+### GOAL T48_BOUNDED_OVERLAY_CONTROLLED_DEPLOY_V1（Owner 注入；OWNER_AUTHORIZED_CONTROLLED_PRODUCTION_RELEASE 履行完毕 @ 本 push）
+
+- **§1 fresh preimage=Case B**：live 树已从 549dace 演进为 549dace+66 处 live-patch（patch sha 1d4da080…/218KB 已归档）——闭包对 live 字节重推；*：8788 被无关长驻进程（dsh-remote-plugin gateway，8/30 起）wildcard 占用 → history port 调整为 **8789**；production mutex 无既有持有者（mkdir 原子锁当场建立、apply 后释放）。
+- **§5 关键部署兼容发现（staging 实测，非 import 推断）**：本机 standalone tailscaled 1.94 校验 LocalAPI Host 头——实测 `local-`+socket basename→200、localhost/官方常量名→403 "invalid localapi request"；b6b1d50 评审实现的 transport 用 node 默认 Host（localhost）→真机 whois 将永久 503。candidate 据此携带**唯一披露偏差**：history-auth.js transport 加 `headers:{host:'local-'+basename}`（+1 行+3 注释）——修后 live 实测 whois ok:true。该偏差经最终 fresh 评审专项审计确认仅此一处。
+- **§6 差分**：PRE vs CAND staging——product-api 6/6→20/20、production-runtime 42 项失败集逐项恒等（20 既有环境性失败）→ NEW_FAILURES_INTRODUCED=0；history 33 项全绿；双负例（env 未设/ENABLED+空 host）fail-closed。
+- **§7 fresh independent review**：ACCEPT | BLOCKERS = 0（v2 candidate，含偏差专项审计：delta 恰=manifest、66 live-patch cmp 保全、graft 字节一致、auth 层封闭 schema/0600/403-503 二分、只读=仅 O_RDONLY|O_NOFOLLOW 无 write/rename/unlink/spawn）。
+- **§8-§10 受控 apply 与验收**：mutex→preimage 备份（4 补丁文件原件+脏补丁+status）→19 文件面+1 symlink 精确落位（residual diff=仅 .review 脚手架）；wrapper env 一次自纠（追加在 exec 后无效→恢复备份后在 exec 前插入）；三次受控重启：R1 fail-closed 503 姿态（auth 缺位）→auth 配置落位（0600 out-of-Git）→R2 profile ready=true；**listener=100.103.205.36:8789 精确绑定、零新增 wildcard**；auth 矩阵=valid→读路径执行（404 SESSION_NOT_FOUND）/wrong surface→403/missing→403/unknown agent→404；**隐私=0 泄露**（surface/stableid/token 零入日志；listener 日志仅 {agentId} 模板+requestId）；ordinary 8787/8791 全程健康（frozen envelope 实证）。
+- **读证 caveat（如实）**：本 runtime 今日无「agent 当前工作区×main session」既有工件→200 bounded read 环境性延后（伪造业务会话违反 smoke 禁项）；404 边界=全链路 live 实证、200 信封=19 项 golden 套件证明——consumer gate 首自然会话时复验。
+- **§12**：T48 四态=AUTHORITY=YES/LANDED=YES/**DEPLOYED=YES**/CONSUMER=NO（canonical 经 set-ticket-state 同态迁移 read-back OK，票体 CONTROLLED_DEPLOY 块落档）；T48 不 DONE；下一 gate=MOBILE_HISTORY_CONSUMER_INTEGRATION_V1（未启动）。lint PASS **85 票/0 findings**。receipts=t48-overlay-deploy.json + t48-deploy-review-accept.log + t48-preimage-backup/。PRODUCTION_DB/GRANT/CREDENTIAL/MOBILE 全 0。账 @ 本 push。
