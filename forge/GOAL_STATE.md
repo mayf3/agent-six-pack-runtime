@@ -1140,3 +1140,10 @@ gate 6/6 PASS（daemon 9095）→ 六仓 maintenance pass 全 DONE（六仓全�
 - **§5 C 的机械证明**：纯 549dace 基线 product-api 6/6；overlay product-api **20/20**（6 旧+14 history）；session-history **19/19**；disabled（env 不设）6/6 挂载块跳过；enabled-no-host 负例 6/6 'route stays absent' fail-closed；**production-runtime 套件差分=42 项、失败集与纯基线逐项 IDENTICAL（15 项为 live base 既有环境性失败，overlay 零新失败）**→ OLD_RUNTIME_BEHAVIOR_UNCHANGED_WHEN_HISTORY_DISABLED=YES。
 - **§8/§9/§10**：PREIMAGE/CANDIDATE/POSTIMAGE/ROLLBACK（L1=env kill switch、L2=文件级还原至 549dace 字节）成文；**RECOMMENDED_VEHICLE=C_BOUNDED_OVERLAY**（最小 blast radius+最强 authority（新增字节=已评审实现）+最简回滚+零拓扑变更+已差分验证）→ **READY_FOR_OWNER_EXECUTION_MANDATE**，附一条件：4 个补丁文件构成新 candidate head（新增文件与已评审字节相同，graft 是新的）——执行 mandate 须含对 overlay diff 的 fresh 独立评审后 apply。
 - **§11 零变更兑现**：零 production/PR/产品仓写入；live checkout 未触；/tmp 全部资源（两 worktree+clone+日志）已清理；lint 不适用（queue 未动）维持 72/0。receipt=state/dispatch/2026-09-14/receipts/t48-release-vehicle-preflight.json。账 @ 本 push。
+
+### 09-15 夜 BOOTSTRAP（23:0x；NIGHT_RUN_ID=2026-09-15-nightly-dispatch-v1）
+
+- gate 全 PASS → 六仓 pass 全 DONE：Owner 昼间大收编（dsh→f72255d scheduler wrapper r1-r3、svc→ed99fa0 #59 human-executor-normalization、auth→af617ae #74 canonical-identity-foundation、forum #27/#71 MERGED、vp #51=T60 repair MERGED）。零新矛盾。
+- **Owner 昼间大收编 REPAIR PR 状态**：auth#70(T36+T43)/**MERGED**、auth#71(T52)/**MERGED**、forum#27(T56 主面)/**MERGED**、vp#51(T60)/**MERGED**、svc#49(T75)/**MERGED**——五个修复 PR 已落地 main。svc#50(T70)/#51(T71)/#52(T72)/#54(T69) + forum#26(T56 残腿) OPEN 待 Owner。
+- T78-T90 十三张全 characterization 完成（2 DISPROVED + 11 WAITING_OWNER）。
+- queue：executable=0；T68 BLOCKED 维持；lint PASS 85/0。
