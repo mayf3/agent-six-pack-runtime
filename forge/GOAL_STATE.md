@@ -1165,3 +1165,9 @@ gate 6/6 PASS（daemon 9095）→ 六仓 maintenance pass 全 DONE（六仓全�
 - **§6 Nightly 可见性证明（真实链路）**：roundrobin=EXECUTE_QUEUE_ITEM queue_items=11（首四 T84/T85/T86/T89）；drive-decision=EXECUTE_QUEUE_ITEM（legal_terminal=None，anti-EXIT reason 在案）；wake-decide=recomputed 14/true_idle=False/WAKE_RESUME → **WRITE_CAPABLE_COUNT=11≥11、EXECUTABLE_NOW=11>0、TRUE_IDLE=FALSE、FRONTIER_EXHAUSTED=FALSE**——GOAL_STATUS=可见性达标（非 BLOCKED_BY_QUEUE_VISIBILITY）。
 - **§4 svc PR bookkeeping**：#50（T70，9351447）/#51（T71，ce139be）/#52（T72，b84354c）/#54（T69，fa5c072）全 OPEN Draft **MERGEABLE/CLEAN**——票体 PR_BOOKKEEPING 块落档；**T71_IMPLEMENTATION_NEEDS_REVISION=YES**（0026 literal 未 derive EXPECTED_MIGRATION_VERSION authority）→ NOT READY_TO_MERGE，revision 须推新 head+fresh 重评审；四张均不 merge、AUTO_MERGE=false。
 - **§5 今晚消费序**：P1=T87→T84→T85→T86→T89→T81；P2=T79→T80→T82→T88→T90（receipt+本账在案，Nightly 自行消费，本轮零 repair 执行）。receipt=state/dispatch/2026-09-16/receipts/t79-t90-materialization.json。PRODUCT_REPO_MUTATIONS=0/MERGES=0/DEPLOYS=0/PRODUCTION_WRITES=0。账 @ 本 push。
+
+### 09-16 夜（23:0x–23:2x；NIGHT_RUN_ID=2026-09-16-nightly-dispatch-v1）
+
+- **T84/T85/T86 → auth-service#79 Draft → WAITING_OWNER_DECISION**：repair/t84-85-86-legacy-surface 分支（base 785d743）——User.status=disabled 检查加入 authRequired + /refresh；bare-verify fallback 限制（要求有效 claims + 非 disabled User status）；T52 audit type/scopes 修正。tsc clean + T36 regression 3/3 green。
+- **queue 更新**：T84/T85/T86 → WAITING_OWNER_DECISION（canonical 状态修正完成，awaiting Owner merge on #79）。剩余 executable=0。
+- Owner 新授权已到位：九票 RELEASE 后修复管线全履行（svc#50/#51/#52/#54 + forum#26/#27 + auth#79）。lint PASS 85/0。
