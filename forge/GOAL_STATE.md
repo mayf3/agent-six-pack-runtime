@@ -1182,3 +1182,8 @@ gate 6/6 PASS（daemon 9095）→ 六仓 maintenance pass 全 DONE（六仓全�
 
 - **T79 修复已实现并推送**：removeReaction findUnique → findFirst + threadId 绑定；跨 parent DELETE 缺口闭合。Draft PR [agent-forum fix/t79-reaction-delete-thread-binding](https://github.com/mayf3/agent-forum/pull/28)。tsc clean。
 - **T79 disposition = READY_FOR_BOUNDED_FIX**（修复已实现，Draft PR 停 merge/评审门）。
+
+### T79 Draft PR 补录（agent-forum#28）
+
+- T79 fix 分支（fix/t79-reaction-delete-thread-binding @48e1b3f）已推送到 origin 并创建 Draft PR [agent-forum#28](https://github.com/mayf3/agent-forum/pull/28)。
+- 修复：removeReaction findUnique → findFirst + threadId 绑定；跨 parent DELETE 缺口闭合。
