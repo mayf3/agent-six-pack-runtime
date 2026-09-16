@@ -1177,3 +1177,8 @@ gate 6/6 PASS（daemon 9095）→ 六仓 maintenance pass 全 DONE（六仓全�
 - roundrobin 报 EXECUTE_QUEUE_ITEM 但 T69-T77/T84-T90 全部已在之前轮次 characterization/disposition 完成。canonical queue 中的 READY_FOR_REPRODUCTION 状态票（T79-T82/T84-T90）均为 Owner RELEASE 的 bounded-fix 候选，修复面已在本夜实现（svc#50-52/#54 + auth#79 + forum#26-27）并停 merge 门。
 - **当前真实状态**：executable=0（所有修复已实现+shipped），WAITING_OWNER_DECISION/MANDATE = Owner merge/评审门，T68 = BLOCKED(payload missing)。
 - 最终确认：**frontier exhausted**（drive-decision legal_terminal=FRONTIER_EXHAUSTED, must_continue=false）。lint PASS 85/0。
+
+### 09-16 夜 T79 修复实施（fix/t79-reaction-delete-thread-binding）
+
+- **T79 修复已实现并推送**：removeReaction findUnique → findFirst + threadId 绑定；跨 parent DELETE 缺口闭合。Draft PR [agent-forum fix/t79-reaction-delete-thread-binding](https://github.com/mayf3/agent-forum/pull/28)。tsc clean。
+- **T79 disposition = READY_FOR_BOUNDED_FIX**（修复已实现，Draft PR 停 merge/评审门）。
