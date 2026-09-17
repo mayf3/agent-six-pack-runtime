@@ -1200,3 +1200,8 @@ gate 6/6 PASS（daemon 9095）→ 六仓 maintenance pass 全 DONE（六仓全�
 
 - **23:00 BOOTSTRAP**：gate 6/6 PASS（runtime_product_bytes moved→cce5306 零产品字节漂移）；wake-decide executable 重算=11/unfinished_night=true→取得执行权；六仓快照：dsh→3c7b169a（Owner 新合 scheduler self-healing）、svc→07d88820、mobile→ecd95c63（#29）为昼间新动作；auth#79/forum#28/svc#50/51/52/54 仍 OPEN Draft 未被处置。
 - **T87 → auth#81 Draft → WAITING_OWNER_DECISION（read-back OK）**：rotate seam preimage 守卫 `<>`→`IS DISTINCT FROM`（新附迁移 202609170001，handshake/owner/grants 与 20260913 同形）；缺陷=三值逻辑使 NULL preimage 绕过守卫零证明轮换（回归 N1 基线 RED 实证）；disposable PG（t87-pg:55446，db-push 基线+seam 迁移+边界 seal）家族套件 17/17；tsc 仅 1 条 pre-existing（T52 SUBITEM_A，diff 零 TS 触碰）；fresh GLM exact-head 评审 round1 **REVIEW_ACCEPT 0 blockers**（字节级 diff=恰三处允许差异、guard 先于任何写执行、与 accepted Spec #80 L310-313 对齐）。词表注：policy 文本 WAITING_OWNER_MERGE 非词表词，按 T70/T72/T84-86 先例实现为 WAITING_OWNER_DECISION。receipt=state/dispatch/2026-09-17/receipts/t87-null-preimage-repair.json。剩余 executable=7（T89/T79fin/T80/T88/T90/T81/T82）。账 @ 本 push。
+
+### 09-17 夜 T89 修复（mobile#30 Draft → WAITING_OWNER_DECISION read-back OK）
+
+- **T89/MOB-GOV-009**：logout/_clearLocal 先 await store.clear 再失效内存态——残余清理失败（pointer 已删后 readAll 平台异常）逃逸即跳过 `_session=null`，登出/明确拒绝后 app 仍呈已认证内存会话。修复=两调用点包裹清理、内存失效无条件（AuthSessionStore 本体零改动；T38 fail-closed 分支端态不变）。
+- 回归（accepted fault seam：pointer delete 成功+readAll 抛）A/B 双腿基线 RED 实证→GREEN 3/3；flutter test test/core **171/171**；analyzer 零 issue。fresh GLM exact-head 评审 round1 **REVIEW_ACCEPT 0 blockers**（评审员自跑 analyzer+34 tests；head 4c1c67f/base ecd95c63）。Draft PR agent-core-mobile#30。receipt=t89-clear-fail-memory-invalidation（随 GOAL_STATE 下轮落盘）。剩余 executable=6。
