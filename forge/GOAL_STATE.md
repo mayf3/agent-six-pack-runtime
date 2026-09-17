@@ -1224,3 +1224,10 @@ gate 6/6 PASS（daemon 9095）→ 六仓 maintenance pass 全 DONE（六仓全�
 
 - **T90/MOB-GOV-010**：_request/postBytes 的 .timeout 只盖 open+headers，body-join 无界——headers 后拖 body 即永久挂且 finally 的 force-close 不可达。修复=两处 join() 套同 per-call deadline；超时走既有不确定 NETWORK_ERROR 路径（CTR-RETRY-003 不动）、postBytes 按契约透传传输异常、finally 释放资源；retry 块字节未动。
 - 回归基线 RED（A/B/C 挂到超时，评审员独立复现）→ GREEN 4/4；test/core **175/175**；analyzer 清洁。fresh GLM exact-head 评审 round1 **REVIEW_ACCEPT 0 blockers**（含 Dart abandoned-join 不可变 unhandled-error 语义核验）。**rebase 纠偏**：T90 分支最初带 T89 commit → rebase --onto main（d6460ac）保一票一 PR，T90 hunks 字节恒等。剩余 executable=2（T81/T82）。账 @ 本 push。
+
+### 09-17 夜 T81/T82 修复（svc#61/#62 Draft → WAITING_OWNER_DECISION read-back OK）+ 全夜终态
+
+- **T81/WF-GS-09**：reconcile_apply 的 already_applied 识别分支（新 key；原 key 在 acquire_receipt 即重放不可变 receipt、字节未动）只查 target 角色绑定不查 target principal 当前 enabled——原 apply 后被禁用的 target 仍返回 200 already_applied。修复=分支内同事务补正常路径同款校验（缺→identity_not_found、禁→principal_disabled）经 fail_receipt 落失败 receipt、零 audit 行、零 auto-enable/rewrite。
+- **T82/WF-GS-10**：get_domain_owner 承认全域 coordinator 或域内 Domain Owner，但 audit_read 硬编码 GLOBAL_WORKFLOW_COORDINATOR——域内授权的读被伪标为全域权威。修复=audit_read 参数化 basis，get_domain_owner 按实际谓词取值（DOMAIN_OWNER）；三个真全域门读面传 coordinator 常量；零权限扩张（评审员字节级验证谓词未动）。
+- 双回归基线 RED（main 实测）→ GREEN；套件 35_ 8/8 + 23_ 10/10 + 24_ 11/11（disposable t81-pg:55447）；双 fresh GLM exact-head 评审 round1 **均 REVIEW_ACCEPT 0 blockers**（各自独立复现 RED/自跑套件；T81 head 766ebe2、T82 head 7e47796）。**一票一 PR 纪律**：从 main 分别建支携带各自 hunk。
+- **09-17 夜终态（01:00）**：Owner materialization 的十一张授权修复全履约——T84/T85/T86（auth#79，昨夜）+ T87（auth#81）+ T88（auth#82）+ T79 finish（forum#28 补回归+评审）+ T80（forum#29）+ T89（mobile#30）+ T90（mobile#31）+ T81（svc#61）+ T82（svc#62）。全部 Draft 停 merge/评审门、全部评审 ACCEPT、全部 canonical 迁 WAITING_OWNER_DECISION read-back OK。**plan @01:00：executable=0**（wake-decide 重算 3 = align-2 ACTIVE_WRITE_TASK/CODE-1 QUEUED_VALIDATED_FINDING/FORUM-L0 无 mandate 三类非可执行遗留，与 09-13 先例同口径）；lint PASS 85/0。九 PR 待 Owner：auth#79/#81/#82、forum#28/#29、mobile#30/#31、svc#61/#62（另 svc#50/#51[NEEDS_REVISION]/#52/#54、forum#26 仍 OPEN 停 Owner 门）。receipt=t81-t82-coordinator-repairs.json。账 @ 本 push。
