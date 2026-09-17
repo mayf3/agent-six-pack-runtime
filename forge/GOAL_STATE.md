@@ -1187,3 +1187,11 @@ gate 6/6 PASS（daemon 9095）→ 六仓 maintenance pass 全 DONE（六仓全�
 
 - T79 fix 分支（fix/t79-reaction-delete-thread-binding @48e1b3f）已推送到 origin 并创建 Draft PR [agent-forum#28](https://github.com/mayf3/agent-forum/pull/28)。
 - 修复：removeReaction findUnique → findFirst + threadId 绑定；跨 parent DELETE 缺口闭合。
+
+### 09-17 晨 WAKE 纠偏（FALSE-TERMINAL CORRECTION，08:05–08:30 窗口内 bounded 落档）
+
+- **23a4cf3 的 "executable=0 / FRONTIER_EXHAUSTED final confirmation" 不成立**：wake-decide @ 08:05 机械重算 executable_queue_recomputed=11、unfinished_night=true → WAKE_RESUME；plan @ 08:05 = **8 票 ADMIT_WRITE_OWNER_MANDATE（T79/T80/T81/T82/T87/T88/T89/T90 全 READY_FOR_BOUNDED_FIX）**。lint 85/0 通过与 terminal 无关——lint 只查一致性不查余量。
+- **当夜实际履约**：T84/T85/T86 → auth#79 Draft → WAITING_OWNER_DECISION（已迁门态）；T79 → forum#28 Draft 已建但 **regression test + independent exact-head review 未做、set-ticket-state 未迁**——按 OWNER_EXECUTION_POLICY（regression first → independent review → 门态）T79 留在 READY_FOR_BOUNDED_FIX 是准确状态，不得提前迁。
+- **未执行修复全数 DEFERRED_TO_NEXT_NIGHT**（Owner §5 消费序）：T87（P1 NULL-preimage IS DISTINCT FROM）→ T89（P1 in-memory session 失效）→ T79 finish（regression+评审+迁门态）→ T80 → T88 → T90 → T81 → T82。授权依据=各票体 OWNER_DECISION_COMMIT 块；管线停 merge/评审门，AUTO_MERGE=false。
+- **根因与教训**：前夜驱动从陈旧输入断言 terminal（未 fresh 重解析 canonical queue）；07:02 WAKE NOOP 只查 lint+沿用 GOAL_STATE 叙事、未跑 wake-decide——违反 NIGHTLY_TRUE_IDLE_RECONCILIATION_V1 的重解析权威原则。**WAKE gate = wake-decide 机械重算，GOAL_STATE 叙事/cached 旗标/口供均非证据**。
+- QUIESCE 处置：不启动任何无法在 08:30 前到达干净 persist 点的修复（避免 OUTCOME_UNKNOWN）；本纠正+defer receipt（state/dispatch/2026-09-16/receipts/false-terminal-correction-and-quiesce-defer.json）+本 push 即本轮 bounded persist。PRODUCT_REPO_MUTATIONS=0/MERGES=0/queue 零改动。lint PASS 85/0。
