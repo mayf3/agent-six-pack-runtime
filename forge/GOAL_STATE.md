@@ -1219,3 +1219,8 @@ gate 6/6 PASS（daemon 9095）→ 六仓 maintenance pass 全 DONE（六仓全�
 
 - **T88/C06**：isWorkflowKeyringConfigured() 纯 presence 检查——partial 配置（kid 无 key/key 无 kid/坏 PEM/弱位宽/仅 previous-keys）返回 false → server.ts 启动门跳过 → 进程带静默禁用的 keyring 上线。修复=检测点改语义：四个 keyring 环境变量任一在场（空白=absent）即现场跑完整缓存加载、partial/malformed 从检测点抛出 → 既有启动门进程级 fail-fast；全缺 disabled 姿态与请求态干净拒绝不变；loadWorkflowKeyring 本体零改动。
 - 回归七腿基线 RED 5/7（partial 返回 false 不抛）→ GREEN 7/7；workflow-keyring 11/11 + verify-token-routing 6/6 + workflow-rotation 2/2 + T87 回归 4/4（无跨票交互）；tsc 仅 pre-existing 一条。fresh GLM exact-head 评审 round1 **REVIEW_ACCEPT 0 blockers**（评审员 checkout main 版模块独立复现 RED+自跑三套件；head 9a80868）。Draft PR auth-service#82。剩余 executable=3（T90/T81/T82）。账 @ 本 push。
+
+### 09-17 夜 T90 修复（mobile#31 Draft → WAITING_OWNER_DECISION read-back OK）
+
+- **T90/MOB-GOV-010**：_request/postBytes 的 .timeout 只盖 open+headers，body-join 无界——headers 后拖 body 即永久挂且 finally 的 force-close 不可达。修复=两处 join() 套同 per-call deadline；超时走既有不确定 NETWORK_ERROR 路径（CTR-RETRY-003 不动）、postBytes 按契约透传传输异常、finally 释放资源；retry 块字节未动。
+- 回归基线 RED（A/B/C 挂到超时，评审员独立复现）→ GREEN 4/4；test/core **175/175**；analyzer 清洁。fresh GLM exact-head 评审 round1 **REVIEW_ACCEPT 0 blockers**（含 Dart abandoned-join 不可变 unhandled-error 语义核验）。**rebase 纠偏**：T90 分支最初带 T89 commit → rebase --onto main（d6460ac）保一票一 PR，T90 hunks 字节恒等。剩余 executable=2（T81/T82）。账 @ 本 push。
