@@ -1205,3 +1205,7 @@ gate 6/6 PASS（daemon 9095）→ 六仓 maintenance pass 全 DONE（六仓全�
 
 - **T89/MOB-GOV-009**：logout/_clearLocal 先 await store.clear 再失效内存态——残余清理失败（pointer 已删后 readAll 平台异常）逃逸即跳过 `_session=null`，登出/明确拒绝后 app 仍呈已认证内存会话。修复=两调用点包裹清理、内存失效无条件（AuthSessionStore 本体零改动；T38 fail-closed 分支端态不变）。
 - 回归（accepted fault seam：pointer delete 成功+readAll 抛）A/B 双腿基线 RED 实证→GREEN 3/3；flutter test test/core **171/171**；analyzer 零 issue。fresh GLM exact-head 评审 round1 **REVIEW_ACCEPT 0 blockers**（评审员自跑 analyzer+34 tests；head 4c1c67f/base ecd95c63）。Draft PR agent-core-mobile#30。receipt=t89-clear-fail-memory-invalidation（随 GOAL_STATE 下轮落盘）。剩余 executable=6。
+
+### 09-17 夜 T79 finish（forum#28 + regression → WAITING_OWNER_DECISION read-back OK）
+
+- **T79/AF-SCOUT-07 收尾**：前夜 PR#28 只有修复代码（48e1b3f，findUnique→findFirst 绑路由 threadId）、无回归无评审。本夜补齐：tests/reactions.test.ts 新增 **T79-A 跨 parent DELETE 腿**（对 main 版 reactions.ts 实证 RED：可见 thread 路由删掉异 thread 消息的 reaction；分支 GREEN）+ mock findFirst 补全真实 Prisma 标量过滤（原只滤 threadId/id 等键——修复后的 findFirst 查找在 mock 下会错配行；扩展对 main 的 findUnique 路径中性，AC#1 对 main 代码验证过）。全套件 **387/387**（49 套件，含 t57 real-DB 腿 @t36-repair-pg:55443 复用容器+补建 svc_forum/forum_app/postgres 角色）；typecheck 清洁。fresh GLM exact-head 评审 round1 **REVIEW_ACCEPT 0 blockers**（评审员独立复跑 RED 实验+全套+typecheck；head 6dbf152）。PR#28 描述更新。坑记：--depth 单支 clone 需显式 refspec fetch；svc-forum 全套件须 plain npm ci（prisma generate）。剩余 executable=5（T80/T88/T90/T81/T82）。账 @ 本 push。
