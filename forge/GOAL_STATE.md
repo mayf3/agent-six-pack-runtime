@@ -1209,3 +1209,8 @@ gate 6/6 PASS（daemon 9095）→ 六仓 maintenance pass 全 DONE（六仓全�
 ### 09-17 夜 T79 finish（forum#28 + regression → WAITING_OWNER_DECISION read-back OK）
 
 - **T79/AF-SCOUT-07 收尾**：前夜 PR#28 只有修复代码（48e1b3f，findUnique→findFirst 绑路由 threadId）、无回归无评审。本夜补齐：tests/reactions.test.ts 新增 **T79-A 跨 parent DELETE 腿**（对 main 版 reactions.ts 实证 RED：可见 thread 路由删掉异 thread 消息的 reaction；分支 GREEN）+ mock findFirst 补全真实 Prisma 标量过滤（原只滤 threadId/id 等键——修复后的 findFirst 查找在 mock 下会错配行；扩展对 main 的 findUnique 路径中性，AC#1 对 main 代码验证过）。全套件 **387/387**（49 套件，含 t57 real-DB 腿 @t36-repair-pg:55443 复用容器+补建 svc_forum/forum_app/postgres 角色）；typecheck 清洁。fresh GLM exact-head 评审 round1 **REVIEW_ACCEPT 0 blockers**（评审员独立复跑 RED 实验+全套+typecheck；head 6dbf152）。PR#28 描述更新。坑记：--depth 单支 clone 需显式 refspec fetch；svc-forum 全套件须 plain npm ci（prisma generate）。剩余 executable=5（T80/T88/T90/T81/T82）。账 @ 本 push。
+
+### 09-17 夜 T80 修复（forum#29 Draft → WAITING_OWNER_DECISION read-back OK）
+
+- **T80/AF-SCOUT-08**：T58 probe 无 deadline（慢头 JWKS 把 verify 永久挂死——RED 实测 pre-fix 直接钉死 test runner）、body 从不消费/释放（socket 钉住）、无 in-flight 共享（并发失败=N fetch）。修复=单 AbortController deadline（默认 3s 常量导出+per-probe override）覆盖 fetch+body release、status 后立即 body.cancel()、模块级 in-flight 共享（href 键、settle 即删、无 TTL——T58 顺序语义不变）；taxonomy/消息形状字节恒等（评审员验证）。
+- 回归四腿 RED vs main（A 挂死/B socket 不释放/C 5 fetch/D taxonomy guard）→ GREEN 4/4；全套 391/391 ×3；typecheck 清洁。fresh GLM exact-head 评审 round1 **REVIEW_ACCEPT 0 blockers**（评审员独立复现 pre-fix 180s 挂死；head 7196998）。**流程纠错：T80 误提交到 T79 PR 分支→拆分（cherry-pick 到 fix/t80-probe-deadline 建独立 forum#29；T79 分支 reset 回已评审 6dbf152 强推，PR#28 文件面复核=恰两路径）**。剩余 executable=4（T88/T90/T81/T82）。账 @ 本 push。
