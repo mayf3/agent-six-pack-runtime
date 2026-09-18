@@ -1238,3 +1238,10 @@ gate 6/6 PASS（daemon 9095）→ 六仓 maintenance pass 全 DONE（六仓全�
 - **九张修复 PR 全部仍 OPEN（Owner 未处置）**：auth#79/#81/#82、forum#28/#29、mobile#30/#31、svc#61/#62；既有门 svc#50/#51/#52/#54、forum#26 不变。
 - Owner 昼间动作：dsh→ebab8ebb（TRUSTED_CP_PACK_INPUT_PROVENANCE_V1 r3）、svc→f6a74001（contract-bundle 1.8.0 r3 docs）——queue 无对应新票，non-executable。
 - exit gate：drive-decision（喂 plan 重算值 0/0）= **FRONTIER_EXHAUSTED / must_continue=false**。晨报补录 MORNING_REPORT_2026-09-18.md。standby 至下窗。
+
+### 09-18 夜 FALSE-TERMINAL 撤销（VOID_FALSE_TERMINAL；T85/T86 ERRONEOUS_FINALIZATION_CORRECTION）
+
+- **75548b1 的 "FRONTIER_EXHAUSTED / executable=0" 记录为 VOID_FALSE_TERMINAL，reason=T85/T86 false closure**（历史不删，本节即撤销记录）。根因：09-16 夜把 auth#79（实为 T84-only + T52 夹带）按 T84/T85/T86 grouped closure 一次迁三门态——grouped PR title 连带关闭、shared receipt 替代逐票实现证据，违反逐票证明要求。
+- **Fresh 三点证明（receipt=state/dispatch/2026-09-18/receipts/t85-t86-false-closure.json）**：A=#79 全 77 行零 T85 面（无 secret-only fallback 收敛/iss-aud 负回归/legacy context-bound）；B=零 T86 面（refresh 仍 process-local Map 且 if(payload.jti) 门控 check+revoke）；C=main 复现双缺陷（auth.ts L145 裸 verify 兜底；token-rotation.ts check→await→revoke 竞态+缺 jti 整体跳过轮换）。
+- Ledger 纠偏 23:22:47 由 DAY_OWNER_REPAIR_RECONCILIATION_AND_MERGE_20260918_V1（Owner 并行日班会话）执行，交接本夜班；本班补齐 receipt+lint 修复（BODY_DONE_MARKERS "CLOSURE" 假阳性→按先例 reword 为 ERRONEOUS_FINALIZATION_CORRECTION）。SECURITY_REPAIR_AUTHORIZED mandate 维持不重请求。
+- **机械验证 @23:2x**：T85/T86 = ADMIT_WRITE_OWNER_MANDATE、executable=2、roundrobin EXECUTE_QUEUE_ITEM、drive-decision（喂重算值）=EXECUTE_QUEUE_ITEM/must_continue、wake-decide 重算 5/TRUE_IDLE=False、lint PASS 85/0。今夜真目标=T85/T86 独立修复 + #79 审计纠正 + closure-gate regression 后方可重新 FRONTIER_EXHAUSTED。账 @ 本 push。
