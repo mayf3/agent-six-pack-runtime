@@ -1231,3 +1231,10 @@ gate 6/6 PASS（daemon 9095）→ 六仓 maintenance pass 全 DONE（六仓全�
 - **T82/WF-GS-10**：get_domain_owner 承认全域 coordinator 或域内 Domain Owner，但 audit_read 硬编码 GLOBAL_WORKFLOW_COORDINATOR——域内授权的读被伪标为全域权威。修复=audit_read 参数化 basis，get_domain_owner 按实际谓词取值（DOMAIN_OWNER）；三个真全域门读面传 coordinator 常量；零权限扩张（评审员字节级验证谓词未动）。
 - 双回归基线 RED（main 实测）→ GREEN；套件 35_ 8/8 + 23_ 10/10 + 24_ 11/11（disposable t81-pg:55447）；双 fresh GLM exact-head 评审 round1 **均 REVIEW_ACCEPT 0 blockers**（各自独立复现 RED/自跑套件；T81 head 766ebe2、T82 head 7e47796）。**一票一 PR 纪律**：从 main 分别建支携带各自 hunk。
 - **09-17 夜终态（01:00）**：Owner materialization 的十一张授权修复全履约——T84/T85/T86（auth#79，昨夜）+ T87（auth#81）+ T88（auth#82）+ T79 finish（forum#28 补回归+评审）+ T80（forum#29）+ T89（mobile#30）+ T90（mobile#31）+ T81（svc#61）+ T82（svc#62）。全部 Draft 停 merge/评审门、全部评审 ACCEPT、全部 canonical 迁 WAITING_OWNER_DECISION read-back OK。**plan @01:00：executable=0**（wake-decide 重算 3 = align-2 ACTIVE_WRITE_TASK/CODE-1 QUEUED_VALIDATED_FINDING/FORUM-L0 无 mandate 三类非可执行遗留，与 09-13 先例同口径）；lint PASS 85/0。九 PR 待 Owner：auth#79/#81/#82、forum#28/#29、mobile#30/#31、svc#61/#62（另 svc#50/#51[NEEDS_REVISION]/#52/#54、forum#26 仍 OPEN 停 Owner 门）。receipt=t81-t82-coordinator-repairs.json。账 @ 本 push。
+
+### 09-18 夜 BOOTSTRAP（23:0x；NIGHT_RUN_ID=2026-09-18-nightly-dispatch-v1）
+
+- gate 6/6 PASS；plan executable=0——09-17 夜 11 张授权修复履约后的真空维持，无新 materialization。
+- **九张修复 PR 全部仍 OPEN（Owner 未处置）**：auth#79/#81/#82、forum#28/#29、mobile#30/#31、svc#61/#62；既有门 svc#50/#51/#52/#54、forum#26 不变。
+- Owner 昼间动作：dsh→ebab8ebb（TRUSTED_CP_PACK_INPUT_PROVENANCE_V1 r3）、svc→f6a74001（contract-bundle 1.8.0 r3 docs）——queue 无对应新票，non-executable。
+- exit gate：drive-decision（喂 plan 重算值 0/0）= **FRONTIER_EXHAUSTED / must_continue=false**。晨报补录 MORNING_REPORT_2026-09-18.md。standby 至下窗。
