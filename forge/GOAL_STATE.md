@@ -1245,3 +1245,17 @@ gate 6/6 PASS（daemon 9095）→ 六仓 maintenance pass 全 DONE（六仓全�
 - **Fresh 三点证明（receipt=state/dispatch/2026-09-18/receipts/t85-t86-false-closure.json）**：A=#79 全 77 行零 T85 面（无 secret-only fallback 收敛/iss-aud 负回归/legacy context-bound）；B=零 T86 面（refresh 仍 process-local Map 且 if(payload.jti) 门控 check+revoke）；C=main 复现双缺陷（auth.ts L145 裸 verify 兜底；token-rotation.ts check→await→revoke 竞态+缺 jti 整体跳过轮换）。
 - Ledger 纠偏 23:22:47 由 DAY_OWNER_REPAIR_RECONCILIATION_AND_MERGE_20260918_V1（Owner 并行日班会话）执行，交接本夜班；本班补齐 receipt+lint 修复（BODY_DONE_MARKERS "CLOSURE" 假阳性→按先例 reword 为 ERRONEOUS_FINALIZATION_CORRECTION）。SECURITY_REPAIR_AUTHORIZED mandate 维持不重请求。
 - **机械验证 @23:2x**：T85/T86 = ADMIT_WRITE_OWNER_MANDATE、executable=2、roundrobin EXECUTE_QUEUE_ITEM、drive-decision（喂重算值）=EXECUTE_QUEUE_ITEM/must_continue、wake-decide 重算 5/TRUE_IDLE=False、lint PASS 85/0。今夜真目标=T85/T86 独立修复 + #79 审计纠正 + closure-gate regression 后方可重新 FRONTIER_EXHAUSTED。账 @ 本 push。
+
+### 09-18/19 夜 T85/T86 独立修复（auth#83/#84 Draft → WAITING_OWNER_DECISION read-back OK）
+
+- **T85（auth#83，head cffd15d）**：authRequired 裸 `jwt.verify(token, JWT_SECRET)` 兜底删除——同 secret 错 iss/aud/缺上下文不再凭签名复活；恰两上下文（unified/legacy ADC）options 字节恒等；machine profile 与 T52 Forum profile 面未触；disabled-User 腿归 #79（组合说明+skip 理由在案）。回归基线 RED（4 context 腿被兜底放行）→GREEN 6+1skip；评审员实跑 RED/套件/tsc，**REVIEW_ACCEPT 0 blockers**；FOLLOW_UP=service-registrations.ts:290 第二个两参 verify（introspection，pre-existing）记待自有票/Owner 裁定。
+- **T86（auth#84，delta 537be36+8045c87，rebase 拆票 hunks 恒等）**：durable 单次消费账本 refresh_token_consumptions（jti PK，附加迁移 202609190001）+consumeRefreshToken（INSERT..ON CONFLICT 决出原子胜者，复用既有 Prisma/PG 权威零新基建）；/refresh 缺 jti 拒绝零签发、消费先于 lookup/mint（消费后失败=烧 token fail-closed、同 jti 两次轮换不可能）；token-rotation Map 模块删除零残留。基线 RED（missing-jti 200+签发、并发 5 中 4 胜）→GREEN 5/5；评审员 detached main worktree 独立复现 RED+7 项全验，**REVIEW_ACCEPT 0 blockers**（follow-up：账本保留修剪/::uuid cast 假设/头注已修）。
+- 环境坑记：本 clone npm install-scripts 被拦→bcrypt 原生绑定缺失（token-login 套件挂）→`npm rebuild bcrypt` 修复；tsx -e ESM/CJS 判定抖动→探针用 .mts 文件入 worktree。账 @ 下轮 push。
+
+### 09-18/19 夜终态：T85/T86 假闭包全链纠偏完毕 + FRONTIER_EXHAUSTED 合法重达
+
+- **#79 纠偏（Option A）**：repair/t84-85-86-legacy-surface @568f78d——forum-direct-agent-token.ts 两 T52 hunks 删除（`principal.resolved as any` 非法 mint 事件不再在案），diff 恰=auth.ts 两文件 +13/-1 纯 T84；PR#79 标题/正文改写为 pure-T84 scope correction；fresh GLM exact-head 评审 round1 **REVIEW_ACCEPT 0 blockers**（含与 #83/#84 merge-tree 零冲突验证）。#79 恢复 Owner merge 门。
+- **closure-gate regression（§5）**：dispatcher set_ticket_state 新增 repair_closure_evidence_ok 纯门——READY_FOR_BOUNDED_FIX→门态必须携带绑定本票的结构化证据（ticket= pr= head= regression= review=），异票/分组/shared receipt/缺 token 一律 fail-closed（写队列前 SystemExit）；零模型回归 6/6（tests/test_repair_closure_gate.py；B 案例=异票证据拒=本次假闭包形态）。prospective-only。
+- **T91 新立**（T85 评审 FOLLOW_UP）：service-registrations.ts:290 裸两参 verify（/verify-token 内省面，authRequired 后、非会话面，P2）静态表征 VALIDATED → WAITING_OWNER_MANDATE（SECURITY_REPAIR 是否延展至该面=Owner 裁决）。lint 86/0。
+- **终局机械验证（§6）**：T85=auth#83（回归 PASS+评审 ACCEPT+WAITING_OWNER_DECISION）✓；T86=auth#84（同）✓；#79 corrected ✓；fresh plan **executable=0**（T91 为 WAITING_OWNER_MANDATE 非可执行）；drive-decision（喂 plan 重算值）=**FRONTIER_EXHAUSTED / must_continue=false**——本次为合法重达（区别于被撤销的 75548b1）。lint PASS 86/0。
+- MERGES=0 DEPLOYS=0 PRODUCTION_WRITES=0。账 @ 本 push。
