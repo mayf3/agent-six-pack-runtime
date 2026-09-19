@@ -1284,3 +1284,12 @@ gate 6/6 PASS（daemon 9095）→ 六仓 maintenance pass 全 DONE（六仓全�
 - **T71 r2（svc#51，ca5dc8e）**：SCHEMA_VERSION 常量整体移除→schema_version()=format!("{:04}", EXPECTED_MIGRATION_VERSION)（与 readyz 门同一 authority；编译期 guard+锁步单测）；VersionResponse 字段改 String（唯一构造点；wire 输出不变，smoke "0026" 断言原样过）。
 - **T82 r2（svc#62，97033db）**：rebase 到 post-#61/#52/#54 main d661af5；冲突=35_ 尾部双测试追加（both-keep 解决+残标清理）；35_ 9/9（T81+T82 并存）。
 - **GLM 5h 限额（1308）@23:04 触发，01:02 重置**——四场 fresh 评审排队待重置后串行执行；迁门态（closure-gate 结构化证据格式）随后。账 @ 下轮 push。
+
+### 09-19/20 夜终态：四 REVISE 全部 r2 履约（评审全 ACCEPT）→ FRONTIER_EXHAUSTED 合法重达
+
+- **GLM 5h 限额（1308）23:04 触发 → 代码面先行**：四张 REVISE 的修复+回归+推送全部在窗内完成；后台等待 01:02 重置后串行四场 fresh exact-head 评审（01:04–01:19）全 **REVIEW_ACCEPT 0 blockers**。
+- **T86 r2**（auth#84 @81da6e0，P1）：rebase 到 post-wave main f00dab7；冲突=refresh 尾段（保 T84 disabled-User 检查、删旧 revoke）；组合序 verify→缺jti拒→原子消费→lookup→T84 403→mint（禁用用户烧 token fail-closed 语义评审确认）；回归 5/5。
+- **T70 r2**（svc#50 @65bdaf5）：负缓存 (instant, jwks_generation) 绑定+代递增失效重试（Owner 冻结语义满足）；同代风暴共享不变；新增 generation-bound 腿 2/2。**评审插曲**：首次送审因驱动 prompt 头错误（cwd 停在 T82 分支致 $(git rev-parse HEAD) 解析错）被评审员如实 REJECT（exact-head 冲突拒绝正确行为）；切正头 65bdaf5 重送即 ACCEPT——评审员守 exact-head 纪律的正例。
+- **T71 r2**（svc#51 @ca5dc8e）：SCHEMA_VERSION 常量移除→从 EXPECTED_MIGRATION_VERSION 派生（同 readyz authority；编译期 guard+锁步单测）；wire 输出不变 smoke 0026 过。
+- **T82 r2**（svc#62 @97033db）：rebase both-keep（main 的 T81 回归+本支 T82 回归并存）；r1 fix 字节恒等 graft；35_ 9/9。
+- **终局**：四票全迁 WAITING_OWNER_DECISION（closure-gate 结构化证据格式 ticket=/pr=/head=/regression=/review= 首次全程使用，read-back 4/4）；plan executable=0；lint PASS 86/0；drive-decision（喂 plan 重算值）=**FRONTIER_EXHAUSTED / must_continue=false**。receipt=four-revise-r2-completion.json。MERGES=0/DEPLOYS=0/PRODUCTION_WRITES=0。账 @ 本 push。
