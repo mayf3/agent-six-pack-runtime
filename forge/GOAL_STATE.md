@@ -1275,3 +1275,12 @@ gate 6/6 PASS（daemon 9095）→ 六仓 maintenance pass 全 DONE（六仓全�
 - Owner 日班会话（DAY_OWNER_REPAIR_RECONCILIATION_AND_MERGE_20260918_V1 @336160a）昼间完成 11-PR merge wave（auth 4/forum 2/mobile 2/svc 3，四仓 main 前移 a5f3b3d/e533d63/1c104d6/c908c3f），queue @07:12 释放四票回可执行态并附 exact REVISE blocker：**T86**（auth#84 CONFLICTING vs 新 auth main——rebase+fresh tests+fresh 评审）、**T70**（svc#50 TTL 非 refresh-generation 键控——按代际键控/失效重做）、**T71**（svc#51 0026 literal 违反 derive 冻结——从共享 authority 派生）、**T82**（svc#62 CONFLICTING vs 新 svc main——rebase+fresh 评审）。各票 mandate 维持不重裁决。
 - 08:02 观测，距 QUIESCE 28 分钟：无一张 REVISE（冲突性 rebase/代码变更+fresh 评审，各 30-60 分钟级）能在窗内干净落账——按 §13 不启动，全部 DEFERRED_TO_NEXT_NIGHT（消费序 T86→T70→T71→T82；receipt=four-revise-defer.json）。
 - lint PASS 86/0（queue 由日班会话维护后本班复验）。账 @ 本 push。
+
+### 09-19/20 夜 BOOTSTRAP + 四 REVISE 代码面履约（NIGHT_RUN_ID=2026-09-19-nightly-dispatch-v1）
+
+- 23:01 BOOTSTRAP：gate 6/6、executable=4（T86/T70/T71/T82，晨间 defer 四票）→ 取得执行权。
+- **T86 r2（auth#84，81da6e0）**：rebase 到 post-wave main f00dab7；唯一冲突=refresh 尾段（保 T84 disabled-User 检查、删旧 revoke 块）；组合序=verify→缺jti拒→原子消费→lookup→T84 检查→mint；回归 5/5、tsc 零新增、T85 组合面 intact。
+- **T70 r2（svc#50，65bdaf5）**：kid-miss 负缓存改 (instant, jwks_generation) 绑定——generation 每次 fetch 成功递增、条目仅同代内+TTL 内生效、代前进即失效重试（满足 Owner 冻结「下一合法 refresh generation 必须允许重新尝试」）；同代风暴共享不变（32 并发 ≤1 fetch 腿保持）；新增 generation-bound 腿；2/2。
+- **T71 r2（svc#51，ca5dc8e）**：SCHEMA_VERSION 常量整体移除→schema_version()=format!("{:04}", EXPECTED_MIGRATION_VERSION)（与 readyz 门同一 authority；编译期 guard+锁步单测）；VersionResponse 字段改 String（唯一构造点；wire 输出不变，smoke "0026" 断言原样过）。
+- **T82 r2（svc#62，97033db）**：rebase 到 post-#61/#52/#54 main d661af5；冲突=35_ 尾部双测试追加（both-keep 解决+残标清理）；35_ 9/9（T81+T82 并存）。
+- **GLM 5h 限额（1308）@23:04 触发，01:02 重置**——四场 fresh 评审排队待重置后串行执行；迁门态（closure-gate 结构化证据格式）随后。账 @ 下轮 push。
