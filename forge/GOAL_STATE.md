@@ -1269,3 +1269,9 @@ gate 6/6 PASS（daemon 9095）→ 六仓 maintenance pass 全 DONE（六仓全�
 - **§6 closure-gate**：repair_closure_evidence_ok 门（READY_FOR_BOUNDED_FIX→门态须绑定本票 ticket/PR/head/files/regression/review 结构化证据；grouped claim 无逐票块=fail-closed）在位，回归 tests/test_repair_closure_gate.py **6/6 PASS**（本 session 复跑验证）。
 - **§7 终态可见性**：lint PASS **86/0**；plan EXECUTE_PLAN order=4（ADMIT_WRITE=[T70,T71,T82,T86]）；wake recomputed=7/true_idle=False/WAKE_RESUME；T85_NIGHTLY_PLAN=MERGED（superseded——真实现已落地）；T86_NIGHTLY_PLAN=ADMIT_WRITE（REVISE-rebase 任务）。NIGHTLY_VISIBLE=YES。
 - MERGES=**11**；DEPLOYS=0；PRODUCTION_WRITES=0；receipt=state/dispatch/2026-09-18/receipts/day-merge-wave.json。账 @ 本 push。
+
+### 09-19 晨 08:02 WAKE——Owner 11-PR merge wave 后四票 REVISE 回队，DEFERRED_TO_NEXT_NIGHT（QUIESCE 纪律）
+
+- Owner 日班会话（DAY_OWNER_REPAIR_RECONCILIATION_AND_MERGE_20260918_V1 @336160a）昼间完成 11-PR merge wave（auth 4/forum 2/mobile 2/svc 3，四仓 main 前移 a5f3b3d/e533d63/1c104d6/c908c3f），queue @07:12 释放四票回可执行态并附 exact REVISE blocker：**T86**（auth#84 CONFLICTING vs 新 auth main——rebase+fresh tests+fresh 评审）、**T70**（svc#50 TTL 非 refresh-generation 键控——按代际键控/失效重做）、**T71**（svc#51 0026 literal 违反 derive 冻结——从共享 authority 派生）、**T82**（svc#62 CONFLICTING vs 新 svc main——rebase+fresh 评审）。各票 mandate 维持不重裁决。
+- 08:02 观测，距 QUIESCE 28 分钟：无一张 REVISE（冲突性 rebase/代码变更+fresh 评审，各 30-60 分钟级）能在窗内干净落账——按 §13 不启动，全部 DEFERRED_TO_NEXT_NIGHT（消费序 T86→T70→T71→T82；receipt=four-revise-defer.json）。
+- lint PASS 86/0（queue 由日班会话维护后本班复验）。账 @ 本 push。
