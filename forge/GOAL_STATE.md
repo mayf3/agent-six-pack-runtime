@@ -1311,3 +1311,9 @@ gate 6/6 PASS（daemon 9095）→ 六仓 maintenance pass 全 DONE（六仓全�
 - **T92（表征完成 → WAITING_OWNER_MANDATE）**：三线静态链 fresh 实证（recordQueryState recovering 第三态/admitDueIntent 围栏仅盖 pending/围栏外直达 beginAttemptIfAbsent 唯一 mint 路径）——Router-recovering stale re-entry 可无正静默证明铸造 generation N+1。acceptance mapping 交付（fence 扩至 recovering 或 Router-settlement-aware mint 门）；FORBIDDEN 面未触；write 需 Owner mandate 延展。
 - **T93（栈式收口 → WAITING_OWNER_DECISION）**：#265(parent @f79797c)+#268(child @df5a60a) 绑定+增量评审 ACCEPT 0 blockers（parent 增量=storeWriteOwner 入 onboard 调用+3 非空洞回归 8/8；child 增量=entityId client 面优先 OAuth 公共 id+回归 1/1）；GitHub MERGEABLE 权威整合验证；orphan 历史（无 merge base）rebase 尝试安全撤销零远端影响（教训在案：orphan 分支永不 rebase）；评审员 scout-fact 纠正（符号在 main 存在、真缺陷=调用点丢弃 resolved owner，修复仍必要）。heads 未动、双 PR 保持 OPEN stacked。
 - **终局**：四票门态迁移 read-back 4/4（T86 式 closure-gate 结构化证据格式含 ticket=/pr=/head=/regression=/review=）；plan executable=0；lint PASS 88/0；drive-decision（喂 plan 重算值）=**FRONTIER_EXHAUSTED / must_continue=false**。receipt=four-ticket-drive-completion.json。MERGES=0/DEPLOYS=0/PRODUCTION_WRITES=0。账 @ 本 push。
+
+### 09-24 夜 BOOTSTRAP（23:0x；NIGHT_RUN_ID=2026-09-24-nightly-dispatch-v1）
+
+- gate 6/6 PASS；plan executable=0（98 项全为 owner-bound 34/closed 57/blocked 2/legacy 3/no-action 3——queue 真空维持，Owner 昼间无新注入）；lint PASS 86/0 口径延续。
+- 六仓 main 昼间前移（dsh 2ee6f47/forum 4c0c321/svc 9f7c248/auth 862eab3/mobile 4f22704/vp e1ea75d）——Owner/日班活动，queue 无对应新票，non-executable。
+- wake-decide 粗口径 3 = align-2/CODE-1/FORUM-L0 三类非可执行遗留（口径先例一致）。exit gate（喂 plan 重算值 0/0）= FRONTIER_EXHAUSTED 合法 terminal 确认。standby 至下窗。
