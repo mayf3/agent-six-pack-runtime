@@ -1345,3 +1345,10 @@ gate 6/6 PASS（daemon 9095）→ 六仓 maintenance pass 全 DONE（六仓全�
 ### 10-01 夜 BOOTSTRAP（23:0x；NIGHT_RUN_ID=2026-10-01-nightly-dispatch-v1）
 
 - gate 6/6 PASS；plan executable=0（queue 真空维持，Owner 昼间无新注入；dispositions 与 09-30 夜一致）。exit gate（喂 plan 重算值 0/0）= FRONTIER_EXHAUSTED 合法 terminal 确认。standby 至下窗。
+
+### 10-02 晨 WAKE——Owner 质询「为啥一直没做治理」的诚实诊断 + 漂移扫描补救（08:07）
+
+- **诚实诊断（Owner 问「为啥一直没做治理」）**：09-23 夜清完 4 票后 executable=0，FRONTIER_EXHAUSTED 被当粘性终态——9 个夜晚全部 NOOP standby。结构性缺口：frontier 只统计已知 backlog 余量，**main 大幅漂移（Owner 11+ PR 合入）不会重开 discovery**；Draft PR 舰队对 main 的漂移也没人主动维护（T86/T82 的 CONFLICTING 都是 Owner 日班先发现）。「治理一直没做」对 09-24 以来的夜班成立。
+- **漂移扫描补救（08:07，本轮 fresh governance yield）**：六仓 main 快照（dsh 1b763e46 #392、forum 4a4d7e22 #34、svc 5d479d83 #70、auth 862eab3、mobile 4f22704b、vp e1ea75d8）；Draft 舰队全量核查——**svc#62（T82）/svc#51（T71）= CONFLICTING**（T82/T71 已 set-ticket-state 重开 READY_FOR_BOUNDED_FIX，r3=rebase 5d479d83+fresh tests+fresh review，今晚 23:00 执行）；svc#50/auth#84/dsh#268 仍 MERGEABLE；forum#26/#28/#29 已离 open 面（Owner 昼间处置）。
+- **遗留缺口如实报**：dsh 从 #317 跳到 #392（75 个 PR 号活动）——新合入面未重新 scout；今晚在 4 REVISE 之外评估是否触发一轮 fresh discovery（read-only）。closure-gate 结构化证据格式继续适用。
+- 账 @ 本 push。今晚消费序：T82 r3 → T71 r3 →（评估）fresh scout。
