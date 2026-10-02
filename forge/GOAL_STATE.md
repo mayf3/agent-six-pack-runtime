@@ -1352,3 +1352,10 @@ gate 6/6 PASS（daemon 9095）→ 六仓 maintenance pass 全 DONE（六仓全�
 - **漂移扫描补救（08:07，本轮 fresh governance yield）**：六仓 main 快照（dsh 1b763e46 #392、forum 4a4d7e22 #34、svc 5d479d83 #70、auth 862eab3、mobile 4f22704b、vp e1ea75d8）；Draft 舰队全量核查——**svc#62（T82）/svc#51（T71）= CONFLICTING**（T82/T71 已 set-ticket-state 重开 READY_FOR_BOUNDED_FIX，r3=rebase 5d479d83+fresh tests+fresh review，今晚 23:00 执行）；svc#50/auth#84/dsh#268 仍 MERGEABLE；forum#26/#28/#29 已离 open 面（Owner 昼间处置）。
 - **遗留缺口如实报**：dsh 从 #317 跳到 #392（75 个 PR 号活动）——新合入面未重新 scout；今晚在 4 REVISE 之外评估是否触发一轮 fresh discovery（read-only）。closure-gate 结构化证据格式继续适用。
 - 账 @ 本 push。今晚消费序：T82 r3 → T71 r3 →（评估）fresh scout。
+
+### 09-25 夜续段（10-02/03 深夜）：T82/T71 r3 双闭环 + fresh-scout census
+
+- **T82 r3（svc#62 @caa3880 → WAITING_OWNER_DECISION read-back OK）**：rebase 到 5d479d8（保 main 的 T81 测试+本支 T82 测试 both-keep）；rebase seam 残留被 round3 评审 REJECT 正确拦截（stray ======= 编译失败），round4 修复清单核对，round5 五轮收敛 ACCEPT——src 与 round3 字节恒等、9/9、零标记。
+- **T71 r3（svc#51 @03025eb → WAITING_OWNER_DECISION read-back OK）**：rebase 揭示 **T71 预言的漂移在 main 自身兑现**——EXPECTED_MIGRATION_VERSION 26→28（迁移 0027/0028 落地）而 main 手写 literal 停在 0023（落后五个迁移）；r3 派生解两处冲突保 main authority=28 不动，derived 自动给 0028 零代码变更；smoke 断言 0028 对活库过。round3 评审 ACCEPT（评审员自跑锁步+smoke+check，确认 r1 literal 在 0028 上会错）。
+- **fresh-scout census（只读有界）**：dsh main 2ee6f47→d54b8f7 = **55 个 merge**（#317→#433，hr-admin/emergency 16+、release-safety、c11-selfheal、b7-packet 系列、e12-exec-authority 等 10+ 家族）——深度逐票 triage 需专门 scout 窗口（owner-injected 模式），census receipt 在档（dsh-fresh-merge-census.json）；T93 绑定 #265(UNKNOWN compute)/#268(MERGEABLE) heads 未动，ba5f708 邻域漂移由 GitHub 内容级判定覆盖。
+- **终局**：executable=0、lint 88/0、drive-decision（喂 plan 重算值）= FRONTIER_EXHAUSTED。MERGES=0/DEPLOYS=0/PRODUCTION_WRITES=0。账 @ 本 push。
