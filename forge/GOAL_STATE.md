@@ -1359,3 +1359,7 @@ gate 6/6 PASS（daemon 9095）→ 六仓 maintenance pass 全 DONE（六仓全�
 - **T71 r3（svc#51 @03025eb → WAITING_OWNER_DECISION read-back OK）**：rebase 揭示 **T71 预言的漂移在 main 自身兑现**——EXPECTED_MIGRATION_VERSION 26→28（迁移 0027/0028 落地）而 main 手写 literal 停在 0023（落后五个迁移）；r3 派生解两处冲突保 main authority=28 不动，derived 自动给 0028 零代码变更；smoke 断言 0028 对活库过。round3 评审 ACCEPT（评审员自跑锁步+smoke+check，确认 r1 literal 在 0028 上会错）。
 - **fresh-scout census（只读有界）**：dsh main 2ee6f47→d54b8f7 = **55 个 merge**（#317→#433，hr-admin/emergency 16+、release-safety、c11-selfheal、b7-packet 系列、e12-exec-authority 等 10+ 家族）——深度逐票 triage 需专门 scout 窗口（owner-injected 模式），census receipt 在档（dsh-fresh-merge-census.json）；T93 绑定 #265(UNKNOWN compute)/#268(MERGEABLE) heads 未动，ba5f708 邻域漂移由 GitHub 内容级判定覆盖。
 - **终局**：executable=0、lint 88/0、drive-decision（喂 plan 重算值）= FRONTIER_EXHAUSTED。MERGES=0/DEPLOYS=0/PRODUCTION_WRITES=0。账 @ 本 push。
+
+### 10-03 夜 BOOTSTRAP（23:0x；NIGHT_RUN_ID=2026-10-03-nightly-dispatch-v1）
+
+- gate 6/6 PASS；plan executable=0（queue 真空维持，Owner 昼间无新注入；dispositions 与 10-02 夜一致）。exit gate（喂 plan 重算值 0/0）= FRONTIER_EXHAUSTED 合法 terminal 确认。standby 至下窗。
