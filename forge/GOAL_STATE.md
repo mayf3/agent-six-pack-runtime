@@ -1375,3 +1375,7 @@ gate 6/6 PASS（daemon 9095）→ 六仓 maintenance pass 全 DONE（六仓全�
 ### 10-06 夜 BOOTSTRAP（23:0x；NIGHT_RUN_ID=2026-10-06-nightly-dispatch-v1）
 
 - gate 6/6 PASS；plan executable=0（queue 真空维持，Owner 昼间无新注入；dispositions 与 10-05 夜一致）。exit gate（喂 plan 重算值 0/0）= FRONTIER_EXHAUSTED 合法 terminal 确认。standby 至下窗。
+
+### 10-07 夜 BOOTSTRAP（23:00；NIGHT_RUN_ID=2026-10-07-nightly-dispatch-v1）
+
+- gate 6/6 PASS；plan @23:00 executable=0、parked-admissible=0（queue 真空维持，Owner 昼间无新注入；dispositions 与 10-06 夜一致：57 CLOSED / 34 OWNER / 其余 blocked·no-action 残留）。exit gate（喂 plan 重算值 0/0）= FRONTIER_EXHAUSTED 合法 terminal 确认；lint PASS 88/0。standby 至整点 WAKE。
