@@ -1387,3 +1387,7 @@ gate 6/6 PASS（daemon 9095）→ 六仓 maintenance pass 全 DONE（六仓全�
 ### 10-09 夜 BOOTSTRAP（23:00；NIGHT_RUN_ID=2026-10-09-nightly-dispatch-v1）
 
 - gate 6/6 PASS；plan @23:00 executable=0、parked-admissible=0（queue 真空维持，Owner 昼间无新注入；dispositions 与 10-08 夜一致：57 CLOSED / 34 OWNER / 其余 blocked·no-action 残留）。PARKED_CANDIDATE_AUTO_ADMISSION_V1 策略落地证据在档（parked-admission/admission-v2 命令、MAX_AUTO_ADMIT_PER_BATCH=3、A–G 回归、账 6a75b3c），激活条件每 wake 新鲜复验 PARKED=0 不触发。exit gate（喂重算值 0/0）= FRONTIER_EXHAUSTED；lint PASS 88/0。standby 至整点 WAKE。
+
+### 10-10 夜 BOOTSTRAP（23:00；NIGHT_RUN_ID=2026-10-10-nightly-dispatch-v1）
+
+- gate 6/6 PASS；plan @23:00 executable=0、parked-admissible=0（queue 真空维持，Owner 昼间无新注入；dispositions 与 10-09 夜一致：57 CLOSED / 34 OWNER / 其余 blocked·no-action 残留）。PARKED_CANDIDATE_AUTO_ADMISSION_V1 完成证据深核在档（落地 8e5fcca 09-13：策略实装+A–G 回归全过+首批 T67–T69 admit 产生真实工作；缺陷修复链 6a75b3c；零产品仓改动），激活条件每 wake 新鲜复验 PARKED=0 不触发。exit gate（喂重算值 0/0）= FRONTIER_EXHAUSTED；lint PASS 88/0。standby 至整点 WAKE。
